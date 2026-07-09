@@ -1,4 +1,4 @@
-id,title,video_type,priority,status
-tow_truck_dark_side,The Dark Side of Tow Truck Companies,business_crime_story,high,planned
-fake_moving_companies,How Fake Moving Companies Scam Families,business_crime_story,high,planned
-car_washes_everywhere,Why Car Washes Are Suddenly Everywhere,business_documentary,high,planned
+id,title,video_type,status,priority,next_stage,allow_overnight,last_run_at,last_result
+tow_truck_dark_side,The Dark Side of Tow Truck Companies,business_crime_story,shorts_done,high,,yes,2026-07-09T03:12:11.427Z,success
+fake_moving_companies,How Fake Moving Companies Scam Families,business_crime_story,planned,high,research,no,,
+car_washes_everywhere,Why Car Washes Are Suddenly Everywhere,business_documentary,planned,high,research,no,,

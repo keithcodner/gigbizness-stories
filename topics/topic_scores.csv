@@ -1,0 +1,4 @@
+topic_id,video_type,topic_score,recommended_priority,reason
+fake_moving_companies,business_crime_story,72,high,No published history for this video type yet; score leans on current queue priority.
+car_washes_everywhere,business_documentary,72,high,No published history for this video type yet; score leans on current queue priority.
+tow_truck_dark_side,business_crime_story,70,high,No published history for this video type yet; score leans on current queue priority.

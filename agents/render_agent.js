@@ -10,6 +10,7 @@ const {
 function getPaths(workspaceDir) {
   const renderPlanDir = path.join(workspaceDir, "05_render_plan");
   const renderDir = path.join(workspaceDir, "06_renders");
+  const qcDir = path.join(workspaceDir, "10_qc");
   const scriptsDir = path.join(path.resolve(__dirname, ".."), "scripts");
   const rootConfigDir = path.join(path.resolve(__dirname, ".."), "config");
 
@@ -19,8 +20,24 @@ function getPaths(workspaceDir) {
     renderProfilesPath: path.join(rootConfigDir, "render_profiles.json"),
     rendererScriptPath: path.join(scriptsDir, "ffmpeg_render.py"),
     draftOutputPath: path.join(renderDir, "draft_01.mp4"),
-    finalOutputPath: path.join(renderDir, "final_1080p.mp4")
+    finalOutputPath: path.join(renderDir, "final_1080p.mp4"),
+    finalApprovalPath: path.join(qcDir, "final_approval.md")
   };
+}
+
+function enforceQcForFinal(profileName, finalApprovalPath) {
+  if (profileName === "draft") {
+    return;
+  }
+
+  if (!require("fs").existsSync(finalApprovalPath)) {
+    throw new Error("Final render is blocked until QC creates 10_qc/final_approval.md.");
+  }
+
+  const approvalText = require("fs").readFileSync(finalApprovalPath, "utf8");
+  if (!approvalText.startsWith("APPROVED")) {
+    throw new Error("Final render is blocked because QC has not approved this package.");
+  }
 }
 
 function runCommand(command, args, label) {
@@ -51,6 +68,8 @@ function main() {
     if (!profile) {
       throw new Error(`Unknown render profile: ${profileName}`);
     }
+
+    enforceQcForFinal(profileName, paths.finalApprovalPath);
 
     const outputPath = profileName === "draft" ? paths.draftOutputPath : paths.finalOutputPath;
     runCommand("python", [

@@ -97,6 +97,7 @@ const WORKSPACE_LAYOUT = [
     dir: "08_thumbnail",
     files: {
       "thumbnail_prompt.txt": "",
+      "thumbnail_concepts.md": "# Thumbnail Concepts\n\n",
       "thumbnail_01.png": "",
       "thumbnail_02.png": "",
       "final_thumbnail.jpg": ""
@@ -109,13 +110,17 @@ const WORKSPACE_LAYOUT = [
       "description.txt": "",
       "tags.txt": "",
       "chapters.txt": "",
-      "pinned_comment.txt": ""
+      "pinned_comment.txt": "",
+      "performance_input.json": "{\n  \"ctr\": null,\n  \"average_view_duration_seconds\": null,\n  \"first_30_second_retention\": null,\n  \"comments_value_mentions\": null,\n  \"subscriber_conversion_percent\": null,\n  \"shorts_to_long_conversion_percent\": null,\n  \"production_hours\": null,\n  \"notes\": \"Fill this in manually after publish.\"\n}\n",
+      "publish_record.json": "{\n  \"status\": \"not_published\"\n}\n"
     }
   },
   {
     dir: "10_qc",
     files: {
       "quality_report.md": "# Quality Report\n\n",
+      "required_fixes.md": "# Required Fixes\n\n",
+      "optional_improvements.md": "# Optional Improvements\n\n",
       "final_approval.md": "NOT APPROVED\n"
     }
   }
@@ -313,6 +318,55 @@ function runRenderStage(topicId, profile = "draft") {
   return workspaceDir;
 }
 
+function runShortsStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting shorts/thumbnail/metadata stage for topic '${topicId}'`);
+
+  runNodeAgent("shorts_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+  runNodeAgent("thumbnail_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+  runNodeAgent("metadata_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed shorts/thumbnail/metadata stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runQcStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting QC stage for topic '${topicId}'`);
+
+  runNodeAgent("qc_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed QC stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runPublishRecord(topicId, publishDate) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Recording publish package for topic '${topicId}'`);
+
+  const args = ["--record-publish", "--topic", topicId, "--workspace", workspaceDir];
+  if (publishDate) {
+    args.push("--date", publishDate);
+  }
+  runNodeAgent("topic_planner.js", args);
+
+  writeLog(`Publish package recorded for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runAnalyticsReview() {
+  writeLog("Starting analytics review and queue refresh");
+  runNodeAgent("topic_planner.js", ["--analytics-review"]);
+  writeLog("Completed analytics review and queue refresh");
+}
+
+function runOvernightMode(resume = false) {
+  writeLog(`Starting overnight mode${resume ? " (resume)" : ""}`);
+  const args = resume ? ["--resume"] : [];
+  runNodeAgent("overnight_agent.js", args);
+  writeLog(`Completed overnight mode${resume ? " (resume)" : ""}`);
+}
+
 function printUsage() {
   console.log("Usage:");
   console.log("  node agents/orchestrator.js --init-project");
@@ -322,6 +376,12 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage voice");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage assets");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render --profile draft");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage shorts");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage qc");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --record-publish --date YYYY-MM-DD");
+  console.log("  node agents/orchestrator.js --analytics-review");
+  console.log("  node agents/orchestrator.js --overnight");
+  console.log("  node agents/orchestrator.js --resume");
 }
 
 function main() {
@@ -334,6 +394,34 @@ function main() {
     if (args["init-project"]) {
       initProject();
       console.log("Project directories verified.");
+      return;
+    }
+
+    if (args.overnight) {
+      runOvernightMode(false);
+      console.log("Overnight mode completed.");
+      return;
+    }
+
+    if (args.resume) {
+      runOvernightMode(true);
+      console.log("Overnight resume completed.");
+      return;
+    }
+
+    if (args["analytics-review"]) {
+      runAnalyticsReview();
+      console.log("Analytics review completed.");
+      return;
+    }
+
+    if (args["record-publish"]) {
+      if (!args.topic) {
+        throw new Error("Missing required argument: --topic <topic_id>");
+      }
+
+      const workspaceDir = runPublishRecord(args.topic, args.date || null);
+      console.log(`Publish record completed: ${workspaceDir}`);
       return;
     }
 
@@ -352,7 +440,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["research", "script", "voice", "assets", "render"].includes(args.stage)) {
+      if (!["research", "script", "voice", "assets", "render", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -365,8 +453,12 @@ function main() {
         workspaceDir = runVoiceStage(args.topic);
       } else if (args.stage === "assets") {
         workspaceDir = runAssetsStage(args.topic);
-      } else {
+      } else if (args.stage === "render") {
         workspaceDir = runRenderStage(args.topic, args.profile || "draft");
+      } else if (args.stage === "qc") {
+        workspaceDir = runQcStage(args.topic);
+      } else {
+        workspaceDir = runShortsStage(args.topic);
       }
       console.log(`${args.stage[0].toUpperCase()}${args.stage.slice(1)} stage completed: ${workspaceDir}`);
       return;

@@ -1,0 +1,40 @@
+{
+  "shorts": [
+    {
+      "id": "short_01",
+      "source_scene_id": "S03",
+      "title": "The fee stack behind towing",
+      "hook_text": "THE BILL KEEPS GROWING",
+      "setup": "A tow fee is only the first layer.",
+      "takeaway": "The leverage changes after the car is already in the lot.",
+      "start_seconds": 58,
+      "end_seconds": 82,
+      "narration_excerpt": "The towing bill does not always end when the car leaves the scene. There can be the tow itself, then storage, then release fees, then extra charges tied to timing and paperwork.",
+      "duration_seconds": 32
+    },
+    {
+      "id": "short_02",
+      "source_scene_id": "S04",
+      "title": "Why towing can feel high pressure",
+      "hook_text": "WHY YOU FEEL TRAPPED",
+      "setup": "Pressure rises when time and transportation disappear.",
+      "takeaway": "The customer loses leverage once the vehicle is locked behind the gate.",
+      "start_seconds": 82,
+      "end_seconds": 110,
+      "narration_excerpt": "This is where the business can shift from service to pressure. If the customer has limited time, limited transportation, or a bill that grows daily, the leverage changes fast.",
+      "duration_seconds": 36
+    },
+    {
+      "id": "short_03",
+      "source_scene_id": "S06",
+      "title": "Warning signs before the bill hits",
+      "hook_text": "WATCH THE PAPERWORK",
+      "setup": "Vague charges create room for surprise fees.",
+      "takeaway": "A clear process is one of the easiest ways to spot a better operator.",
+      "start_seconds": 138,
+      "end_seconds": 162,
+      "narration_excerpt": "For the viewer, the practical lesson is to watch the paperwork, the fee structure, and the timing pressure. A business that stays vague about charges has more room to trap you later.",
+      "duration_seconds": 32
+    }
+  ]
+}
