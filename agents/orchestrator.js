@@ -9,6 +9,7 @@ const TOPICS_DIR = path.join(ROOT, "topics");
 const WORKSPACES_DIR = path.join(ROOT, "workspaces");
 const OUTPUT_LOGS_DIR = path.join(ROOT, "output", "logs");
 const AGENTS_DIR = __dirname;
+const ROOT_CONFIG_DIR = path.join(ROOT, "config");
 
 const WORKSPACE_LAYOUT = [
   {
@@ -180,6 +181,345 @@ function writeLog(message) {
   const stamp = new Date().toISOString();
   const logPath = path.join(OUTPUT_LOGS_DIR, "orchestrator.log");
   fs.appendFileSync(logPath, `[${stamp}] ${message}\n`, "utf8");
+}
+
+function readText(filePath) {
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
+}
+
+function fileHasContent(filePath) {
+  return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
+}
+
+function getTopicPaths(topicId) {
+  const workspaceDir = getWorkspaceDir(topicId);
+  return {
+    workspaceDir,
+    guidedStatusPath: path.join(workspaceDir, "guided_status.md"),
+    qualityRulesPath: path.join(ROOT_CONFIG_DIR, "quality_rules.json"),
+    manualNotesPath: path.join(workspaceDir, "01_research", "manual_notes.md"),
+    researchDossierPath: path.join(workspaceDir, "01_research", "research_dossier.md"),
+    sourcesPath: path.join(workspaceDir, "01_research", "sources.csv"),
+    approvedFactsPath: path.join(workspaceDir, "01_research", "approved_facts.csv"),
+    riskReportPath: path.join(workspaceDir, "01_research", "source_risk_report.md"),
+    scriptPath: path.join(workspaceDir, "02_script", "script_v2_human_review.md"),
+    voiceCleanPath: path.join(workspaceDir, "03_voice", "voiceover_clean.wav"),
+    captionsPath: path.join(workspaceDir, "03_voice", "captions.srt"),
+    visualManifestPath: path.join(workspaceDir, "04_assets", "visual_manifest.csv"),
+    assetGapsPath: path.join(workspaceDir, "04_assets", "asset_gaps.md"),
+    draftRenderPath: path.join(workspaceDir, "06_renders", "draft_01.mp4"),
+    shortOnePath: path.join(workspaceDir, "07_shorts", "short_01.mp4"),
+    thumbnailPath: path.join(workspaceDir, "08_thumbnail", "final_thumbnail.jpg"),
+    titleOptionsPath: path.join(workspaceDir, "09_publish", "title_options.txt"),
+    qualityReportPath: path.join(workspaceDir, "10_qc", "quality_report.md"),
+    requiredFixesPath: path.join(workspaceDir, "10_qc", "required_fixes.md"),
+    finalApprovalPath: path.join(workspaceDir, "10_qc", "final_approval.md"),
+    finalRenderPath: path.join(workspaceDir, "06_renders", "final_1080p.mp4")
+  };
+}
+
+function loadQualityRules() {
+  return JSON.parse(fs.readFileSync(path.join(ROOT_CONFIG_DIR, "quality_rules.json"), "utf8"));
+}
+
+function countCsvRows(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return 0;
+  }
+
+  const lines = fs.readFileSync(filePath, "utf8")
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.length > 0);
+  return Math.max(0, lines.length - 1);
+}
+
+function countSourceTypes(filePath, allowedTypes) {
+  if (!fs.existsSync(filePath)) {
+    return 0;
+  }
+
+  const text = fs.readFileSync(filePath, "utf8")
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.length > 0);
+
+  if (text.length <= 1) {
+    return 0;
+  }
+
+  const rows = text.slice(1).map((line) => line.split(","));
+  return rows.filter((row) => allowedTypes.has((row[2] || "").trim().toLowerCase())).length;
+}
+
+function hasMeaningfulManualNotes(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+
+  const lines = fs.readFileSync(filePath, "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !line.startsWith("#"))
+    .filter((line) => !line.includes("Add rough research notes"))
+    .filter((line) => !line.includes("candidate sources"))
+    .filter((line) => !line.includes("open questions"));
+
+  return lines.some((line) => line.length >= 20 || /^[-*]\s+/.test(line));
+}
+
+function isResearchApproved(topic) {
+  const paths = getTopicPaths(topic.id);
+  const qualityRules = loadQualityRules();
+  const approvedFacts = countCsvRows(paths.approvedFactsPath);
+  const sources = countCsvRows(paths.sourcesPath);
+  const officialSources = countSourceTypes(
+    paths.sourcesPath,
+    new Set(["government", "court", "regulator", "company_filing"])
+  );
+
+  if (sources < qualityRules.research.min_sources) {
+    return false;
+  }
+  if (officialSources < qualityRules.research.min_primary_or_official_sources) {
+    return false;
+  }
+  if (topic.video_type === "business_crime_story" &&
+      officialSources < qualityRules.research.crime_video_min_official_sources) {
+    return false;
+  }
+
+  return approvedFacts >= 3 && readText(paths.researchDossierPath).includes("## Sources");
+}
+
+function isScriptReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  const scriptText = readText(paths.scriptPath);
+  return scriptText.includes("## S01") && scriptText.length > 1200;
+}
+
+function isVoiceReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return fileHasContent(paths.voiceCleanPath) && fileHasContent(paths.captionsPath);
+}
+
+function isAssetsReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return countCsvRows(paths.visualManifestPath) >= 6;
+}
+
+function isDraftReady(topicId) {
+  return fileHasContent(getTopicPaths(topicId).draftRenderPath);
+}
+
+function isShortsPackageReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return fileHasContent(paths.shortOnePath) && fileHasContent(paths.thumbnailPath) && fileHasContent(paths.titleOptionsPath);
+}
+
+function isQcApproved(topicId) {
+  const approvalText = readText(getTopicPaths(topicId).finalApprovalPath);
+  return approvalText.startsWith("APPROVED");
+}
+
+function isFinalRenderReady(topicId) {
+  return fileHasContent(getTopicPaths(topicId).finalRenderPath);
+}
+
+function printGuidedBlock(title, lines) {
+  console.log("");
+  console.log(`GUIDED PIPELINE BLOCKED: ${title}`);
+  console.log("");
+  for (const line of lines) {
+    console.log(`- ${line}`);
+  }
+  console.log("");
+  console.log("Re-run the same command after updating the requested files.");
+}
+
+function writeGuidedStatus(topicId, mode, state, title, lines) {
+  const paths = getTopicPaths(topicId);
+  const statusLines = [
+    "# Guided Status",
+    "",
+    `- Topic ID: ${topicId}`,
+    `- Mode: ${mode}`,
+    `- State: ${state}`,
+    `- Updated at: ${new Date().toISOString()}`,
+    ""
+  ];
+
+  if (title) {
+    statusLines.push(`## ${title}`);
+    statusLines.push("");
+  }
+
+  if (lines.length === 0) {
+    statusLines.push("- None.");
+  } else {
+    for (const line of lines) {
+      statusLines.push(`- ${line}`);
+    }
+  }
+
+  statusLines.push("");
+  statusLines.push(`- Re-run command: node agents/orchestrator.js --topic ${topicId} --${mode}`);
+  statusLines.push("");
+
+  fs.writeFileSync(paths.guidedStatusPath, `${statusLines.join("\n")}\n`, "utf8");
+}
+
+function getResearchApprovalBlock(topic) {
+  const paths = getTopicPaths(topic.id);
+  const qualityRules = loadQualityRules();
+
+  const sources = countCsvRows(paths.sourcesPath);
+  const approvedFacts = countCsvRows(paths.approvedFactsPath);
+  const officialSources = countSourceTypes(
+    paths.sourcesPath,
+    new Set(["government", "court", "regulator", "company_filing"])
+  );
+  return {
+    title: "Research approval needed",
+    lines: [
+      `Current sources: ${sources} total, ${officialSources} official/primary, ${approvedFacts} approved facts`,
+      `Targets: ${qualityRules.research.min_sources} total and ${qualityRules.research.min_primary_or_official_sources} official/primary`,
+      topic.video_type === "business_crime_story"
+        ? `Crime-story target: ${qualityRules.research.crime_video_min_official_sources} official sources`
+        : "Crime-story official-source target is not applicable here.",
+      `Review ${paths.riskReportPath}`,
+      `Strengthen ${paths.sourcesPath} and ${paths.approvedFactsPath}`
+    ]
+  };
+}
+
+function getQcBlock(topicId) {
+  const paths = getTopicPaths(topicId);
+  const fixes = readText(paths.requiredFixesPath)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- ["))
+    .slice(0, 6);
+
+  if (fixes.length === 0 || !fileHasContent(paths.draftRenderPath)) {
+    return null;
+  }
+
+  return {
+    title: "QC fixes required",
+    lines: [
+      ...fixes.map((line) => line.replace(/^- /, "")),
+      `Full report: ${paths.qualityReportPath}`,
+      `Approval file: ${paths.finalApprovalPath}`
+    ]
+  };
+}
+
+function checkForGuidedBlock(topic) {
+  const paths = getTopicPaths(topic.id);
+  const hasResearchSeed = countCsvRows(paths.sourcesPath) > 0 || countCsvRows(paths.approvedFactsPath) > 0;
+
+  if (!hasMeaningfulManualNotes(paths.manualNotesPath) && !hasResearchSeed) {
+    return {
+      title: "Research notes needed",
+      lines: [
+        `Add real notes, candidate sources, or pasted excerpts to ${paths.manualNotesPath}`,
+        "Include numbers, public cases, official sources, and open questions before research runs."
+      ]
+    };
+  }
+
+  return getQcBlock(topic.id);
+}
+
+function runGuidedPipeline(topicId, mode = "guided") {
+  const { topic } = loadTopic(topicId);
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting ${mode} pipeline for topic '${topicId}'`);
+
+  let block = checkForGuidedBlock(topic);
+  if (block) {
+    writeGuidedStatus(topicId, mode, "blocked", block.title, block.lines);
+    printGuidedBlock(block.title, block.lines);
+    return workspaceDir;
+  }
+
+  if (!isResearchApproved(topic)) {
+    runResearchStage(topicId);
+    if (!isResearchApproved(topic)) {
+      const researchBlock = getResearchApprovalBlock(topic);
+      writeGuidedStatus(topicId, mode, "blocked", researchBlock.title, researchBlock.lines);
+      printGuidedBlock(researchBlock.title, researchBlock.lines);
+      return workspaceDir;
+    }
+  }
+
+  if (!isScriptReady(topicId)) {
+    runScriptStage(topicId);
+  }
+
+  if (!isVoiceReady(topicId)) {
+    runVoiceStage(topicId);
+  }
+
+  if (!isAssetsReady(topicId)) {
+    runAssetsStage(topicId);
+  }
+
+  if (!isDraftReady(topicId)) {
+    runRenderStage(topicId, "draft");
+  }
+
+  if (!isShortsPackageReady(topicId)) {
+    runShortsStage(topicId);
+  }
+
+  if (!isQcApproved(topicId)) {
+    try {
+      runQcStage(topicId);
+    } catch (error) {
+      block = getQcBlock(topic.id) || {
+        title: "QC review needed",
+        lines: [
+          `Review ${getTopicPaths(topicId).requiredFixesPath}`,
+          "Resolve the required fixes, then rerun the same guided command."
+        ]
+      };
+      writeGuidedStatus(topicId, mode, "blocked", block.title, block.lines);
+      printGuidedBlock(block.title, block.lines);
+      return workspaceDir;
+    }
+  }
+
+  if (mode === "full" && !isFinalRenderReady(topicId)) {
+    runRenderStage(topicId, "youtube_1080p");
+  }
+
+  console.log("");
+  console.log(`GUIDED PIPELINE READY: ${workspaceDir}`);
+  console.log("");
+  const readyLines = mode === "full"
+    ? [
+        isFinalRenderReady(topicId)
+          ? `Final video ready at ${getTopicPaths(topicId).finalRenderPath}`
+          : "QC passed. Final render can run now or may already be complete."
+      ]
+    : [
+        isQcApproved(topicId)
+          ? `QC approved. Run final export with: node agents/orchestrator.js --topic ${topicId} --stage render --profile youtube_1080p`
+          : "Draft pipeline is complete up to the current human-review gates."
+      ];
+  writeGuidedStatus(topicId, mode, "ready", "Pipeline Ready", readyLines);
+  if (mode === "full") {
+    console.log(isFinalRenderReady(topicId)
+      ? `Final video ready at ${getTopicPaths(topicId).finalRenderPath}`
+      : "QC passed. Final render can run now or may already be complete.");
+  } else {
+    console.log(isQcApproved(topicId)
+      ? `QC approved. Run final export with: node agents/orchestrator.js --topic ${topicId} --stage render --profile youtube_1080p`
+      : "Draft pipeline is complete up to the current human-review gates.");
+  }
 }
 
 function initTopicWorkspace(topicId) {
@@ -378,6 +718,8 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render --profile draft");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shorts");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage qc");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --guided");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --full");
   console.log("  node agents/orchestrator.js --topic <topic_id> --record-publish --date YYYY-MM-DD");
   console.log("  node agents/orchestrator.js --analytics-review");
   console.log("  node agents/orchestrator.js --overnight");
@@ -387,6 +729,14 @@ function printUsage() {
 function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
+    if (typeof args.guided === "string" && !args.topic) {
+      args.topic = args.guided;
+      args.guided = true;
+    }
+    if (typeof args.full === "string" && !args.topic) {
+      args.topic = args.full;
+      args.full = true;
+    }
     if (!args.topic && args._.length > 0) {
       args.topic = args._[0];
     }
@@ -422,6 +772,15 @@ function main() {
 
       const workspaceDir = runPublishRecord(args.topic, args.date || null);
       console.log(`Publish record completed: ${workspaceDir}`);
+      return;
+    }
+
+    if (args.guided || args.full) {
+      if (!args.topic) {
+        throw new Error("Missing required argument: --topic <topic_id>");
+      }
+
+      runGuidedPipeline(args.topic, args.full ? "full" : "guided");
       return;
     }
 

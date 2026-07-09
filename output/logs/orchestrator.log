@@ -52,3 +52,13 @@
 [2026-07-09T03:22:23.761Z] Starting analytics review and queue refresh
 [2026-07-09T03:22:23.934Z] Completed analytics review and queue refresh
 [2026-07-09T03:22:24.422Z] Recording publish package for topic 'tow_truck_dark_side'
+[2026-07-09T04:30:11.782Z] Starting guided pipeline for topic 'tow_truck_dark_side'
+[2026-07-09T04:30:12.024Z] Initialized workspace for topic 'fake_moving_companies' at C:\xampp\htdocs\apps\gigbizness-stories\workspaces\fake_moving_companies
+[2026-07-09T04:30:12.025Z] Starting guided pipeline for topic 'fake_moving_companies'
+[2026-07-09T04:30:12.158Z] Starting full pipeline for topic 'tow_truck_dark_side'
+[2026-07-09T04:30:35.382Z] Starting guided pipeline for topic 'tow_truck_dark_side'
+[2026-07-09T04:30:35.563Z] Starting guided pipeline for topic 'fake_moving_companies'
+[2026-07-09T04:31:56.599Z] Starting guided pipeline for topic 'fake_moving_companies'
+[2026-07-09T04:31:56.809Z] Starting guided pipeline for topic 'tow_truck_dark_side'
+[2026-07-09T04:33:01.106Z] Starting guided pipeline for topic 'fake_moving_companies'
+[2026-07-09T04:33:11.163Z] Starting guided pipeline for topic 'fake_moving_companies'

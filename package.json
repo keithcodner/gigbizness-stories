@@ -15,6 +15,8 @@
     "render:final": "node agents/orchestrator.js --stage render --profile youtube_1080p",
     "shorts": "node agents/orchestrator.js --stage shorts",
     "qc": "node agents/orchestrator.js --stage qc",
+    "guided": "node agents/orchestrator.js --guided",
+    "full": "node agents/orchestrator.js --full",
     "publish:record": "node agents/orchestrator.js --record-publish",
     "analytics": "node agents/orchestrator.js --analytics-review",
     "overnight": "node agents/orchestrator.js --overnight"
