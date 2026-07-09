@@ -292,6 +292,27 @@ function runVoiceStage(topicId) {
   return workspaceDir;
 }
 
+function runAssetsStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting assets stage for topic '${topicId}'`);
+
+  runNodeAgent("visual_asset_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed assets stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runRenderStage(topicId, profile = "draft") {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting render stage for topic '${topicId}' with profile '${profile}'`);
+
+  runNodeAgent("render_plan_agent.js", ["--topic", topicId, "--workspace", workspaceDir, "--profile", profile]);
+  runNodeAgent("render_agent.js", ["--topic", topicId, "--workspace", workspaceDir, "--profile", profile]);
+
+  writeLog(`Completed render stage for topic '${topicId}' with profile '${profile}'`);
+  return workspaceDir;
+}
+
 function printUsage() {
   console.log("Usage:");
   console.log("  node agents/orchestrator.js --init-project");
@@ -299,6 +320,8 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage research");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage script");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage voice");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage assets");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage render --profile draft");
 }
 
 function main() {
@@ -329,7 +352,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["research", "script", "voice"].includes(args.stage)) {
+      if (!["research", "script", "voice", "assets", "render"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -338,8 +361,12 @@ function main() {
         workspaceDir = runResearchStage(args.topic);
       } else if (args.stage === "script") {
         workspaceDir = runScriptStage(args.topic);
-      } else {
+      } else if (args.stage === "voice") {
         workspaceDir = runVoiceStage(args.topic);
+      } else if (args.stage === "assets") {
+        workspaceDir = runAssetsStage(args.topic);
+      } else {
+        workspaceDir = runRenderStage(args.topic, args.profile || "draft");
       }
       console.log(`${args.stage[0].toUpperCase()}${args.stage.slice(1)} stage completed: ${workspaceDir}`);
       return;

@@ -9,7 +9,10 @@
     "init:topic": "node agents/orchestrator.js --init",
     "research": "node agents/orchestrator.js --stage research",
     "script": "node agents/orchestrator.js --stage script",
-    "voice": "node agents/orchestrator.js --stage voice"
+    "voice": "node agents/orchestrator.js --stage voice",
+    "assets": "node agents/orchestrator.js --stage assets",
+    "render:draft": "node agents/orchestrator.js --stage render --profile draft",
+    "render:final": "node agents/orchestrator.js --stage render --profile youtube_1080p"
   },
   "engines": {
     "node": ">=18"

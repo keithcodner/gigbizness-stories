@@ -1,3 +1,225 @@
 {
-  "scenes": []
+  "video_id": "tow_truck_dark_side",
+  "working_title": "The Dark Side of Tow Truck Companies",
+  "profile": "draft",
+  "duration_seconds": 183,
+  "scenes": [
+    {
+      "id": "S01",
+      "title": "Hook And Stakes",
+      "start": 0,
+      "end": 29,
+      "duration_seconds": 29,
+      "narration_excerpt": "Your car can disappear in minutes, but the bigger problem can start after the tow is already done. The first charge is easy to imagine. The harder part is everything that can come after it.",
+      "voiceover_file": "03_voice/voiceover_clean.wav",
+      "visuals": [
+        {
+          "type": "stock_video",
+          "file": "04_assets/s01_b_roll_01.mp4",
+          "source_status": "manual_needed",
+          "effect": "gentle_pan",
+          "usage": "Hook And Stakes primary visual (0s-29s)"
+        }
+      ],
+      "music": null,
+      "sfx": [],
+      "motion_style": "fast_intro",
+      "retention_purpose": "Immediate hook and stakes",
+      "notes": "No generic intro. Start with immediate tension."
+    },
+    {
+      "id": "S02",
+      "title": "The Legitimate Business Model",
+      "start": 29,
+      "end": 58,
+      "duration_seconds": 29,
+      "narration_excerpt": "At the basic level, towing solves a real problem. A disabled car blocks traffic, breaks down on the shoulder, or gets removed from private property.",
+      "voiceover_file": "03_voice/voiceover_clean.wav",
+      "visuals": [
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/charts/s02_fact_card_01.svg",
+          "source_status": "generated",
+          "effect": "slow_zoom",
+          "usage": "The Legitimate Business Model explainer card"
+        },
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/s02_generated_graphic_01.svg",
+          "source_status": "planned",
+          "effect": "slow_zoom",
+          "usage": "The Legitimate Business Model primary visual (29s-58s)"
+        },
+        {
+          "type": "map",
+          "file": "04_assets/s02_map_01.svg",
+          "source_status": "planned",
+          "effect": "gentle_pan",
+          "usage": "The Legitimate Business Model location context"
+        }
+      ],
+      "music": null,
+      "sfx": [],
+      "motion_style": "steady_documentary",
+      "retention_purpose": "Ground viewer in the normal business model",
+      "notes": "Use generated cards where sourced footage is not ready."
+    },
+    {
+      "id": "S03",
+      "title": "How The Money Works",
+      "start": 58,
+      "end": 82,
+      "duration_seconds": 24,
+      "narration_excerpt": "The towing bill does not always end when the car leaves the scene. There can be the tow itself, then storage, then release fees, then extra charges tied to timing and paperwork.",
+      "voiceover_file": "03_voice/voiceover_clean.wav",
+      "visuals": [
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/charts/s03_fact_card_01.svg",
+          "source_status": "generated",
+          "effect": "slow_zoom",
+          "usage": "How The Money Works explainer card"
+        },
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/s03_generated_graphic_01.svg",
+          "source_status": "planned",
+          "effect": "slow_zoom",
+          "usage": "How The Money Works primary visual (58s-82s)"
+        }
+      ],
+      "music": null,
+      "sfx": [],
+      "motion_style": "steady_documentary",
+      "retention_purpose": "Clarify the fee stack visually",
+      "notes": "Use generated cards where sourced footage is not ready."
+    },
+    {
+      "id": "S04",
+      "title": "Where Pressure Enters",
+      "start": 82,
+      "end": 110,
+      "duration_seconds": 28,
+      "narration_excerpt": "This is where the business can shift from service to pressure. If the customer has limited time, limited transportation, or a bill that grows daily, the leverage changes fast.",
+      "voiceover_file": "03_voice/voiceover_clean.wav",
+      "visuals": [
+        {
+          "type": "stock_video",
+          "file": "04_assets/s04_b_roll_01.mp4",
+          "source_status": "manual_needed",
+          "effect": "gentle_pan",
+          "usage": "Where Pressure Enters primary visual (82s-110s)"
+        }
+      ],
+      "music": null,
+      "sfx": [],
+      "motion_style": "steady_documentary",
+      "retention_purpose": "Show where leverage shifts",
+      "notes": "Use generated cards where sourced footage is not ready."
+    },
+    {
+      "id": "S05",
+      "title": "Evidence Gap And Public Cases",
+      "start": 110,
+      "end": 138,
+      "duration_seconds": 28,
+      "narration_excerpt": "This is the point where strong sourcing matters most. If a video names a company, a person, or a public enforcement action, the wording has to match the evidence exactly.",
+      "voiceover_file": "03_voice/voiceover_clean.wav",
+      "visuals": [
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/charts/s05_fact_card_01.svg",
+          "source_status": "generated",
+          "effect": "slow_zoom",
+          "usage": "Evidence Gap And Public Cases explainer card"
+        },
+        {
+          "type": "document",
+          "file": "04_assets/documents/s05_source_card_01.mp4",
+          "source_status": "planned",
+          "effect": "hold_with_highlight",
+          "usage": "Evidence Gap And Public Cases primary visual (110s-138s)"
+        },
+        {
+          "type": "document",
+          "file": "04_assets/documents/s05_public_doc_01.png",
+          "source_status": "missing_source",
+          "effect": "hold_with_highlight",
+          "usage": "public case evidence card"
+        }
+      ],
+      "music": null,
+      "sfx": [],
+      "motion_style": "documentary_hold",
+      "retention_purpose": "Reserve proof section for sourced evidence",
+      "notes": "Keep this scene conservative until public-case sourcing improves."
+    },
+    {
+      "id": "S06",
+      "title": "Warning Signs For Viewers",
+      "start": 138,
+      "end": 162,
+      "duration_seconds": 24,
+      "narration_excerpt": "For the viewer, the practical lesson is to watch the paperwork, the fee structure, and the timing pressure. A business that stays vague about charges has more room to trap you later.",
+      "voiceover_file": "03_voice/voiceover_clean.wav",
+      "visuals": [
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/charts/s06_fact_card_01.svg",
+          "source_status": "generated",
+          "effect": "slow_zoom",
+          "usage": "Warning Signs For Viewers explainer card"
+        },
+        {
+          "type": "document",
+          "file": "04_assets/documents/s06_source_card_01.mp4",
+          "source_status": "planned",
+          "effect": "hold_with_highlight",
+          "usage": "Warning Signs For Viewers primary visual (138s-162s)"
+        }
+      ],
+      "music": null,
+      "sfx": [],
+      "motion_style": "steady_documentary",
+      "retention_purpose": "Translate story into practical viewer advice",
+      "notes": "Use generated cards where sourced footage is not ready."
+    },
+    {
+      "id": "S07",
+      "title": "Final Takeaway",
+      "start": 162,
+      "end": 183,
+      "duration_seconds": 21,
+      "narration_excerpt": "Towing is a real service, but it is also a business built around moments when the customer has very little flexibility. That is why the line between legitimate cost and predatory pressure matters so much.",
+      "voiceover_file": "03_voice/voiceover_clean.wav",
+      "visuals": [
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/charts/s07_fact_card_01.svg",
+          "source_status": "generated",
+          "effect": "slow_zoom",
+          "usage": "Final Takeaway explainer card"
+        },
+        {
+          "type": "generated_graphic",
+          "file": "04_assets/s07_generated_graphic_01.svg",
+          "source_status": "planned",
+          "effect": "slow_zoom",
+          "usage": "Final Takeaway primary visual (162s-183s)"
+        },
+        {
+          "type": "map",
+          "file": "04_assets/s07_map_01.svg",
+          "source_status": "planned",
+          "effect": "gentle_pan",
+          "usage": "Final Takeaway location context"
+        }
+      ],
+      "music": null,
+      "sfx": [],
+      "motion_style": "steady_documentary",
+      "retention_purpose": "Close with a clean takeaway",
+      "notes": "Use generated cards where sourced footage is not ready."
+    }
+  ]
 }

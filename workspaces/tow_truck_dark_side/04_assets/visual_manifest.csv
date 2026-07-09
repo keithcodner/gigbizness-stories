@@ -1,0 +1,17 @@
+scene_id,asset_type,search_query,filename,source_url,license,usage,priority,status
+S01,stock_video,tow truck night tow truck dark side hook and stakes documentary b-roll,s01_b_roll_01.mp4,,manual-source-needed,Hook And Stakes primary visual (0s-29s),high,manual_needed
+S02,generated_graphic,tow truck dark side the legitimate business model explainer graphic,s02_generated_graphic_01.svg,,manual-source-needed,The Legitimate Business Model primary visual (29s-58s),medium,planned
+S02,generated_graphic,tow_truck_dark_side The Legitimate Business Model explainer card,s02_fact_card_01.svg,local-generated,project-original,The Legitimate Business Model explainer card,high,generated
+S02,map,tow_truck_dark_side city map graphic,s02_map_01.svg,,manual-source-needed,The Legitimate Business Model location context,medium,planned
+S03,generated_graphic,tow truck dark side how the money works explainer graphic,s03_generated_graphic_01.svg,,manual-source-needed,How The Money Works primary visual (58s-82s),high,planned
+S03,generated_graphic,tow_truck_dark_side How The Money Works explainer card,s03_fact_card_01.svg,local-generated,project-original,How The Money Works explainer card,high,generated
+S04,stock_video,tow truck night tow truck dark side where pressure enters documentary b-roll,s04_b_roll_01.mp4,,manual-source-needed,Where Pressure Enters primary visual (82s-110s),medium,manual_needed
+S05,document,tow truck dark side evidence gap and public cases official document headline card,s05_source_card_01.mp4,,manual-source-needed,Evidence Gap And Public Cases primary visual (110s-138s),high,planned
+S05,generated_graphic,tow_truck_dark_side Evidence Gap And Public Cases explainer card,s05_fact_card_01.svg,local-generated,project-original,Evidence Gap And Public Cases explainer card,high,generated
+S05,document,tow_truck_dark_side regulator complaint court filing,s05_public_doc_01.png,,source-required,public case evidence card,high,missing_source
+S06,document,tow truck dark side warning signs for viewers official document headline card,s06_source_card_01.mp4,,manual-source-needed,Warning Signs For Viewers primary visual (138s-162s),high,planned
+S06,generated_graphic,tow_truck_dark_side Warning Signs For Viewers explainer card,s06_fact_card_01.svg,local-generated,project-original,Warning Signs For Viewers explainer card,high,generated
+S07,generated_graphic,tow truck dark side final takeaway explainer graphic,s07_generated_graphic_01.svg,,manual-source-needed,Final Takeaway primary visual (162s-183s),medium,planned
+S07,generated_graphic,tow_truck_dark_side Final Takeaway explainer card,s07_fact_card_01.svg,local-generated,project-original,Final Takeaway explainer card,high,generated
+S07,map,tow_truck_dark_side city map graphic,s07_map_01.svg,,manual-source-needed,Final Takeaway location context,medium,planned
+ALL,chart,tow_truck_dark_side scene timing overview,narration_timing_overview.svg,local-generated,project-original,editing reference,medium,generated
