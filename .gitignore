@@ -1,0 +1,11 @@
+node_modules/
+workspaces/
+topics/
+
+# Local runtime artifacts
+/output/logs/
+*.log
+
+# Python caches
+__pycache__/
+*.pyc
