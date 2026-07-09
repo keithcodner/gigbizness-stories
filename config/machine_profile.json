@@ -1,0 +1,31 @@
+{
+  "machine_name": "vj_video_machine",
+  "gpu": {
+    "model": "NVIDIA GeForce GTX 1080",
+    "vram_gb": 8,
+    "preferred_encoding": "h264_nvenc",
+    "avoid": [
+      "heavy local AI video generation",
+      "large SDXL batch jobs",
+      "4K heavy effects"
+    ]
+  },
+  "cpu": {
+    "model": "Intel Xeon E5-2696 class",
+    "preferred_threads": 16,
+    "max_threads": 32,
+    "use_for": [
+      "ffmpeg preprocessing",
+      "research parsing",
+      "chart generation",
+      "audio normalization",
+      "proxy generation",
+      "batch downloads"
+    ]
+  },
+  "ram_gb": 65,
+  "target_resolution": "1920x1080",
+  "optional_resolution": "2560x1440",
+  "fps": 30,
+  "overnight_mode": true
+}

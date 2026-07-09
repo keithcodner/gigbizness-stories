@@ -1,0 +1,37 @@
+{
+  "id": "car_washes_everywhere",
+  "video_type": "business_documentary",
+  "working_title": "Why Car Washes Are Suddenly Everywhere",
+  "central_question": "Why do car washes keep multiplying, and what makes the business attractive to operators and investors?",
+  "target_length_minutes": 10,
+  "tone": "clear, analytical, documentary",
+  "audience": "general viewers interested in local business, money, and industry trends",
+  "value_promise": "Viewers will understand the economics, growth drivers, and hidden risks behind the car wash boom.",
+  "must_include": [
+    "business model",
+    "startup and operating costs",
+    "membership economics",
+    "real expansion examples",
+    "hidden risks"
+  ],
+  "must_avoid": [
+    "unsupported margin claims",
+    "generic visual filler"
+  ],
+  "visual_style": [
+    "clean documentary",
+    "suburban growth",
+    "membership cards",
+    "site plans",
+    "traffic patterns"
+  ],
+  "asset_keywords": [
+    "car wash exterior",
+    "vacuum stations",
+    "car wash tunnel",
+    "subscription sign"
+  ],
+  "music_style": "modern documentary, steady",
+  "humor_level": "light",
+  "publish_priority": "high"
+}

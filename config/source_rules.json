@@ -1,0 +1,35 @@
+{
+  "source_types": [
+    "government",
+    "court",
+    "regulator",
+    "company_filing",
+    "company_page",
+    "reputable_news",
+    "industry_report",
+    "academic",
+    "trade_publication",
+    "blog",
+    "unknown"
+  ],
+  "reliability_levels": [
+    "high",
+    "medium",
+    "low"
+  ],
+  "risk_levels": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "crime_wording_requirements": [
+    "alleged",
+    "charged",
+    "convicted",
+    "sued",
+    "settled",
+    "fined",
+    "according to court documents",
+    "regulators said"
+  ]
+}

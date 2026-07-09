@@ -1,0 +1,43 @@
+{
+  "id": "tow_truck_dark_side",
+  "video_type": "business_crime_story",
+  "working_title": "The Dark Side of Tow Truck Companies",
+  "central_question": "How does a normal roadside service turn into a high-pressure business where customers can feel trapped?",
+  "target_length_minutes": 9,
+  "tone": "serious, clear, documentary, slightly skeptical",
+  "audience": "general viewers interested in business, scams, money, and consumer protection",
+  "value_promise": "Viewers will understand the towing business model, the legitimate costs, and where predatory practices can enter.",
+  "must_include": [
+    "normal towing business model",
+    "fee stack explanation",
+    "storage fees",
+    "at least one real public case",
+    "consumer warning signs"
+  ],
+  "must_avoid": [
+    "accusing a company without a source",
+    "showing victims disrespectfully",
+    "giving instructions for illegal activity",
+    "generic stock footage for too long"
+  ],
+  "visual_style": [
+    "dark documentary",
+    "tow trucks",
+    "parking lots",
+    "invoice graphics",
+    "fee stack animation",
+    "court/legal document cards",
+    "city map graphics"
+  ],
+  "asset_keywords": [
+    "tow truck night",
+    "impound lot",
+    "parking lot towing",
+    "invoice closeup",
+    "car being towed",
+    "city street"
+  ],
+  "music_style": "low tension documentary, subtle, not horror",
+  "humor_level": "light analogies only; no jokes about victims",
+  "publish_priority": "high"
+}

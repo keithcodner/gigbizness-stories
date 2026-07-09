@@ -1,0 +1,29 @@
+{
+  "target_videos_per_week": 2,
+  "release_days": [
+    "Tuesday",
+    "Friday"
+  ],
+  "workflow": {
+    "Monday": [
+      "lock topics",
+      "run research"
+    ],
+    "Tuesday": [
+      "publish video A",
+      "script video B"
+    ],
+    "Wednesday": [
+      "edit and render video B",
+      "generate shorts"
+    ],
+    "Thursday": [
+      "research next week video A",
+      "prepare thumbnail and metadata"
+    ],
+    "Friday": [
+      "publish video B",
+      "script next week video A"
+    ]
+  }
+}

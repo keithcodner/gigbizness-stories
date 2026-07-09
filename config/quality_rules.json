@@ -1,0 +1,53 @@
+{
+  "script": {
+    "forbidden_phrases": [
+      "in today's fast-paced world",
+      "ever wondered",
+      "let's dive in",
+      "game-changer",
+      "revolutionary",
+      "this begs the question"
+    ],
+    "required": [
+      "clear hook within first 10 seconds",
+      "specific central question",
+      "viewer payoff stated early",
+      "at least one surprising insight",
+      "no unsupported financial claims"
+    ]
+  },
+  "visuals": {
+    "max_seconds_without_visual_change": 8,
+    "min_original_graphics_per_video": 3,
+    "min_source_cards_per_video": 2,
+    "avoid": [
+      "random unrelated stock footage",
+      "same clip reused too many times",
+      "text walls",
+      "low-resolution screenshots",
+      "AI-looking generic characters unless style is intentional"
+    ]
+  },
+  "research": {
+    "min_sources": 8,
+    "min_primary_or_official_sources": 2,
+    "crime_video_min_official_sources": 3,
+    "all_numbers_need_sources": true,
+    "legal_claims_need_exact_status": true
+  },
+  "audio": {
+    "target_lufs": -14,
+    "voice_must_be_clear": true,
+    "music_below_voice_db": -22,
+    "avoid_overused_ai_voice_cadence": true
+  },
+  "final_review": {
+    "human_must_review": [
+      "title",
+      "hook",
+      "crime allegations",
+      "thumbnail",
+      "final export"
+    ]
+  }
+}

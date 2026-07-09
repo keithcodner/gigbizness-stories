@@ -1,0 +1,14 @@
+{
+  "name": "business-video-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Business video docs automation scaffolding",
+  "main": "agents/orchestrator.js",
+  "scripts": {
+    "init:project": "node agents/orchestrator.js --init-project",
+    "init:topic": "node agents/orchestrator.js --init"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

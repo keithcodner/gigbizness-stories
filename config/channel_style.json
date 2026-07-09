@@ -1,0 +1,22 @@
+{
+  "channel_name": "Business Video Docs",
+  "tone": [
+    "clear",
+    "skeptical",
+    "specific",
+    "useful",
+    "curious"
+  ],
+  "avoid": [
+    "generic AI intros",
+    "empty hype",
+    "mean-spirited jokes",
+    "vague stock narration"
+  ],
+  "target_video_length_minutes": {
+    "default": 10,
+    "business_tip": 8,
+    "business_documentary": 10,
+    "business_crime_story": 9
+  }
+}
