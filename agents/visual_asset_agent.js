@@ -27,6 +27,8 @@ function getPaths(workspaceDir) {
     visualManifestPath: path.join(assetsDir, "visual_manifest.csv"),
     licensesPath: path.join(assetsDir, "licenses.csv"),
     assetGapsPath: path.join(assetsDir, "asset_gaps.md"),
+    visualPlanPath: path.join(assetsDir, "visual_plan.md"),
+    visualReadinessPath: path.join(assetsDir, "visual_readiness.json"),
     summaryPath: path.join(assetsDir, "visual_manifest_summary.md"),
     chartSpecPath: path.join(assetsDir, "charts", "chart_specs.json"),
     factCardSpecPath: path.join(assetsDir, "charts", "fact_card_specs.json"),
@@ -82,26 +84,24 @@ function inferAssetRows(topic, shotRows, timingData) {
       status: needsGeneratedStatus(shot.visual_type)
     });
 
-    if (shot.visual_type === "generated_graphic" || shot.visual_type === "source_card") {
       rows.push({
         scene_id: sceneId,
         asset_type: "generated_graphic",
         search_query: `${topic.id} ${shot.section} explainer card`,
-        filename: inferFilename(sceneId, "fact_card", "01", "svg"),
+        filename: inferFilename(sceneId, "fact_card", "01", "png"),
         source_url: "local-generated",
         license: "project-original",
         usage: `${shot.section} explainer card`,
         priority: "high",
         status: "generated"
-      });
-    }
+    });
 
     if (description.toLowerCase().includes("map")) {
       rows.push({
         scene_id: sceneId,
         asset_type: "map",
         search_query: `${topic.id} city map graphic`,
-        filename: inferFilename(sceneId, "map", "01", "svg"),
+        filename: inferFilename(sceneId, "map", "01", "png"),
         source_url: "",
         license: "manual-source-needed",
         usage: `${shot.section} location context`,
@@ -129,7 +129,7 @@ function inferAssetRows(topic, shotRows, timingData) {
     scene_id: "ALL",
     asset_type: "chart",
     search_query: `${topic.id} scene timing overview`,
-    filename: "narration_timing_overview.svg",
+    filename: "narration_timing_overview.png",
     source_url: "local-generated",
     license: "project-original",
     usage: "editing reference",
@@ -245,6 +245,84 @@ function buildSummary(topic, manifestRows, timingData) {
   return `${lines.join("\n")}\n`;
 }
 
+function resolveAssetPath(assetsDir, row) {
+  if (/\.(svg|png|jpg|jpeg|webp|bmp)$/i.test(row.filename || "")) {
+    return path.join(assetsDir, "charts", row.filename);
+  }
+  if ((row.asset_type || "").toLowerCase() === "document") {
+    return path.join(assetsDir, "documents", row.filename);
+  }
+  if ((row.asset_type || "").toLowerCase() === "stock_video") {
+    return path.join(assetsDir, "stock_videos", row.filename);
+  }
+  return path.join(assetsDir, row.filename || "");
+}
+
+function collectVisualReadiness(manifestRows, assetsDir) {
+  const rowsWithFiles = manifestRows.map((row) => ({
+    ...row,
+    asset_path: resolveAssetPath(assetsDir, row),
+    exists: fs.existsSync(resolveAssetPath(assetsDir, row))
+  }));
+
+  const generatedExisting = rowsWithFiles.filter((row) => row.status === "generated" && row.exists);
+  const realExisting = rowsWithFiles.filter((row) => row.status !== "generated" && row.exists);
+  const existingStock = realExisting.filter((row) => row.asset_type === "stock_video");
+  const existingDocuments = realExisting.filter((row) => row.asset_type === "document");
+  const unresolvedHighPriority = rowsWithFiles.filter((row) =>
+    row.priority === "high" && row.status !== "generated" && !row.exists
+  );
+
+  return {
+    generated_existing_count: generatedExisting.length,
+    real_existing_count: realExisting.length,
+    stock_video_count: existingStock.length,
+    document_count: existingDocuments.length,
+    unresolved_high_priority_count: unresolvedHighPriority.length,
+    unresolved_high_priority: unresolvedHighPriority.map((row) => ({
+      scene_id: row.scene_id,
+      asset_type: row.asset_type,
+      filename: row.filename,
+      status: row.status
+    }))
+  };
+}
+
+function buildVisualPlan(topic, manifestRows, readiness) {
+  const lines = [
+    "# Visual Plan",
+    "",
+    `Topic: ${topic.working_title}`,
+    "",
+    "## Ready now",
+    "",
+    `- Generated helper graphics available: ${readiness.generated_existing_count}`,
+    `- Real non-generated local assets available: ${readiness.real_existing_count}`,
+    `- Stock video clips available: ${readiness.stock_video_count}`,
+    `- Document/source visuals available: ${readiness.document_count}`,
+    "",
+    "## Missing for a strong final cut",
+    ""
+  ];
+
+  const missingRows = manifestRows.filter((row) => row.status !== "generated");
+  if (missingRows.length === 0) {
+    lines.push("- None.");
+  } else {
+    for (const row of missingRows) {
+      lines.push(`- ${row.scene_id}: ${row.asset_type} -> ${row.filename} (${row.status})`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## Workflow rule");
+  lines.push("");
+  lines.push("- Draft renders may use generated fallback graphics.");
+  lines.push("- Final renders should include real stock footage, sourced screenshots, or real document visuals for the key scenes.");
+  lines.push("");
+  return `${lines.join("\n")}\n`;
+}
+
 function reconcileManifestRows(manifestRows, assetsDir) {
   return manifestRows.map((row) => {
     const expectedPath = path.join(assetsDir, "charts", row.filename);
@@ -273,7 +351,7 @@ function buildChartSpec(topic, timingData) {
   return {
     title: `${topic.working_title} Scene Timing Overview`,
     subtitle: "Estimated narration timing by scene",
-    output_filename: "narration_timing_overview.svg",
+    output_filename: "narration_timing_overview.png",
     scenes: (timingData.scenes || []).map((scene) => ({
       label: scene.scene,
       seconds: scene.estimated_seconds
@@ -284,20 +362,18 @@ function buildChartSpec(topic, timingData) {
 function buildFactCardSpec(topic, shotRows, timingData) {
   return {
     topic_id: topic.id,
-    cards: shotRows
-      .filter((shot) => shot.visual_type === "generated_graphic" || shot.visual_type === "source_card")
-      .map((shot) => {
-        const timing = timingData.scenes?.find((scene) => scene.scene.startsWith(shot.scene_id));
-        return {
-          scene_id: shot.scene_id,
-          title: shot.section,
-          subtitle: timing
-            ? `${timing.start_seconds}s-${timing.end_seconds}s`
-            : "timing pending",
-          body: shot.description,
-          output_filename: inferFilename(shot.scene_id, "fact_card", "01", "svg")
-        };
-      })
+    cards: shotRows.map((shot) => {
+      const timing = timingData.scenes?.find((scene) => scene.scene.startsWith(shot.scene_id));
+      return {
+        scene_id: shot.scene_id,
+        title: shot.section,
+        subtitle: timing
+          ? `${timing.start_seconds}s-${timing.end_seconds}s`
+          : "timing pending",
+        body: shot.description,
+        output_filename: inferFilename(shot.scene_id, "fact_card", "01", "png")
+      };
+    })
   };
 }
 
@@ -335,6 +411,9 @@ function main() {
     ]));
     writeText(paths.assetGapsPath, buildAssetGaps(topic, manifestRows));
     writeText(paths.summaryPath, buildSummary(topic, manifestRows, timingData));
+    let readiness = collectVisualReadiness(manifestRows, path.join(args.workspace, "04_assets"));
+    writeText(paths.visualPlanPath, buildVisualPlan(topic, manifestRows, readiness));
+    writeText(paths.visualReadinessPath, `${JSON.stringify(readiness, null, 2)}\n`);
 
     const chartSpec = buildChartSpec(topic, timingData);
     const factCardSpec = buildFactCardSpec(topic, shotRows, timingData);
@@ -379,6 +458,9 @@ function main() {
     ]));
     writeText(paths.assetGapsPath, buildAssetGaps(topic, manifestRows));
     writeText(paths.summaryPath, buildSummary(topic, manifestRows, timingData));
+    readiness = collectVisualReadiness(manifestRows, path.join(args.workspace, "04_assets"));
+    writeText(paths.visualPlanPath, buildVisualPlan(topic, manifestRows, readiness));
+    writeText(paths.visualReadinessPath, `${JSON.stringify(readiness, null, 2)}\n`);
 
     console.log(`Visual asset package generated for topic '${topic.id}'.`);
   } catch (error) {

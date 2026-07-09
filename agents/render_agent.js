@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
 const {
@@ -21,22 +22,42 @@ function getPaths(workspaceDir) {
     rendererScriptPath: path.join(scriptsDir, "ffmpeg_render.py"),
     draftOutputPath: path.join(renderDir, "draft_01.mp4"),
     finalOutputPath: path.join(renderDir, "final_1080p.mp4"),
-    finalApprovalPath: path.join(qcDir, "final_approval.md")
+    finalApprovalPath: path.join(qcDir, "final_approval.md"),
+    visualReadinessPath: path.join(workspaceDir, "04_assets", "visual_readiness.json"),
+    qualityRulesPath: path.join(rootConfigDir, "quality_rules.json")
   };
 }
 
-function enforceQcForFinal(profileName, finalApprovalPath) {
+function enforceQcForFinal(profileName, finalApprovalPath, visualReadinessPath, qualityRulesPath) {
   if (profileName === "draft") {
     return;
   }
 
-  if (!require("fs").existsSync(finalApprovalPath)) {
+  if (!fs.existsSync(finalApprovalPath)) {
     throw new Error("Final render is blocked until QC creates 10_qc/final_approval.md.");
   }
 
-  const approvalText = require("fs").readFileSync(finalApprovalPath, "utf8");
+  const approvalText = fs.readFileSync(finalApprovalPath, "utf8");
   if (!approvalText.startsWith("APPROVED")) {
     throw new Error("Final render is blocked because QC has not approved this package.");
+  }
+
+  if (!fs.existsSync(visualReadinessPath)) {
+    throw new Error("Final render is blocked until assets/visual_readiness.json exists.");
+  }
+
+  const visualReadiness = JSON.parse(fs.readFileSync(visualReadinessPath, "utf8"));
+  const qualityRules = JSON.parse(fs.readFileSync(qualityRulesPath, "utf8"));
+  const visualRules = qualityRules.visuals || {};
+
+  if ((visualRules.require_visual_plan_for_final || false) &&
+      visualReadiness.real_existing_count < (visualRules.min_real_visual_assets_for_final || 0)) {
+    throw new Error("Final render is blocked because there are not enough real visual assets for a publishable cut.");
+  }
+
+  if ((visualRules.min_stock_video_clips_for_final || 0) > 0 &&
+      visualReadiness.stock_video_count < visualRules.min_stock_video_clips_for_final) {
+    throw new Error("Final render is blocked because not enough real stock video clips are available.");
   }
 }
 
@@ -69,7 +90,7 @@ function main() {
       throw new Error(`Unknown render profile: ${profileName}`);
     }
 
-    enforceQcForFinal(profileName, paths.finalApprovalPath);
+    enforceQcForFinal(profileName, paths.finalApprovalPath, paths.visualReadinessPath, paths.qualityRulesPath);
 
     const outputPath = profileName === "draft" ? paths.draftOutputPath : paths.finalOutputPath;
     runCommand("python", [

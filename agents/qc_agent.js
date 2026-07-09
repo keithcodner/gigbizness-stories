@@ -24,6 +24,7 @@ function getPaths(workspaceDir) {
   return {
     topicPath: path.join(configDir, "topic.json"),
     qualityRulesPath: path.join(rootConfigDir, "quality_rules.json"),
+    musicPolicyPath: path.join(rootConfigDir, "music_policy.json"),
     sourceRulesPath: path.join(rootConfigDir, "source_rules.json"),
     researchDossierPath: path.join(researchDir, "research_dossier.md"),
     sourcesPath: path.join(researchDir, "sources.csv"),
@@ -31,8 +32,11 @@ function getPaths(workspaceDir) {
     blockedClaimsPath: path.join(researchDir, "blocked_claims.md"),
     riskReportPath: path.join(researchDir, "source_risk_report.md"),
     scriptPath: path.join(scriptDir, "script_v2_human_review.md"),
+    voiceCleanPath: path.join(workspaceDir, "03_voice", "voiceover_clean.wav"),
     sceneManifestPath: path.join(renderPlanDir, "scene_manifest.json"),
     visualManifestPath: path.join(assetsDir, "visual_manifest.csv"),
+    musicSelectionPath: path.join(assetsDir, "music", "music_selection.md"),
+    musicManifestPath: path.join(assetsDir, "music", "music_manifest.csv"),
     draftRenderPath: path.join(renderDir, "draft_01.mp4"),
     final1080pPath: path.join(renderDir, "final_1080p.mp4"),
     final1440pPath: path.join(renderDir, "final_1440p.mp4"),
@@ -61,6 +65,20 @@ function safeReadCsv(filePath) {
 
 function safeReadJson(filePath, fallback) {
   return fs.existsSync(filePath) ? readJson(filePath) : fallback;
+}
+
+function resolveAssetPath(workspaceDir, row) {
+  const assetsDir = path.join(workspaceDir, "04_assets");
+  if (/\.(svg|png|jpg|jpeg|webp|bmp)$/i.test(row.filename || "")) {
+    return path.join(assetsDir, "charts", row.filename);
+  }
+  if ((row.asset_type || "").toLowerCase() === "document") {
+    return path.join(assetsDir, "documents", row.filename);
+  }
+  if ((row.asset_type || "").toLowerCase() === "stock_video") {
+    return path.join(assetsDir, "stock_videos", row.filename);
+  }
+  return path.join(assetsDir, row.filename || "");
 }
 
 function parseBlockedClaims(markdown) {
@@ -190,13 +208,22 @@ function buildScriptChecks(topic, qualityRules, scriptMarkdown, approvedFacts) {
   };
 }
 
-function buildVisualChecks(qualityRules, sceneManifest, visualManifest, draftRenderPath) {
+function buildVisualChecks(qualityRules, workspaceDir, sceneManifest, visualManifest, draftRenderPath) {
   const findings = [];
   const scenes = sceneManifest.scenes || [];
+  const generatedScenes = new Set(
+    visualManifest
+      .filter((row) => (row.status || "").toLowerCase() === "generated" && row.scene_id !== "ALL")
+      .map((row) => row.scene_id)
+  );
   const originalGraphics = visualManifest.filter((row) =>
     (row.status || "").toLowerCase() === "generated" &&
     ["generated_graphic", "chart", "map"].includes((row.asset_type || "").toLowerCase())
   ).length;
+  const realExistingVisuals = visualManifest.filter((row) =>
+    (row.status || "").toLowerCase() !== "generated" && fs.existsSync(resolveAssetPath(workspaceDir, row))
+  );
+  const stockVideoCount = realExistingVisuals.filter((row) => (row.asset_type || "").toLowerCase() === "stock_video").length;
   const sourceCards = visualManifest.filter((row) =>
     (row.asset_type || "").toLowerCase() === "document" ||
     (row.filename || "").toLowerCase().includes("source_card")
@@ -204,7 +231,10 @@ function buildVisualChecks(qualityRules, sceneManifest, visualManifest, draftRen
   const unresolvedAssets = visualManifest.filter((row) =>
     ["missing_source", "manual_needed", "planned"].includes((row.status || "").toLowerCase())
   );
-  const highPriorityUnresolved = unresolvedAssets.filter((row) => (row.priority || "").toLowerCase() === "high");
+  const highPriorityUnresolved = unresolvedAssets.filter((row) =>
+    (row.priority || "").toLowerCase() === "high" &&
+    !generatedScenes.has(row.scene_id)
+  );
 
   const maxGapSeconds = scenes.reduce((maxGap, scene) => {
     const visualCount = Array.isArray(scene.visuals) && scene.visuals.length > 0 ? scene.visuals.length : 1;
@@ -228,6 +258,14 @@ function buildVisualChecks(qualityRules, sceneManifest, visualManifest, draftRen
     findings.push(`${highPriorityUnresolved.length} high-priority visual assets are still unresolved.`);
   }
 
+  if (realExistingVisuals.length < (qualityRules.visuals.min_real_visual_assets_for_final || 0)) {
+    findings.push(`Only ${realExistingVisuals.length} real non-generated visual assets exist locally; target is ${qualityRules.visuals.min_real_visual_assets_for_final}.`);
+  }
+
+  if (stockVideoCount < (qualityRules.visuals.min_stock_video_clips_for_final || 0)) {
+    findings.push(`Only ${stockVideoCount} stock video clips exist locally; target is ${qualityRules.visuals.min_stock_video_clips_for_final}.`);
+  }
+
   if (!fs.existsSync(draftRenderPath) || fs.statSync(draftRenderPath).size === 0) {
     findings.push("Draft render is missing, so QC cannot verify pacing or visual cohesion yet.");
   }
@@ -239,7 +277,9 @@ function buildVisualChecks(qualityRules, sceneManifest, visualManifest, draftRen
       `Scenes in manifest: ${scenes.length}`,
       `Original graphics: ${originalGraphics}`,
       `Source cards: ${sourceCards}`,
-      `Unresolved assets: ${unresolvedAssets.length}`
+      `Unresolved assets: ${unresolvedAssets.length}`,
+      `Real local visuals: ${realExistingVisuals.length}`,
+      `Stock video clips: ${stockVideoCount}`
     ]
   };
 }
@@ -292,6 +332,64 @@ function buildMetadataChecks(topic, titleOptionsText, descriptionText, tagsText,
       `Title options: ${titleOptions.length}`,
       `Chapter markers: ${chapterLines.length}`,
       `Thumbnail file present: ${fs.existsSync(finalThumbnailPath) ? "yes" : "no"}`
+    ]
+  };
+}
+
+function normalizeWindowsPath(filePath) {
+  return String(filePath || "").replaceAll("\\", "/").trim();
+}
+
+function isDirectChildOf(parentDir, filePath) {
+  const normalizedParent = normalizeWindowsPath(parentDir).replace(/\/+$/, "").toLowerCase();
+  const normalizedFile = normalizeWindowsPath(filePath).toLowerCase();
+  const relative = path.posix.relative(normalizedParent, normalizedFile);
+  return !!relative && !relative.startsWith("..") && !relative.includes("/");
+}
+
+function buildAudioChecks(qualityRules, musicPolicy, voiceCleanPath, musicSelectionText, musicManifestRows) {
+  const findings = [];
+  const selectedTrack = musicManifestRows.find((row) => (row.status || "").toLowerCase() === "selected") ||
+    musicManifestRows.find((row) => (row.status || "").toLowerCase() === "approved") ||
+    null;
+  const preferredRoots = musicPolicy.preferred_library_roots || [];
+  const fallbackRoots = musicPolicy.fallback_library_roots || [];
+  const allowedRoots = [...preferredRoots, ...fallbackRoots];
+
+  if (!fs.existsSync(voiceCleanPath) || fs.statSync(voiceCleanPath).size === 0) {
+    findings.push("Clean voiceover audio is missing.");
+  }
+
+  if (!musicSelectionText.trim()) {
+    findings.push("Music selection notes are missing.");
+  }
+
+  if (!selectedTrack) {
+    findings.push("No music track is marked as selected or approved in 04_assets/music/music_manifest.csv.");
+  } else {
+    const normalizedTrackPath = normalizeWindowsPath(selectedTrack.track_path);
+    const insideAllowedRoot = allowedRoots.some((rootPath) => {
+      const normalizedRoot = normalizeWindowsPath(rootPath).replace(/\/+$/, "").toLowerCase();
+      return normalizedTrackPath.toLowerCase().startsWith(`${normalizedRoot}/`) || normalizedTrackPath.toLowerCase() === normalizedRoot;
+    });
+
+    if (!insideAllowedRoot) {
+      findings.push("Selected music track is outside the approved local royalty-free music libraries.");
+    }
+
+    if ((musicPolicy.disallow_unsorted_root_files || false) &&
+      fallbackRoots.some((rootPath) => isDirectChildOf(rootPath, normalizedTrackPath))) {
+      findings.push("Selected music track points to an unsorted file in the root of @all. Use a sorted subfolder or @all/good instead.");
+    }
+  }
+
+  return {
+    passed: findings.length === 0,
+    findings,
+    summary: [
+      `Voiceover ready: ${fs.existsSync(voiceCleanPath) && fs.statSync(voiceCleanPath).size > 0 ? "yes" : "no"}`,
+      `Music rows logged: ${musicManifestRows.length}`,
+      `Selected music track: ${selectedTrack ? (selectedTrack.track_title || selectedTrack.track_path) : "none"}`
     ]
   };
 }
@@ -394,6 +492,7 @@ function buildFinalApproval(checks) {
     "",
     `Research: ${checks.find((check) => check.label === "Research")?.passed ? "PASS" : "FAIL"}`,
     `Script: ${checks.find((check) => check.label === "Script")?.passed ? "PASS" : "FAIL"}`,
+    `Audio: ${checks.find((check) => check.label === "Audio")?.passed ? "PASS" : "FAIL"}`,
     `Visuals: ${checks.find((check) => check.label === "Visuals")?.passed ? "PASS" : "FAIL"}`,
     `Metadata: ${checks.find((check) => check.label === "Metadata")?.passed ? "PASS" : "FAIL"}`,
     "",
@@ -414,15 +513,18 @@ function main() {
     const paths = getPaths(args.workspace);
     const topic = readJson(paths.topicPath);
     const qualityRules = readJson(paths.qualityRulesPath);
+    const musicPolicy = readJson(paths.musicPolicyPath);
 
     const dossier = safeRead(paths.researchDossierPath);
     const riskReport = safeRead(paths.riskReportPath);
     const scriptMarkdown = safeRead(paths.scriptPath);
+    const musicSelectionText = safeRead(paths.musicSelectionPath);
     const sources = safeReadCsv(paths.sourcesPath);
     const approvedFacts = safeReadCsv(paths.approvedFactsPath);
     const blockedClaims = parseBlockedClaims(safeRead(paths.blockedClaimsPath));
     const sceneManifest = safeReadJson(paths.sceneManifestPath, { scenes: [] });
     const visualManifest = safeReadCsv(paths.visualManifestPath);
+    const musicManifest = safeReadCsv(paths.musicManifestPath);
 
     const titleOptionsText = safeRead(paths.titleOptionsPath);
     const descriptionText = safeRead(paths.descriptionPath);
@@ -442,8 +544,12 @@ function main() {
         ...buildScriptChecks(topic, qualityRules, scriptMarkdown, approvedFacts)
       },
       {
+        label: "Audio",
+        ...buildAudioChecks(qualityRules, musicPolicy, paths.voiceCleanPath, musicSelectionText, musicManifest)
+      },
+      {
         label: "Visuals",
-        ...buildVisualChecks(qualityRules, sceneManifest, visualManifest, paths.draftRenderPath)
+        ...buildVisualChecks(qualityRules, args.workspace, sceneManifest, visualManifest, paths.draftRenderPath)
       },
       {
         label: "Metadata",

@@ -2,6 +2,16 @@ import argparse
 import json
 import os
 import sys
+from PIL import Image, ImageDraw, ImageFont
+
+
+WIDTH = 1400
+HEIGHT = 900
+BACKGROUND = "#132328"
+CARD = "#1e3b42"
+ACCENT = "#e9d4a8"
+TEXT = "#f7efe0"
+MUTED = "#d6d6cf"
 
 
 def load_spec(spec_path: str) -> dict:
@@ -9,50 +19,59 @@ def load_spec(spec_path: str) -> dict:
         return json.load(handle)
 
 
-def wrap_text(text: str, line_length: int = 34) -> list[str]:
+def load_font(size: int, bold: bool = False):
+    candidates = [
+        "C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/segoeui.ttf",
+    ]
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return ImageFont.truetype(candidate, size=size)
+    return ImageFont.load_default()
+
+
+def wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str]:
     words = text.split()
     lines = []
-    current = []
-    current_length = 0
+    current = ""
     for word in words:
-        projected = current_length + len(word) + (1 if current else 0)
-        if projected > line_length:
-            lines.append(" ".join(current))
-            current = [word]
-            current_length = len(word)
+        candidate = word if not current else f"{current} {word}"
+        if draw.textlength(candidate, font=font) <= max_width:
+            current = candidate
         else:
-            current.append(word)
-            current_length = projected
+            if current:
+                lines.append(current)
+            current = word
     if current:
-        lines.append(" ".join(current))
+        lines.append(current)
     return lines
 
 
-def build_card_svg(card: dict) -> str:
-    width = 1400
-    height = 900
-    body_lines = wrap_text(card.get("body", ""))
-    svg = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
-        '<rect width="100%" height="100%" fill="#132328"/>',
-        '<rect x="84" y="84" width="1232" height="732" rx="32" fill="#1e3b42" stroke="#e9d4a8" stroke-width="4"/>',
-        f'<text x="126" y="170" font-family="Georgia, serif" font-size="48" fill="#f7efe0">{card.get("title", "Fact Card")}</text>',
-        f'<text x="126" y="214" font-family="Arial, sans-serif" font-size="22" fill="#e9d4a8">{card.get("subtitle", "")}</text>',
-        '<line x1="126" y1="246" x2="1274" y2="246" stroke="#e9d4a8" stroke-width="3"/>'
-    ]
+def build_card_png(card: dict, output_path: str) -> None:
+    image = Image.new("RGB", (WIDTH, HEIGHT), BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    title_font = load_font(48, bold=True)
+    subtitle_font = load_font(24)
+    body_font = load_font(34)
+    footer_font = load_font(20)
 
-    y = 330
+    draw.rounded_rectangle((84, 84, 1316, 816), radius=32, fill=CARD, outline=ACCENT, width=4)
+    draw.text((126, 132), card.get("title", "Fact Card"), fill=TEXT, font=title_font)
+    draw.text((126, 192), card.get("subtitle", ""), fill=ACCENT, font=subtitle_font)
+    draw.line((126, 246, 1274, 246), fill=ACCENT, width=3)
+
+    body_lines = wrap_text(draw, card.get("body", ""), body_font, 1120)
+    y = 310
     for line in body_lines[:8]:
-        svg.append(f'<text x="126" y="{y}" font-family="Arial, sans-serif" font-size="34" fill="#f7efe0">{line}</text>')
-        y += 58
+      draw.text((126, y), line, fill=TEXT, font=body_font)
+      y += 56
 
-    svg.append(f'<text x="126" y="760" font-family="Arial, sans-serif" font-size="20" fill="#d6d6cf">{card.get("scene_id", "")}</text>')
-    svg.append("</svg>")
-    return "\n".join(svg) + "\n"
+    draw.text((126, 760), card.get("scene_id", ""), fill=MUTED, font=footer_font)
+    image.save(output_path, format="PNG")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate SVG fact cards from a JSON spec.")
+    parser = argparse.ArgumentParser(description="Generate PNG fact cards from a JSON spec.")
     parser.add_argument("--spec", required=True)
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args()
@@ -62,10 +81,9 @@ def main() -> int:
     cards = spec.get("cards", [])
 
     for card in cards:
-        output_path = os.path.join(args.output_dir, card.get("output_filename", "fact_card.svg"))
-        with open(output_path, "w", encoding="utf8") as handle:
-            handle.write(build_card_svg(card))
-        print(f"Generated fact card SVG at {output_path}")
+        output_path = os.path.join(args.output_dir, card.get("output_filename", "fact_card.png"))
+        build_card_png(card, output_path)
+        print(f"Generated fact card PNG at {output_path}")
 
     return 0
 

@@ -17,6 +17,7 @@
     "qc": "node agents/orchestrator.js --stage qc",
     "guided": "node agents/orchestrator.js --guided",
     "full": "node agents/orchestrator.js --full",
+    "restart": "node agents/orchestrator.js --restart",
     "publish:record": "node agents/orchestrator.js --record-publish",
     "analytics": "node agents/orchestrator.js --analytics-review",
     "overnight": "node agents/orchestrator.js --overnight"

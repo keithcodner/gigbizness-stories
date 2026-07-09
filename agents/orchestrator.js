@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { parseCsv, toCsv, writeText } = require("./common");
 
 const ROOT = path.resolve(__dirname, "..");
 const TOPICS_DIR = path.join(ROOT, "topics");
@@ -10,6 +11,7 @@ const WORKSPACES_DIR = path.join(ROOT, "workspaces");
 const OUTPUT_LOGS_DIR = path.join(ROOT, "output", "logs");
 const AGENTS_DIR = __dirname;
 const ROOT_CONFIG_DIR = path.join(ROOT, "config");
+const QUEUE_PATH = path.join(ROOT, "topics", "queue.csv");
 
 const WORKSPACE_LAYOUT = [
   {
@@ -162,6 +164,36 @@ function ensureFile(filePath, contents) {
   fs.writeFileSync(filePath, contents, "utf8");
 }
 
+function ensureWorkspaceStandards(workspaceDir) {
+  const musicDir = path.join(workspaceDir, "04_assets", "music");
+  ensureDir(musicDir);
+
+  ensureFile(path.join(musicDir, "music_selection.md"), [
+    "# Music Selection",
+    "",
+    "## Standard",
+    "",
+    "- Prefer tracks from `C:/Users/admin/Music/royalty free music/@all/good`.",
+    "- Fallback to sorted subfolders inside `C:/Users/admin/Music/royalty free music/@all` when needed.",
+    "- Do not use files sitting directly in the root of `@all`; those are unsorted.",
+    "- Document the final chosen track in `music_manifest.csv` before QC.",
+    "",
+    "## Current Pick",
+    "",
+    "- Selected track: pending",
+    "- Source library: pending",
+    "- Mood target: pending",
+    "- Why it fits this topic: pending",
+    "- License/confidence note: royalty-free local library; confirm usage fit before publish",
+    ""
+  ].join("\n"));
+
+  ensureFile(
+    path.join(musicDir, "music_manifest.csv"),
+    "track_path,track_title,source_library,mood,intended_use,status,notes\n"
+  );
+}
+
 function loadTopic(topicId) {
   const topicPath = path.join(TOPICS_DIR, `${topicId}.json`);
   if (!fs.existsSync(topicPath)) {
@@ -206,6 +238,8 @@ function getTopicPaths(topicId) {
     voiceCleanPath: path.join(workspaceDir, "03_voice", "voiceover_clean.wav"),
     captionsPath: path.join(workspaceDir, "03_voice", "captions.srt"),
     visualManifestPath: path.join(workspaceDir, "04_assets", "visual_manifest.csv"),
+    visualPlanPath: path.join(workspaceDir, "04_assets", "visual_plan.md"),
+    visualReadinessPath: path.join(workspaceDir, "04_assets", "visual_readiness.json"),
     assetGapsPath: path.join(workspaceDir, "04_assets", "asset_gaps.md"),
     draftRenderPath: path.join(workspaceDir, "06_renders", "draft_01.mp4"),
     shortOnePath: path.join(workspaceDir, "07_shorts", "short_01.mp4"),
@@ -306,7 +340,9 @@ function isVoiceReady(topicId) {
 
 function isAssetsReady(topicId) {
   const paths = getTopicPaths(topicId);
-  return countCsvRows(paths.visualManifestPath) >= 6;
+  return countCsvRows(paths.visualManifestPath) >= 6 &&
+    fileHasContent(paths.visualPlanPath) &&
+    fileHasContent(paths.visualReadinessPath);
 }
 
 function isDraftReady(topicId) {
@@ -416,6 +452,32 @@ function getQcBlock(topicId) {
   };
 }
 
+function getVisualSourcingBlock(topicId) {
+  const paths = getTopicPaths(topicId);
+  if (!fs.existsSync(paths.visualReadinessPath)) {
+    return null;
+  }
+
+  const readiness = JSON.parse(fs.readFileSync(paths.visualReadinessPath, "utf8"));
+  const qualityRules = loadQualityRules();
+  const minReal = qualityRules.visuals.min_real_visual_assets_for_final || 0;
+  const minStock = qualityRules.visuals.min_stock_video_clips_for_final || 0;
+
+  if (readiness.real_existing_count >= minReal && readiness.stock_video_count >= minStock) {
+    return null;
+  }
+
+  return {
+    title: "Visual sourcing needed",
+    lines: [
+      `Real visual assets available: ${readiness.real_existing_count} / ${minReal}`,
+      `Stock video clips available: ${readiness.stock_video_count} / ${minStock}`,
+      `Review ${paths.visualPlanPath}`,
+      `Fill ${path.join(paths.workspaceDir, "04_assets", "stock_videos")} and related asset folders with real sourced visuals, then rerun guided mode.`
+    ]
+  };
+}
+
 function checkForGuidedBlock(topic) {
   const paths = getTopicPaths(topic.id);
   const hasResearchSeed = countCsvRows(paths.sourcesPath) > 0 || countCsvRows(paths.approvedFactsPath) > 0;
@@ -465,6 +527,13 @@ function runGuidedPipeline(topicId, mode = "guided") {
 
   if (!isAssetsReady(topicId)) {
     runAssetsStage(topicId);
+  }
+
+  block = getVisualSourcingBlock(topicId);
+  if (block) {
+    writeGuidedStatus(topicId, mode, "blocked", block.title, block.lines);
+    printGuidedBlock(block.title, block.lines);
+    return workspaceDir;
   }
 
   if (!isDraftReady(topicId)) {
@@ -549,6 +618,8 @@ function initTopicWorkspace(topicId) {
     }
   }
 
+  ensureWorkspaceStandards(workspaceDir);
+
   const manifestPath = path.join(workspaceDir, "workspace_manifest.json");
   const manifest = {
     topic_id: topic.id,
@@ -581,7 +652,54 @@ function ensureWorkspace(topicId) {
     return initTopicWorkspace(topicId);
   }
 
+  ensureWorkspaceStandards(workspaceDir);
   return workspaceDir;
+}
+
+function assertWorkspacePathSafe(targetPath) {
+  const resolvedWorkspaceRoot = path.resolve(WORKSPACES_DIR);
+  const resolvedTarget = path.resolve(targetPath);
+  const relative = path.relative(resolvedWorkspaceRoot, resolvedTarget);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error(`Refusing to delete path outside workspaces root: ${resolvedTarget}`);
+  }
+}
+
+function resetQueueRowForTopic(topicId) {
+  if (!fs.existsSync(QUEUE_PATH)) {
+    return;
+  }
+
+  const parsed = parseCsv(fs.readFileSync(QUEUE_PATH, "utf8"));
+  const rows = parsed.rows.map((row) => ({ ...row }));
+  const target = rows.find((row) => row.id === topicId);
+  if (!target) {
+    return;
+  }
+
+  target.status = "planned";
+  target.priority = target.priority || "medium";
+  target.next_stage = "research";
+  target.last_run_at = "";
+  target.last_result = "";
+
+  const headers = parsed.headers.length > 0
+    ? parsed.headers
+    : ["id", "title", "video_type", "status", "priority", "next_stage", "allow_overnight", "last_run_at", "last_result"];
+  writeText(QUEUE_PATH, toCsv(rows, headers));
+}
+
+function restartTopicWorkflow(topicId) {
+  const workspaceDir = getWorkspaceDir(topicId);
+  if (fs.existsSync(workspaceDir)) {
+    assertWorkspacePathSafe(workspaceDir);
+    fs.rmSync(workspaceDir, { recursive: true, force: true });
+  }
+
+  resetQueueRowForTopic(topicId);
+  const recreatedWorkspace = initTopicWorkspace(topicId);
+  writeLog(`Restarted topic workflow for '${topicId}'`);
+  return recreatedWorkspace;
 }
 
 function runNodeAgent(scriptName, args) {
@@ -720,6 +838,7 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage qc");
   console.log("  node agents/orchestrator.js --topic <topic_id> --guided");
   console.log("  node agents/orchestrator.js --topic <topic_id> --full");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --restart");
   console.log("  node agents/orchestrator.js --topic <topic_id> --record-publish --date YYYY-MM-DD");
   console.log("  node agents/orchestrator.js --analytics-review");
   console.log("  node agents/orchestrator.js --overnight");
@@ -772,6 +891,16 @@ function main() {
 
       const workspaceDir = runPublishRecord(args.topic, args.date || null);
       console.log(`Publish record completed: ${workspaceDir}`);
+      return;
+    }
+
+    if (args.restart) {
+      if (!args.topic) {
+        throw new Error("Missing required argument: --topic <topic_id>");
+      }
+
+      const workspaceDir = restartTopicWorkflow(args.topic);
+      console.log(`Topic workflow restarted: ${workspaceDir}`);
       return;
     }
 

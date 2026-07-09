@@ -40,55 +40,67 @@ function readApprovedFacts(filePath) {
 
 function sceneTemplates(topic) {
   if (topic.video_type === "business_crime_story") {
+    const isMovingTopic = /moving|mover|relocation/i.test(`${topic.id} ${topic.working_title}`);
+    const serviceLabel = isMovingTopic ? "moving company" : "business";
+    const customerAsset = isMovingTopic ? "their household goods" : "what they already own";
+    const workflowLabel = isMovingTopic ? "moving workflow" : "normal business workflow";
     return [
       {
         id: "S01",
         heading: "Hook And Stakes",
-        visual: "Tow truck footage, dark parking lot, quick invoice flashes",
+        visual: buildVisualNote(topic, "opening pressure montage, paperwork, fast quote contrast"),
         lines: [
-          "Your car can disappear in minutes, but the bigger problem can start after the tow is already done.",
-          "The first charge is easy to imagine. The harder part is everything that can come after it.",
-          "This story is not about saying every towing company works the same way.",
+          isMovingTopic
+            ? "The moving scam does not begin when the truck disappears. It begins when the low quote stops being real after your life is already on the truck."
+            : "The bigger problem can start after the basic service is already underway.",
+          `The first number is easy to sell. The harder part is everything that can come after the customer loses the ability to walk away.`,
+          `This story is not about saying every ${serviceLabel} works the same way.`,
           "It is about understanding how a normal service can turn into a high-pressure situation for the customer."
         ]
       },
       {
         id: "S02",
         heading: "The Legitimate Business Model",
-        visual: "Tow truck loading sequence, roadside assistance visuals, map card",
+        visual: buildVisualNote(topic, "normal workflow, inventory, estimate, route card"),
         lines: [
-          "At the basic level, towing solves a real problem.",
-          "A disabled car blocks traffic, breaks down on the shoulder, or gets removed from private property.",
-          "In the legitimate version of the business, the tow company is selling speed, labor, equipment, and storage space when it is needed.",
+          `At the basic level, a legitimate ${serviceLabel} solves a real problem.`,
+          `In the honest version of this ${workflowLabel}, the customer gets a clear estimate, clear paperwork, and a service that matches the promise.`,
+          `In the legitimate version of the business, the company is selling labor, logistics, equipment, and reliability when it is needed.`,
           "That normal model matters, because you cannot understand the abuse risk until you understand the honest version first."
         ]
       },
       {
         id: "S03",
         heading: "How The Money Works",
-        visual: "Invoice stack animation, fee card, impound lot b-roll",
+        visual: buildVisualNote(topic, "invoice stack animation, contract terms, fee card"),
         lines: [
-          "The towing bill does not always end when the car leaves the scene.",
-          "There can be the tow itself, then storage, then release fees, then extra charges tied to timing and paperwork.",
+          isMovingTopic
+            ? "The price problem does not always end with the original quote."
+            : "The bill does not always end with the first advertised price.",
+          isMovingTopic
+            ? "There can be the original estimate, then revised volume, added packing charges, storage fees, and delivery pressure once the truck is loaded."
+            : "There can be the basic service, then storage, release fees, or extra charges tied to timing and paperwork.",
           "That changes the customer's position.",
-          "They are no longer choosing a service. They are trying to recover something they already own."
+          `They are no longer choosing a service. They are trying to recover ${customerAsset}.`
         ]
       },
       {
         id: "S04",
         heading: "Where Pressure Enters",
-        visual: "Parking signs, invoice closeups, customer handoff visuals",
+        visual: buildVisualNote(topic, "warning signs, invoice closeups, customer deadline pressure"),
         lines: [
           "This is where the business can shift from service to pressure.",
           "If the customer has limited time, limited transportation, or a bill that grows daily, the leverage changes fast.",
           "Even before you get into any public case, the structure alone can explain why people feel trapped.",
-          "The key business question is simple: who has the leverage once the vehicle is inside the lot?"
+          isMovingTopic
+            ? "The key business question is simple: who has the leverage once the customer's entire home is already on the truck?"
+            : "The key business question is simple: who has the leverage once the customer cannot easily reverse the situation?"
         ]
       },
       {
         id: "S05",
         heading: "Evidence Gap And Public Cases",
-        visual: "Court document placeholder, regulator card, headline wall",
+        visual: buildVisualNote(topic, "court document cards, regulator notices, public case wall"),
         lines: [
           "This is the point where strong sourcing matters most.",
           "If a video names a company, a person, or a public enforcement action, the wording has to match the evidence exactly.",
@@ -99,7 +111,7 @@ function sceneTemplates(topic) {
       {
         id: "S06",
         heading: "Warning Signs For Viewers",
-        visual: "Checklist card, document highlights, fee stack recap",
+        visual: buildVisualNote(topic, "checklist card, document highlights, red-flag recap"),
         lines: [
           "For the viewer, the practical lesson is to watch the paperwork, the fee structure, and the timing pressure.",
           "A business that stays vague about charges has more room to trap you later.",
@@ -110,9 +122,9 @@ function sceneTemplates(topic) {
       {
         id: "S07",
         heading: "Final Takeaway",
-        visual: "Takeaway card, city map, tow truck exit shot",
+        visual: buildVisualNote(topic, "takeaway card, map, closing service visual"),
         lines: [
-          "Towing is a real service, but it is also a business built around moments when the customer has very little flexibility.",
+          `${capitalize(serviceLabel)} is a real service, but it is also a business built around moments when the customer has very little flexibility.`,
           "That is why the line between legitimate cost and predatory pressure matters so much.",
           "If you understand where the leverage appears, you understand the story."
         ]
@@ -131,6 +143,15 @@ function sceneTemplates(topic) {
       ]
     }
   ];
+}
+
+function buildVisualNote(topic, fallback) {
+  const style = Array.isArray(topic.visual_style) ? topic.visual_style.slice(0, 3).join(", ") : "";
+  return style ? `${style}, ${fallback}` : fallback;
+}
+
+function capitalize(text) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function getSceneSourceSupport(scene, approvedFacts) {

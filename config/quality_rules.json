@@ -20,6 +20,9 @@
     "max_seconds_without_visual_change": 8,
     "min_original_graphics_per_video": 3,
     "min_source_cards_per_video": 2,
+    "min_real_visual_assets_for_final": 4,
+    "min_stock_video_clips_for_final": 2,
+    "require_visual_plan_for_final": true,
     "avoid": [
       "random unrelated stock footage",
       "same clip reused too many times",

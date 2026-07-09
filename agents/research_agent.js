@@ -33,7 +33,31 @@ function extractBulletsFromNotes(notes) {
     .map((line) => line.trim())
     .filter((line) => /^[-*]\s+/.test(line))
     .map((line) => line.replace(/^[-*]\s+/, "").trim())
+    .filter((line) => isClaimLikeBullet(line))
     .filter(Boolean);
+}
+
+function isClaimLikeBullet(line) {
+  const normalized = line.toLowerCase();
+  if (!line || line.length < 20) {
+    return false;
+  }
+  if (normalized.startsWith('"') || normalized.startsWith("“")) {
+    return false;
+  }
+  if (normalized.includes("site:") || normalized.includes("http://") || normalized.includes("https://")) {
+    return false;
+  }
+  if (normalized.startsWith("date") || normalized.startsWith("jurisdiction") || normalized.startsWith("agency")) {
+    return false;
+  }
+  if (normalized.startsWith("topic:") || normalized.startsWith("working title")) {
+    return false;
+  }
+  if (normalized.includes("search query") || normalized.includes("possible visual idea")) {
+    return false;
+  }
+  return true;
 }
 
 function buildSeedSources(topic) {

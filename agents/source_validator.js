@@ -56,8 +56,9 @@ function evaluateFact(fact, topic, validSourceTypes) {
     issues.push("Numbered claim is missing a source title.");
   }
 
-  const legalTrigger = ["alleg", "charged", "convict", "sued", "lawsuit", "fraud", "scam", "settled", "fined"];
-  const isLegalClaim = legalTrigger.some((token) => normalizedClaim.includes(token)) || fact.claim_type === "legal";
+  const legalTrigger = ["alleg", "charged", "convict", "sued", "lawsuit", "settled", "fined", "indict", "sentence", "forfeiture", "extort"];
+  const legalClaimTypes = new Set(["legal", "court_case", "enforcement_action", "regulator_warning"]);
+  const isLegalClaim = legalTrigger.some((token) => normalizedClaim.includes(token)) || legalClaimTypes.has(fact.claim_type);
   if (isLegalClaim) {
     if (!["government", "court", "regulator", "reputable_news"].includes(sourceType)) {
       issues.push("Legal or crime claim needs official or reputable reporting support.");

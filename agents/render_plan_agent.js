@@ -24,6 +24,10 @@ function getPaths(workspaceDir) {
     shotlistPath: path.join(scriptDir, "shotlist.csv"),
     timingPath: path.join(voiceDir, "voice_timing.json"),
     visualManifestPath: path.join(assetsDir, "visual_manifest.csv"),
+    musicManifestPath: path.join(assetsDir, "music", "music_manifest.csv"),
+    musicSelectionPath: path.join(assetsDir, "music", "music_selection.md"),
+    assetsDir,
+    musicPolicyPath: path.join(rootConfigDir, "music_policy.json"),
     renderProfilesPath: path.join(rootConfigDir, "render_profiles.json"),
     sceneManifestPath: path.join(renderPlanDir, "scene_manifest.json"),
     renderPlanPath: path.join(renderPlanDir, "render_plan.json"),
@@ -78,14 +82,31 @@ function extractSceneTexts(scriptMarkdown) {
   return scenes;
 }
 
-function chooseVisualsForScene(sceneId, manifestRows) {
+function assetExists(row, assetsDir) {
+  let assetPath;
+  if (/\.(svg|png|jpg|jpeg|webp|bmp)$/i.test(row.filename || "")) {
+    assetPath = path.join(assetsDir, "charts", row.filename);
+  } else if (row.asset_type === "document") {
+    assetPath = path.join(assetsDir, "documents", row.filename);
+  } else if (row.asset_type === "stock_video") {
+    assetPath = path.join(assetsDir, "stock_videos", row.filename);
+  } else {
+    assetPath = path.join(assetsDir, row.filename || "");
+  }
+  return fs.existsSync(assetPath);
+}
+
+function chooseVisualsForScene(sceneId, manifestRows, assetsDir, durationSeconds = 0) {
   const sceneRows = manifestRows.filter((row) => row.scene_id === sceneId);
   const preferred = [];
 
-  const generated = sceneRows.filter((row) => row.status === "generated");
-  const planned = sceneRows.filter((row) => row.status !== "generated");
+  const available = sceneRows.filter((row) => assetExists(row, assetsDir));
+  const generated = available.filter((row) => row.status === "generated");
+  const planned = available.filter((row) => row.status !== "generated");
+  const visualTarget = Math.max(3, Math.ceil((durationSeconds || 0) / 8));
+  const sourceRows = [...generated, ...planned];
 
-  for (const row of [...generated, ...planned].slice(0, 3)) {
+  for (const row of sourceRows.slice(0, visualTarget)) {
     preferred.push({
       type: row.asset_type,
       file: resolveAssetFile(row),
@@ -95,15 +116,28 @@ function chooseVisualsForScene(sceneId, manifestRows) {
     });
   }
 
+  let duplicateIndex = 0;
+  while (preferred.length > 0 && preferred.length < visualTarget) {
+    const duplicate = preferred[duplicateIndex % preferred.length];
+    preferred.push({
+      ...duplicate,
+      usage: `${duplicate.usage} (timing variation ${duplicateIndex + 1})`
+    });
+    duplicateIndex += 1;
+  }
+
   return preferred;
 }
 
 function resolveAssetFile(row) {
-  if (row.status === "generated") {
+  if (/\.(svg|png|jpg|jpeg|webp|bmp)$/i.test(row.filename || "")) {
     return `04_assets/charts/${row.filename}`;
   }
   if (row.asset_type === "document") {
     return `04_assets/documents/${row.filename}`;
+  }
+  if (row.asset_type === "stock_video") {
+    return `04_assets/stock_videos/${row.filename}`;
   }
   return `04_assets/${row.filename}`;
 }
@@ -118,7 +152,15 @@ function inferEffect(row) {
   return "gentle_pan";
 }
 
-function buildSceneManifest(topic, scenes, timingData, manifestRows, profile) {
+function pickMusicTrack(musicRows) {
+  const selected = musicRows.find((row) => (row.status || "").toLowerCase() === "selected");
+  if (selected) {
+    return selected;
+  }
+  return musicRows.find((row) => (row.status || "").toLowerCase() === "approved") || null;
+}
+
+function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, assetsDir, selectedMusic) {
   const timingScenes = timingData.scenes || [];
   const sceneObjects = scenes.map((scene) => {
     const timing = timingScenes.find((item) => item.scene.startsWith(scene.id));
@@ -132,8 +174,13 @@ function buildSceneManifest(topic, scenes, timingData, manifestRows, profile) {
       duration_seconds: end - start,
       narration_excerpt: scene.narration.slice(0, 2).join(" "),
       voiceover_file: "03_voice/voiceover_clean.wav",
-      visuals: chooseVisualsForScene(scene.id, manifestRows),
-      music: null,
+      visuals: chooseVisualsForScene(scene.id, manifestRows, assetsDir, end - start),
+      music: selectedMusic ? {
+        track_path: selectedMusic.track_path,
+        track_title: selectedMusic.track_title || "",
+        source_library: selectedMusic.source_library || "",
+        intended_use: selectedMusic.intended_use || "background_bed"
+      } : null,
       sfx: [],
       motion_style: inferMotionStyle(scene.id),
       retention_purpose: inferRetentionPurpose(scene.id),
@@ -183,13 +230,21 @@ function inferSceneNotes(sceneId) {
   return "Use generated cards where sourced footage is not ready.";
 }
 
-function buildRenderPlan(topic, profileName, profileConfig, manifestRows, sceneManifest) {
+function buildRenderPlan(topic, profileName, profileConfig, manifestRows, sceneManifest, selectedMusic, musicPolicy) {
   return {
     topic_id: topic.id,
     profile: profileName,
     profile_config: profileConfig,
     renderer: "ffmpeg_static_scene_cards",
     draft_strategy: "Use scene cards and generated graphics until sourced b-roll is added.",
+    audio_plan: {
+      voiceover_file: "03_voice/voiceover_clean.wav",
+      music_policy_summary: selectedMusic
+        ? `Use approved local royalty-free music track: ${selectedMusic.track_title || selectedMusic.track_path}`
+        : "No track selected yet. Pick from the approved local sorted royalty-free library before QC.",
+      preferred_music_root: musicPolicy.preferred_library_roots?.[0] || "",
+      fallback_music_root: musicPolicy.fallback_library_roots?.[0] || ""
+    },
     asset_counts: {
       total_manifest_rows: manifestRows.length,
       generated_assets: manifestRows.filter((row) => row.status === "generated").length,
@@ -251,6 +306,10 @@ function main() {
     const scenes = extractSceneTexts(scriptMarkdown);
     const timingData = readJson(paths.timingPath);
     const manifestRows = parseCsv(fs.readFileSync(paths.visualManifestPath, "utf8")).rows;
+    const musicRows = fs.existsSync(paths.musicManifestPath)
+      ? parseCsv(fs.readFileSync(paths.musicManifestPath, "utf8")).rows
+      : [];
+    const musicPolicy = readJson(paths.musicPolicyPath);
     const renderProfiles = readJson(paths.renderProfilesPath);
     const profileConfig = renderProfiles[profileName];
 
@@ -258,8 +317,25 @@ function main() {
       throw new Error(`Unknown render profile: ${profileName}`);
     }
 
-    const sceneManifest = buildSceneManifest(topic, scenes, timingData, manifestRows, profileName);
-    const renderPlan = buildRenderPlan(topic, profileName, profileConfig, manifestRows, sceneManifest);
+    const selectedMusic = pickMusicTrack(musicRows);
+    const sceneManifest = buildSceneManifest(
+      topic,
+      scenes,
+      timingData,
+      manifestRows,
+      profileName,
+      paths.assetsDir,
+      selectedMusic
+    );
+    const renderPlan = buildRenderPlan(
+      topic,
+      profileName,
+      profileConfig,
+      manifestRows,
+      sceneManifest,
+      selectedMusic,
+      musicPolicy
+    );
     const visualTimingRows = buildVisualTimingRows(sceneManifest);
 
     writeText(paths.sceneManifestPath, `${JSON.stringify(sceneManifest, null, 2)}\n`);

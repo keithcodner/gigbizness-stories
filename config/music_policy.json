@@ -1,0 +1,15 @@
+{
+  "preferred_library_roots": [
+    "C:/Users/admin/Music/royalty free music/@all/good"
+  ],
+  "fallback_library_roots": [
+    "C:/Users/admin/Music/royalty free music/@all"
+  ],
+  "disallow_unsorted_root_files": true,
+  "selection_standard": [
+    "Use tracks from the local royalty-free music library.",
+    "Prefer the curated @all/good folder first.",
+    "If @all/good does not fit, use sorted subfolders inside @all.",
+    "Do not select files that sit directly in the root of @all because that root is unsorted."
+  ]
+}

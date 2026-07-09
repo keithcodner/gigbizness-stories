@@ -18,5 +18,10 @@
     "business_tip": 8,
     "business_documentary": 10,
     "business_crime_story": 9
+  },
+  "music_standard": {
+    "preferred_source": "C:/Users/admin/Music/royalty free music/@all/good",
+    "fallback_source": "C:/Users/admin/Music/royalty free music/@all",
+    "rule": "Use sorted local royalty-free music only; do not choose tracks directly from the unsorted root of @all."
   }
 }

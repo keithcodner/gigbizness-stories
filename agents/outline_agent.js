@@ -29,52 +29,52 @@ function buildScenePlan(topic, approvedFacts) {
     business_crime_story: [
       {
         title: "Hook And Stakes",
-        purpose: "Open with the viewer-facing problem and the tension around getting a vehicle back.",
+        purpose: `Open with the viewer-facing problem and the tension around ${describeCrimePressure(topic)}.`,
         narrationGoal: "Make the viewer feel the stakes without making unsourced accusations.",
-        retentionDevice: "The bill problem starts after the tow, not before.",
-        visualPool: ["tow trucks", "parking lots", "invoice graphics"]
+        retentionDevice: "The trap starts after the customer has fewer options, not before.",
+        visualPool: buildVisualPool(topic, ["contracts", "warning graphics", "customer pressure moments"])
       },
       {
-        title: "What Legitimate Towing Looks Like",
-        purpose: "Explain the normal roadside or impound workflow before discussing abuse.",
+        title: "What Legitimate Service Looks Like",
+        purpose: `Explain the normal ${describeNormalBusiness(topic)} before discussing abuse.`,
         narrationGoal: "Build trust by showing what the honest version of the business is supposed to do.",
         retentionDevice: "Set up the contrast between normal service and high-pressure edge cases.",
-        visualPool: ["tow trucks", "city map graphics", "parking lots"]
+        visualPool: buildVisualPool(topic, ["workflow cards", "maps", "paperwork"])
       },
       {
         title: "How The Money Works",
-        purpose: "Break down tow fees, storage, and why charges can grow over time.",
-        narrationGoal: "Show how incentives change once the car is already in the lot.",
+        purpose: `Break down the quote, fees, and incentives behind ${describeBusinessModel(topic)}.`,
+        narrationGoal: "Show how incentives change once the customer is locked into the process.",
         retentionDevice: "Reveal how a small first charge can turn into a much larger final bill.",
-        visualPool: ["fee stack animation", "invoice graphics", "court/legal document cards"]
+        visualPool: buildVisualPool(topic, ["fee stack animation", "invoice graphics", "document cards"])
       },
       {
         title: "Where Pressure Enters",
         purpose: "Describe the conditions where viewers can feel trapped, while keeping language conservative.",
         narrationGoal: "Frame risk as a business and incentive problem, not a blanket accusation.",
         retentionDevice: "Answer the central question directly.",
-        visualPool: ["parking lots", "invoice graphics", "court/legal document cards"]
+        visualPool: buildVisualPool(topic, ["pressure points", "invoices", "warning cards"])
       },
       {
         title: "Evidence And Public Cases",
         purpose: "Reserve space for sourced examples and official actions once they are added.",
         narrationGoal: "Keep this scene obviously evidence-driven and easy to strengthen later.",
         retentionDevice: "Move from explanation into proof.",
-        visualPool: ["court/legal document cards", "city map graphics", "tow trucks"]
+        visualPool: buildVisualPool(topic, ["court/legal document cards", "maps", "company evidence cards"])
       },
       {
         title: "Consumer Warning Signs",
-        purpose: "Give viewers practical signs to watch for when dealing with towing or impound situations.",
+        purpose: `Give viewers practical signs to watch for when dealing with ${describeBusinessModel(topic)}.`,
         narrationGoal: "End the documentary portion with useful action-oriented takeaways.",
         retentionDevice: "Turn the story into a practical viewer checklist.",
-        visualPool: ["invoice graphics", "parking lots", "city map graphics"]
+        visualPool: buildVisualPool(topic, ["checklists", "documents", "warning graphics"])
       },
       {
         title: "Final Takeaway",
         purpose: "Leave the viewer with the legitimate-versus-predatory distinction and the bigger lesson.",
         narrationGoal: "Close clearly, not dramatically.",
         retentionDevice: "Reframe the whole topic in one sentence the viewer can remember.",
-        visualPool: ["tow trucks", "fee stack animation", "city map graphics"]
+        visualPool: buildVisualPool(topic, ["takeaway cards", "fee stack animation", "maps"])
       }
     ]
   };
@@ -111,6 +111,26 @@ function buildScenePlan(topic, approvedFacts) {
       ? approvedFacts.slice(0, 3).map((_, factIndex) => factIndex + 1)
       : []
   }));
+}
+
+function buildVisualPool(topic, fallbacks) {
+  const base = Array.isArray(topic.visual_style) ? topic.visual_style.filter(Boolean) : [];
+  return [...new Set([...base, ...fallbacks])].slice(0, 5);
+}
+
+function describeCrimePressure(topic) {
+  if ((topic.working_title || "").toLowerCase().includes("moving")) {
+    return "the moment a low quote turns into a hostage-style final bill";
+  }
+  return "the moment a normal service turns into a high-pressure situation";
+}
+
+function describeNormalBusiness(topic) {
+  return topic.must_include?.[0] || "normal business workflow";
+}
+
+function describeBusinessModel(topic) {
+  return topic.working_title || "the business";
 }
 
 function buildOutline(topic, scenePlan, blockedClaimsText) {
@@ -203,7 +223,10 @@ function inferRetentionRisk(scene, approvedFactCount) {
 
 function buildHook(topic) {
   if (topic.video_type === "business_crime_story") {
-    return "Your car can disappear in minutes, but the bill problem can start after the tow is already over.";
+    if ((topic.working_title || "").toLowerCase().includes("moving")) {
+      return "The scam does not start with a missing truck. It starts when the cheap quote stops being real after your life is already loaded.";
+    }
+    return "The pressure does not start with the final bill. It starts when the customer has fewer options than they think.";
   }
   return `${topic.working_title} looks simple from the outside. The real story is in how the money moves.`;
 }
