@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+<rect width="100%" height="100%" fill="#132328"/>
+<rect x="84" y="84" width="1232" height="732" rx="32" fill="#1e3b42" stroke="#e9d4a8" stroke-width="4"/>
+<text x="126" y="170" font-family="Georgia, serif" font-size="48" fill="#f7efe0">Warning Signs For Viewers</text>
+<text x="126" y="214" font-family="Arial, sans-serif" font-size="22" fill="#e9d4a8">138s-162s</text>
+<line x1="126" y1="246" x2="1274" y2="246" stroke="#e9d4a8" stroke-width="3"/>
+<text x="126" y="330" font-family="Arial, sans-serif" font-size="34" fill="#f7efe0">Checklist card, document</text>
+<text x="126" y="388" font-family="Arial, sans-serif" font-size="34" fill="#f7efe0">highlights, fee stack recap</text>
+<text x="126" y="760" font-family="Arial, sans-serif" font-size="20" fill="#d6d6cf">S06</text>
+</svg>

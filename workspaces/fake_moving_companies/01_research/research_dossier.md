@@ -2,26 +2,236 @@
 
 ## Central question
 
+How do fraudulent movers trap customers between a low quote and a hostage-style final bill?
+
 ## Short answer
+
+Viewers will learn how legitimate moving works, where fake operators exploit the process, and how to spot warning signs. This draft dossier is manual-first and should be tightened with sourced reporting before scripting.
 
 ## Business model
 
+- normal moving workflow
+- bait-and-switch quote tactic
+- at least one public enforcement case
+- customer warning signs
+
 ## Money flow
+
+- Identify where revenue starts, where costs pile up, and where incentives shift behavior.
+- Add sourced numbers to replace placeholders before script drafting.
 
 ## Key numbers
 
+- Add prices, margins, fees, fines, growth rates, or volume figures with sources.
+
 ## Timeline
+
+- Add dated events, regulation changes, notable incidents, and industry shifts.
 
 ## Real-world examples
 
+- Add at least one public case or operator example with sources.
+
 ## Crime/scam/legal section if applicable
+
+Use conservative wording until official sourcing is attached.
+- Distinguish alleged, charged, sued, fined, settled, and convicted.
+- Note who said it: court documents, regulators, or reputable reporting.
 
 ## Counterpoints
 
+- What does the legitimate version of this business do well?
+- Where can viewers overgeneralize or misunderstand the issue?
+
 ## Visual opportunities
+
+- documentary
+- moving trucks
+- contracts
+- inventory lists
+- customer complaint graphics
 
 ## Approved facts
 
+- None yet. Use `approved_facts.csv` after validation.
+
 ## Claims needing review
 
+- “The Fake Moving Company Playbook”
+- “They Took Everything: Inside the Moving Scam Business”
+- “Low Quote, Locked Truck: The Business of Fake Movers”
+- “Why Moving Scams Keep Working”
+- FMCSA’s “Operation Protect Your Move” is a nationwide enforcement initiative focused on household goods carriers and brokers with severe complaint records in FMCSA’s National Consumer Complaint Database, plus carriers with serious safety deficiencies.
+- FMCSA says the initiative targets both movers and brokers that claim to connect consumers with local movers but instead take advantage of consumers and facilitate fraud.
+- FMCSA states that from April 1–19, 2024, it investigated companies in 17 states in response to increased household goods hostage complaints.
+- FMCSA states that from March 20–April 7, 2023, it investigated companies in 16 states in response to increased household goods hostage complaints.
+- FMCSA’s 2024 announcement said the 2023 operations found more than 1,000 FMCSA regulatory violations and led to enforcement actions where appropriate, including Letters of Probable Violation and revocation of operating authority.
+- FMCSA complaint examples include deliberately low-balling an estimate, withholding customer belongings unless they pay significantly more than quoted, and knowingly assigning a false weight to a shipment.
+- BBB’s April 2024 scam alert, updated May 15, 2025, says that in 2024 more than 100,000 inquiries on BBB.org were made about movers, 718 complaints were filed with BBB against movers, and victims who reported moving scams to BBB Scam Tracker in 2024 lost a median of $754.
+- BBB’s 2020 moving scam study said BBB receives an average of about 13,000 complaints and negative reviews about movers each year.
+- BBB/CAM Canada notes reported patterns where consumers paid up to three times the originally agreed price, paid hundreds or thousands more in cash under threat, or lost deposits after movers failed to show.
+- Government of Canada / Office of Consumer Affairs advises consumers to get estimates from at least three reputable movers, check references, confirm whether the mover is certified by the Canadian Association of Movers, check whether the company has a local presence, and watch for red flags such as no physical address, phone-only estimates, large upfront deposits, or not being listed by CAM/BBB.
+- Competition Bureau Canada warns that rogue movers often find victims through classified ad sites such as Kijiji or Craigslist, quote low prices, claim there are no surprise fees, rely on verbal contracts, then present a different contract on moving day with extra charges and may hold possessions hostage.
+- Canadian Association of Movers maintains consumer alerts and warns of companies misrepresenting CAM affiliation or using fake CAM logos. CAM also lists Toronto-area investigation notes involving “Move Me Again” and multiple alleged aliases.
+- CAM notes a 2023 Ontario case involving Dashen R. Smith as “first mover in Canada charged under Ontario’s Consumer Protection Act” and states the conviction included an unfair practice / renegotiate price undue pressure charge, a $2,000 fine, $640 restitution, and 24 months probation. Verify this through court/police records before using prominently.
+- DOJ said 12 people were charged with conspiring in a racketeering enterprise involving affiliated moving companies across multiple states.
+- More than 900 customers were identified as victims at the time of the announcement.
+- DOJ alleged companies used names including First National Moving and Storage, Public Moving and Storage, Flagship Van Lines, Public Moving Services, Independent Van Lines, Smart Relocation Solutions, National Relocation Van Lines, Unified Van Lines, National Relocation Solutions, United National Moving and Storage, Presidential Moving Services, and US Relocation Systems.
+- Alleged tactics: fake online reviews, false claims about years in business, low binding estimates, price bump after loading, refusal to return goods unless inflated prices were paid, and in some cases stealing goods.
+- DOJ said Andre Prince was sentenced to 24 months in prison and ordered to pay $100,000 forfeiture after conviction for conspiracy to commit wire fraud.
+- DOJ said customers’ belongings were held hostage unless they paid bogus fees.
+- FBI statement said Prince preyed on more than 800 victims.
+- DOJ said Kristy Mak and Andre Prince were convicted of conspiracy to commit wire fraud in connection with a fraudulent moving company scheme.
+- DOJ described the conduct as customers’ belongings being held hostage unless they paid bogus, additional fees.
+- Maximum penalty mentioned: up to 20 years in prison, with forfeiture to be determined.
+- DOJ alleged Great Movers Inc. and affiliated companies misrepresented estimated charges, required extra fees often more than 10% above the original estimate, demanded payment before delivery, or refused/threatened to sell/auction belongings if fees were not paid.
+- Treat as allegations unless later case status is verified.
+- DOJ alleged three Passaic County men used 11Even Movers & Storage to extort increased fees after customers were vulnerable.
+- DOJ alleged prices were often raised to two or three times the quoted estimate after goods were loaded.
+- DOJ alleged the company demanded at least 50% of the inflated cost in cash and often failed to deliver goods for months or at all.
+- Treat as charges/allegations unless later case status is verified.
+- DOJ said Asaf Nass was sentenced to 18 months for conspiracy to commit extortion.
+- DOJ said Nass admitted working with a Miami-based broker to lure customers with inaccurate prices and then hold goods hostage unless victims paid increased fees.
+- Increased fees sometimes reached two or three times the original bid.
+- DOJ said losses exceeded $250,000 and this was the ninth sentencing in that case.
+- DOJ alleged Tasheen Raphael Pickett and Shedrick Giles held themselves out as professional movers, took customers’ goods, and never returned them.
+- DOT-OIG found storage units with approximately 14 individuals’ personal property allegedly taken months earlier.
+- DOJ said neither was authorized by FMCSA to transport household goods.
+- Treat as allegations unless conviction/sentencing is verified.
+- Lowball estimates were provided by phone.
+- Companies allegedly changed identities after complaints accumulated.
+- Companies allegedly shared bank accounts, P.O. boxes, employees, and offices despite separate legal names.
+- Representatives gathered details about when victims had to leave their residence, travel, schedule cleaning, or shut off utilities, then used that pressure against them.
+- Price increases were demanded after goods were partly or fully loaded.
+- Payment was demanded in cash, postal money order, or cashier’s check.
+- If victims refused, representatives threatened storage fees or non-delivery.
+- Investigators found a spreadsheet showing approximately 1,514 moves from 2013 to part of 2015; about 1,338 moves, or 88%, had final costs above the permissible 10% increase, and at least one move rose as high as 400%. The difference between estimates and final balances was about $2 million.
+- This is a very strong data point, but verify the final case outcome before framing it as proven beyond the complaint.
+- Local TV investigations: CBC Marketplace, CTV, CityNews, Global News, ABC/GMA.
+- Reddit victim stories: useful for understanding language and pain points, but do not treat as verified without documents.
+- Moving company blog posts: useful for terminology only; do not use as main evidence unless backed by official sources.
+- Lawyer blog posts about Ontario Consumer Protection Act cases: useful leads, but verify through court records or official police/Ministry sources.
+- date
+- jurisdiction
+- agency
+- company/person names
+- status: alleged / charged / convicted / sentenced / civil enforcement / warning
+- victim count
+- dollar amount
+- tactic
+- source URL
+- quote/excerpt
+- notes on legal caution
+- AY Transport / National Moving Network
+- Pickett and Giles alleged fake movers
+- Farah Al-Ibrahim / NJ target companies
+- Southern District of Ohio 12 defendants
+- Great Movers Inc.
+- 11Even Movers & Storage
+- Mak / Prince Brooklyn case
+- Toronto “Move Me Again” investigation
+- Dashen Smith Ontario case
+- fake website
+- fake reviews
+- fake years in business
+- no local address
+- generic phone answer
+- phone-only estimate
+- broker confusion
+- rental truck
+- large deposit
+- cash / money order / wire
+- blank documents
+- after-loading price jump
+- false weight / volume
+- storage fees
+- threats to auction
+- no delivery
+- damaged/stolen goods
+- fake association logo / fake certification
+- tactic name
+- how it works
+- why it pressures victims
+- official source
+- possible visual idea
+- BBB complaints/negative reviews per year, if available.
+- FMCSA NCCDB household goods complaint categories, if available.
+- Number of FMCSA-registered household goods movers over time, if available.
+- Case-level victim counts and dollar losses.
+- Moving season demand: May–August share of annual moves, if supportable.
+- Canada Anti-Fraud Centre data if moving-specific data exists; otherwise general scam reporting context only.
+- public source only
+- no private addresses/phone numbers
+- summarize, do not copy long quotes
+- distinguish alleged facts from confirmed court findings
+- get at least 3 story arcs:
+- How do lead-gen sites and brokers monetize moving quotes?
+- How do fake companies use SEO, Google ads, Kijiji/Craigslist/Marketplace, fake review sites, and phone rooms?
+- How does name-switching reduce accountability?
+- Why is enforcement hard across state/province lines?
+- How do low margins and high seasonality create opportunity for shady operators?
+- What legitimate moving companies do differently: inventory, written estimate, branded trucks, insurance, licensing, physical offices.
+- verify license / USDOT / provincial requirements
+- confirm whether it is a broker or mover
+- get 3 written estimates
+- avoid phone-only quotes
+- avoid large deposits / cash-only demands
+- never sign blank documents
+- verify physical address and association memberships
+- check complaint history
+- keep all documents
+- report fraud quickly
+- Search results page with many similar mover names.
+- Phone sales room / call center style b-roll.
+- Fake review montage: five-star reviews appearing rapidly.
+- Low quote graphic turning into a giant invoice.
+- Truck door closing on household belongings.
+- “Broker” flowchart: Customer → lead site → broker → unknown carrier → storage lot.
+- Map of cases across U.S. states and Canada.
+- Evidence wall: USDOT number, bill of lading, estimate, inventory sheet.
+- Red flag checklist animation.
+- Split-screen: legitimate mover vs rogue mover.
+- Avoid calling a currently operating company “fake” unless supported by an official enforcement action, court judgment, regulator warning, or direct verifiable evidence.
+- Use “alleged” for charges/complaints and “convicted/sentenced” only when official source says so.
+- Do not publish personal victim names unless already public and necessary.
+- Do not include private phone numbers, addresses, emails, or license plate numbers.
+- Avoid giving instructions that could help scammers improve their tactics; frame tactics from consumer-protection angle.
+- For active companies with only complaints, say “complaints allege” or “consumers reported” rather than stating fraud as fact.
+- Keep copies of every source page as PDF/screenshot if making claims in a video.
+- `"hostage goods" moving company site:justice.gov`
+- `"moving company scheme" "wire fraud" site:justice.gov`
+- `"household goods moving fraud" site:oig.dot.gov`
+- `"Operation Protect Your Move" "Final Report" FMCSA`
+- `"NCCDB" "household goods" "hostage complaints"`
+- `"FMCSA" "household goods" "complaints" "moving fraud"`
+- `"49 CFR 375.703" moving hostage goods`
+- `"rogue movers" "Competition Bureau" Canada`
+- `"moving scam" "Consumer Protection Act" Ontario mover charged`
+- `"Toronto Police" "moving scam" "Move Me Again"`
+- `"Canadian Association of Movers" "fake logo" moving`
+- `"Canadian Association of Movers" "Move Me Again"`
+- `"Canada Anti-Fraud Centre" moving scam`
+- `"BBB" "moving scams" "median loss" 2024`
+- `"BBB Scam Tracker" moving scams 2025`
+- `"Know Your Mover" BBB study movers hostage goods`
+- `"moving broker" "household goods" fraud`
+- `"moving company" fake reviews "DOJ"`
+
+## Working notes snapshot
+
+# Manual Notes — Fake Moving Companies / Rogue Movers
+
+Workspace target:
+`C:\xampp\htdocs\apps\gigbizness-stories\workspaces\fake_moving_companies\01_research\manual_notes.md`
+
+Prepared: 2026-07-09  
+Research status: seed notes before automated research runs  
+Video type: business crime story / consumer protection documentary  
+Working title ideas:
+- “The Fake Moving Company Playbook”
+- “They Took Everything: Inside the Moving Scam Business”
+- “Low Quote, Locked Truck: The Business of Fake Movers”
+
 ## Sources
+
+- Replace placeholder rows in `sources.csv` with real sources.

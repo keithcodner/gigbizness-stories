@@ -1,0 +1,40 @@
+{
+  "topic_id": "fake_moving_companies",
+  "cards": [
+    {
+      "scene_id": "S02",
+      "title": "The Legitimate Business Model",
+      "subtitle": "29s-58s",
+      "body": "Tow truck loading sequence, roadside assistance visuals, map card",
+      "output_filename": "s02_fact_card_01.svg"
+    },
+    {
+      "scene_id": "S03",
+      "title": "How The Money Works",
+      "subtitle": "58s-82s",
+      "body": "Invoice stack animation, fee card, impound lot b-roll",
+      "output_filename": "s03_fact_card_01.svg"
+    },
+    {
+      "scene_id": "S05",
+      "title": "Evidence Gap And Public Cases",
+      "subtitle": "110s-138s",
+      "body": "Court document placeholder, regulator card, headline wall",
+      "output_filename": "s05_fact_card_01.svg"
+    },
+    {
+      "scene_id": "S06",
+      "title": "Warning Signs For Viewers",
+      "subtitle": "138s-162s",
+      "body": "Checklist card, document highlights, fee stack recap",
+      "output_filename": "s06_fact_card_01.svg"
+    },
+    {
+      "scene_id": "S07",
+      "title": "Final Takeaway",
+      "subtitle": "162s-183s",
+      "body": "Takeaway card, city map, tow truck exit shot",
+      "output_filename": "s07_fact_card_01.svg"
+    }
+  ]
+}
