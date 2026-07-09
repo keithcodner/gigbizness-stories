@@ -6,7 +6,10 @@
   "main": "agents/orchestrator.js",
   "scripts": {
     "init:project": "node agents/orchestrator.js --init-project",
-    "init:topic": "node agents/orchestrator.js --init"
+    "init:topic": "node agents/orchestrator.js --init",
+    "research": "node agents/orchestrator.js --stage research",
+    "script": "node agents/orchestrator.js --stage script",
+    "voice": "node agents/orchestrator.js --stage voice"
   },
   "engines": {
     "node": ">=18"

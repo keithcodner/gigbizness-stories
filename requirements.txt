@@ -1,1 +1,1 @@
-# Phase 1 does not require Python packages yet.
+# Current MVP scripts use only the Python standard library.
