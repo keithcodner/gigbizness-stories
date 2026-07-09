@@ -1,0 +1,22 @@
+{
+  "style_id": "bricktoon",
+  "alias": "blocky_toy_cartoon",
+  "safe_for_business_crime": true,
+  "use_real_faces": false,
+  "use_real_company_logos": false,
+  "camera_defaults": {
+    "aspect_ratio": "9:16",
+    "lighting": "cinematic miniature",
+    "caption_safe_zone": "center clear"
+  },
+  "reject_if_contains": [
+    "LEGO logo",
+    "official LEGO packaging",
+    "real company logos",
+    "readable private information",
+    "real addresses",
+    "license plates",
+    "fake agency logos",
+    "copyrighted characters"
+  ]
+}

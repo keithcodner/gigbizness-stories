@@ -23,6 +23,7 @@ function getPaths(workspaceDir) {
     shotlistPath: path.join(scriptDir, "shotlist.csv"),
     outlinePath: path.join(scriptDir, "outline.md"),
     scriptPath: path.join(scriptDir, "script_v2_human_review.md"),
+    sceneCardsPath: path.join(workspaceDir, "05_scene_cards", "scene_cards.json"),
     timingPath: path.join(voiceDir, "voice_timing.json"),
     visualManifestPath: path.join(assetsDir, "visual_manifest.csv"),
     licensesPath: path.join(assetsDir, "licenses.csv"),
@@ -34,8 +35,11 @@ function getPaths(workspaceDir) {
     factCardSpecPath: path.join(assetsDir, "charts", "fact_card_specs.json"),
     chartScriptPath: path.join(scriptsDir, "generate_charts.py"),
     factCardScriptPath: path.join(scriptsDir, "create_fact_cards.py"),
+    sceneCardExportScriptPath: path.join(scriptsDir, "export_scene_card_assets.js"),
     chartsDir: path.join(assetsDir, "charts"),
-    documentsDir: path.join(assetsDir, "documents")
+    documentsDir: path.join(assetsDir, "documents"),
+    bricktoonManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
+    promptExportDir: path.join(workspaceDir, "07_visuals")
   };
 }
 
@@ -59,12 +63,13 @@ function runCommand(command, args, label) {
   }
 }
 
-function inferAssetRows(topic, shotRows, timingData) {
+function inferAssetRows(topic, shotRows, timingData, sceneCards = []) {
   const rows = [];
   const visualKeywords = topic.asset_keywords || [];
 
   for (const shot of shotRows) {
     const sceneId = shot.scene_id;
+    const sceneCard = sceneCards.find((card) => card.scene_id === sceneId) || null;
     const sceneTiming = timingData.scenes?.find((scene) => scene.scene.startsWith(sceneId)) || null;
     const description = shot.description || "";
     const baseKeyword = visualKeywords[0] || "business documentary";
@@ -75,7 +80,7 @@ function inferAssetRows(topic, shotRows, timingData) {
     rows.push({
       scene_id: sceneId,
       asset_type: mapVisualType(shot.visual_type),
-      search_query: buildSearchQuery(topic, shot, baseKeyword),
+      search_query: buildSearchQuery(topic, shot, baseKeyword, sceneCard),
       filename: inferFilename(sceneId, shot.visual_type, "01", shot.visual_type === "generated_graphic" ? "svg" : "mp4"),
       source_url: "",
       license: "manual-source-needed",
@@ -154,6 +159,10 @@ function mapVisualType(visualType) {
 }
 
 function buildSearchQuery(topic, shot, fallbackKeyword) {
+  const sceneCard = arguments[3] || null;
+  if (sceneCard && sceneCard.environment) {
+    return `${sceneCard.environment} bricktoon documentary visual`;
+  }
   const base = `${topic.id.replaceAll("_", " ")} ${shot.section}`.toLowerCase();
   if (shot.visual_type === "b_roll") {
     return `${fallbackKeyword} ${base} documentary b-roll`;
@@ -222,6 +231,22 @@ function buildAssetGaps(topic, manifestRows) {
   lines.push("- Confirm every non-generated asset has a real source URL before final edit.");
   lines.push("");
   return `${lines.join("\n")}\n`;
+}
+
+function buildBricktoonManifest(sceneCards) {
+  return {
+    style: "bricktoon",
+    generated_from: "scene_cards",
+    assets: sceneCards.map((card) => ({
+      scene_id: card.scene_id,
+      beat_id: card.beat_id,
+      characters: card.characters,
+      environment: card.environment,
+      prompt_file: `07_visuals/image_prompts/${card.scene_id}.txt`,
+      caption_file: `07_visuals/caption_chunks/${card.scene_id}.txt`,
+      animation_file: `07_visuals/animation_tasks/${card.scene_id}.txt`
+    }))
+  };
 }
 
 function buildSummary(topic, manifestRows, timingData) {
@@ -388,8 +413,11 @@ function main() {
     const topic = readJson(paths.topicPath);
     const shotRows = parseCsv(fs.readFileSync(paths.shotlistPath, "utf8")).rows;
     const timingData = readJsonIfExists(paths.timingPath, { total_seconds: 0, scenes: [] });
+    const sceneCards = fs.existsSync(paths.sceneCardsPath)
+      ? readJsonIfExists(paths.sceneCardsPath, { scene_cards: [] }).scene_cards || []
+      : [];
 
-    let manifestRows = inferAssetRows(topic, shotRows, timingData);
+    let manifestRows = inferAssetRows(topic, shotRows, timingData, sceneCards);
     writeText(paths.visualManifestPath, toCsv(manifestRows, [
       "scene_id",
       "asset_type",
@@ -419,6 +447,17 @@ function main() {
     const factCardSpec = buildFactCardSpec(topic, shotRows, timingData);
     writeText(paths.chartSpecPath, `${JSON.stringify(chartSpec, null, 2)}\n`);
     writeText(paths.factCardSpecPath, `${JSON.stringify(factCardSpec, null, 2)}\n`);
+    writeText(paths.bricktoonManifestPath, `${JSON.stringify(buildBricktoonManifest(sceneCards), null, 2)}\n`);
+
+    if (sceneCards.length > 0) {
+      runCommand("node", [
+        paths.sceneCardExportScriptPath,
+        "--input",
+        paths.sceneCardsPath,
+        "--output",
+        paths.promptExportDir
+      ], "export_scene_card_assets.js");
+    }
 
     runCommand("python", [
       paths.chartScriptPath,

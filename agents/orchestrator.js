@@ -21,6 +21,14 @@ const WORKSPACE_LAYOUT = [
     }
   },
   {
+    dir: "00_brief",
+    files: {
+      "format_recipe.json": "{\n  \"format_id\": \"bleak_explainer_bricktoon\"\n}\n",
+      "format_brief.md": "# Format Brief\n\n",
+      "style_guide.md": "# Style Guide\n\n"
+    }
+  },
+  {
     dir: "01_research",
     files: {
       "manual_notes.md": "# Manual Notes\n\nAdd rough research notes, pasted excerpts, candidate sources, and open questions here before running the research stage.\n",
@@ -35,6 +43,21 @@ const WORKSPACE_LAYOUT = [
     }
   },
   {
+    dir: "02_angle",
+    files: {
+      "angle.md": "# Angle\n\n",
+      "beat_sheet.md": "# Beat Sheet\n\n"
+    }
+  },
+  {
+    dir: "03_cast",
+    files: {
+      "cast.json": "{\n  \"style_id\": \"bricktoon\",\n  \"cast\": []\n}\n",
+      "character_continuity.md": "# Character Continuity\n\n",
+      "scene_roles.md": "# Scene Roles\n\n"
+    }
+  },
+  {
     dir: "02_script",
     files: {
       "outline.md": "# Outline\n\n",
@@ -44,6 +67,14 @@ const WORKSPACE_LAYOUT = [
       "shotlist.csv": "scene_id,section,visual_type,description,source,notes\n",
       "jokes_and_analogies.md": "# Jokes And Analogies\n\n",
       "narrator_notes.md": "# Narrator Notes\n\n"
+    }
+  },
+  {
+    dir: "05_scene_cards",
+    files: {
+      "scene_cards.json": "{\n  \"style_id\": \"bricktoon\",\n  \"scene_cards\": []\n}\n",
+      "shot_list.md": "# Shot List\n\n",
+      "visual_prompts.md": "# Visual Prompts\n\n"
     }
   },
   {
@@ -71,6 +102,23 @@ const WORKSPACE_LAYOUT = [
     ]
   },
   {
+    dir: "07_visuals",
+    files: {
+      "asset_manifest.json": "{\n  \"style\": \"bricktoon\",\n  \"assets\": []\n}\n"
+    },
+    subdirs: [
+      "generated_images",
+      "character_refs",
+      "backgrounds",
+      "overlays",
+      "source_cards",
+      "image_prompts",
+      "stock_queries",
+      "caption_chunks",
+      "animation_tasks"
+    ]
+  },
+  {
     dir: "05_render_plan",
     files: {
       "scene_manifest.json": "{\n  \"scenes\": []\n}\n",
@@ -85,6 +133,22 @@ const WORKSPACE_LAYOUT = [
       "draft_02.mp4": "",
       "final_1080p.mp4": "",
       "final_1440p.mp4": ""
+    }
+  },
+  {
+    dir: "08_animation",
+    files: {
+      "animation_plan.json": "{\n  \"style\": \"bricktoon_static_motion\",\n  \"scenes\": []\n}\n",
+      "camera_moves.json": "[]\n"
+    },
+    subdirs: [
+      "animated_clips"
+    ]
+  },
+  {
+    dir: "09_edit_plan",
+    files: {
+      "edit_plan.md": "# Edit Plan\n\n"
     }
   },
   {
@@ -194,6 +258,33 @@ function ensureWorkspaceStandards(workspaceDir) {
   );
 }
 
+function ensureWorkspaceLayout(workspaceDir, topicPath = null) {
+  ensureDir(workspaceDir);
+
+  for (const section of WORKSPACE_LAYOUT) {
+    const sectionDir = path.join(workspaceDir, section.dir);
+    ensureDir(sectionDir);
+
+    if (section.subdirs) {
+      for (const subdir of section.subdirs) {
+        ensureDir(path.join(sectionDir, subdir));
+      }
+    }
+
+    for (const [fileName, defaultContents] of Object.entries(section.files)) {
+      const filePath = path.join(sectionDir, fileName);
+      if (fileName === "topic.json" && topicPath) {
+        if (!fs.existsSync(filePath)) {
+          fs.copyFileSync(topicPath, filePath);
+        }
+        continue;
+      }
+
+      ensureFile(filePath, defaultContents);
+    }
+  }
+}
+
 function loadTopic(topicId) {
   const topicPath = path.join(TOPICS_DIR, `${topicId}.json`);
   if (!fs.existsSync(topicPath)) {
@@ -229,18 +320,24 @@ function getTopicPaths(topicId) {
     workspaceDir,
     guidedStatusPath: path.join(workspaceDir, "guided_status.md"),
     qualityRulesPath: path.join(ROOT_CONFIG_DIR, "quality_rules.json"),
+    formatRecipePath: path.join(workspaceDir, "00_brief", "format_recipe.json"),
+    beatSheetPath: path.join(workspaceDir, "02_angle", "beat_sheet.md"),
+    castPath: path.join(workspaceDir, "03_cast", "cast.json"),
     manualNotesPath: path.join(workspaceDir, "01_research", "manual_notes.md"),
     researchDossierPath: path.join(workspaceDir, "01_research", "research_dossier.md"),
     sourcesPath: path.join(workspaceDir, "01_research", "sources.csv"),
     approvedFactsPath: path.join(workspaceDir, "01_research", "approved_facts.csv"),
     riskReportPath: path.join(workspaceDir, "01_research", "source_risk_report.md"),
     scriptPath: path.join(workspaceDir, "02_script", "script_v2_human_review.md"),
+    sceneCardsPath: path.join(workspaceDir, "05_scene_cards", "scene_cards.json"),
     voiceCleanPath: path.join(workspaceDir, "03_voice", "voiceover_clean.wav"),
     captionsPath: path.join(workspaceDir, "03_voice", "captions.srt"),
     visualManifestPath: path.join(workspaceDir, "04_assets", "visual_manifest.csv"),
     visualPlanPath: path.join(workspaceDir, "04_assets", "visual_plan.md"),
     visualReadinessPath: path.join(workspaceDir, "04_assets", "visual_readiness.json"),
     assetGapsPath: path.join(workspaceDir, "04_assets", "asset_gaps.md"),
+    animationPlanPath: path.join(workspaceDir, "08_animation", "animation_plan.json"),
+    editPlanPath: path.join(workspaceDir, "09_edit_plan", "edit_plan.md"),
     draftRenderPath: path.join(workspaceDir, "06_renders", "draft_01.mp4"),
     shortOnePath: path.join(workspaceDir, "07_shorts", "short_01.mp4"),
     thumbnailPath: path.join(workspaceDir, "08_thumbnail", "final_thumbnail.jpg"),
@@ -327,10 +424,30 @@ function isResearchApproved(topic) {
   return approvedFacts >= 3 && readText(paths.researchDossierPath).includes("## Sources");
 }
 
+function isFormatReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return fileHasContent(paths.formatRecipePath);
+}
+
+function isAngleReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return readText(paths.beatSheetPath).includes("B01");
+}
+
+function isCastReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return readText(paths.castPath).includes("\"character_id\"");
+}
+
 function isScriptReady(topicId) {
   const paths = getTopicPaths(topicId);
   const scriptText = readText(paths.scriptPath);
   return scriptText.includes("## S01") && scriptText.length > 1200;
+}
+
+function isSceneCardsReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return readText(paths.sceneCardsPath).includes("\"scene_id\"");
 }
 
 function isVoiceReady(topicId) {
@@ -347,6 +464,11 @@ function isAssetsReady(topicId) {
 
 function isDraftReady(topicId) {
   return fileHasContent(getTopicPaths(topicId).draftRenderPath);
+}
+
+function isAnimationReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return fileHasContent(paths.animationPlanPath) && fileHasContent(paths.editPlanPath);
 }
 
 function isShortsPackageReady(topicId) {
@@ -517,8 +639,24 @@ function runGuidedPipeline(topicId, mode = "guided") {
     }
   }
 
+  if (!isFormatReady(topicId)) {
+    runFormatStage(topicId);
+  }
+
+  if (!isAngleReady(topicId)) {
+    runAngleStage(topicId);
+  }
+
+  if (!isCastReady(topicId)) {
+    runCastStage(topicId);
+  }
+
   if (!isScriptReady(topicId)) {
     runScriptStage(topicId);
+  }
+
+  if (!isSceneCardsReady(topicId)) {
+    runSceneCardStage(topicId);
   }
 
   if (!isVoiceReady(topicId)) {
@@ -537,6 +675,9 @@ function runGuidedPipeline(topicId, mode = "guided") {
   }
 
   if (!isDraftReady(topicId)) {
+    if (!isAnimationReady(topicId)) {
+      runAnimationStage(topicId);
+    }
     runRenderStage(topicId, "draft");
   }
 
@@ -595,29 +736,7 @@ function initTopicWorkspace(topicId) {
   const { topic, topicPath } = loadTopic(topicId);
   const workspaceDir = path.join(WORKSPACES_DIR, topic.id);
 
-  ensureDir(workspaceDir);
-
-  for (const section of WORKSPACE_LAYOUT) {
-    const sectionDir = path.join(workspaceDir, section.dir);
-    ensureDir(sectionDir);
-
-    if (section.subdirs) {
-      for (const subdir of section.subdirs) {
-        ensureDir(path.join(sectionDir, subdir));
-      }
-    }
-
-    for (const [fileName, defaultContents] of Object.entries(section.files)) {
-      const filePath = path.join(sectionDir, fileName);
-      if (fileName === "topic.json") {
-        fs.copyFileSync(topicPath, filePath);
-        continue;
-      }
-
-      ensureFile(filePath, defaultContents);
-    }
-  }
-
+  ensureWorkspaceLayout(workspaceDir, topicPath);
   ensureWorkspaceStandards(workspaceDir);
 
   const manifestPath = path.join(workspaceDir, "workspace_manifest.json");
@@ -652,6 +771,8 @@ function ensureWorkspace(topicId) {
     return initTopicWorkspace(topicId);
   }
 
+  const { topicPath } = loadTopic(topicId);
+  ensureWorkspaceLayout(workspaceDir, topicPath);
   ensureWorkspaceStandards(workspaceDir);
   return workspaceDir;
 }
@@ -733,6 +854,36 @@ function runResearchStage(topicId) {
   return workspaceDir;
 }
 
+function runFormatStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting format stage for topic '${topicId}'`);
+
+  runNodeAgent("format_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed format stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runAngleStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting angle stage for topic '${topicId}'`);
+
+  runNodeAgent("angle_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed angle stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runCastStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting cast stage for topic '${topicId}'`);
+
+  runNodeAgent("character_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed cast stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runScriptStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting script stage for topic '${topicId}'`);
@@ -742,6 +893,16 @@ function runScriptStage(topicId) {
   runNodeAgent("joke_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
 
   writeLog(`Completed script stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runSceneCardStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting scene card stage for topic '${topicId}'`);
+
+  runNodeAgent("scene_card_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed scene card stage for topic '${topicId}'`);
   return workspaceDir;
 }
 
@@ -762,6 +923,17 @@ function runAssetsStage(topicId) {
   runNodeAgent("visual_asset_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
 
   writeLog(`Completed assets stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runAnimationStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting animation/edit-plan stage for topic '${topicId}'`);
+
+  runNodeAgent("animation_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+  runNodeAgent("edit_plan_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed animation/edit-plan stage for topic '${topicId}'`);
   return workspaceDir;
 }
 
@@ -829,10 +1001,15 @@ function printUsage() {
   console.log("Usage:");
   console.log("  node agents/orchestrator.js --init-project");
   console.log("  node agents/orchestrator.js --topic <topic_id> --init");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage format");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage research");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage angle");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage cast");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage script");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-cards");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage voice");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage assets");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage animation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render --profile draft");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shorts");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage qc");
@@ -928,19 +1105,29 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["research", "script", "voice", "assets", "render", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "animation", "render", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
       let workspaceDir;
-      if (args.stage === "research") {
+      if (args.stage === "format") {
+        workspaceDir = runFormatStage(args.topic);
+      } else if (args.stage === "research") {
         workspaceDir = runResearchStage(args.topic);
+      } else if (args.stage === "angle") {
+        workspaceDir = runAngleStage(args.topic);
+      } else if (args.stage === "cast") {
+        workspaceDir = runCastStage(args.topic);
       } else if (args.stage === "script") {
         workspaceDir = runScriptStage(args.topic);
+      } else if (args.stage === "scene-cards") {
+        workspaceDir = runSceneCardStage(args.topic);
       } else if (args.stage === "voice") {
         workspaceDir = runVoiceStage(args.topic);
       } else if (args.stage === "assets") {
         workspaceDir = runAssetsStage(args.topic);
+      } else if (args.stage === "animation") {
+        workspaceDir = runAnimationStage(args.topic);
       } else if (args.stage === "render") {
         workspaceDir = runRenderStage(args.topic, args.profile || "draft");
       } else if (args.stage === "qc") {

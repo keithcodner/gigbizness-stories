@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bricktoon Scene Cards",
+  "type": "object",
+  "required": ["style_id", "format_id", "scene_cards"],
+  "properties": {
+    "style_id": { "type": "string" },
+    "format_id": { "type": "string" },
+    "scene_cards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "scene_id",
+          "beat_id",
+          "duration_seconds",
+          "narration",
+          "characters",
+          "environment",
+          "visual_prompt",
+          "negative_prompt",
+          "camera",
+          "caption_text",
+          "claims",
+          "legal_risk"
+        ],
+        "properties": {
+          "scene_id": { "type": "string" },
+          "beat_id": { "type": "string" },
+          "duration_seconds": { "type": "number" },
+          "narration": { "type": "string" },
+          "characters": { "type": "array", "items": { "type": "string" } },
+          "environment": { "type": "string" },
+          "visual_prompt": { "type": "string" },
+          "negative_prompt": { "type": "string" },
+          "camera": { "type": "object" },
+          "caption_text": { "type": "string" },
+          "caption_emphasis": { "type": "array", "items": { "type": "string" } },
+          "sound_effects": { "type": "array", "items": { "type": "string" } },
+          "claims": { "type": "array", "items": { "type": "string" } },
+          "legal_risk": { "type": "string" }
+        }
+      }
+    }
+  }
+}

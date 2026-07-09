@@ -1,0 +1,95 @@
+{
+  "format_id": "bleak_explainer_bricktoon",
+  "display_name": "Bleak Explainer - Bricktoon",
+  "description": "A dark, dramatic, slightly sarcastic short-form explainer using blocky toy cartoon characters.",
+  "best_for": [
+    "business scams",
+    "consumer traps",
+    "hidden costs",
+    "industry abuse",
+    "small business horror stories"
+  ],
+  "target_lengths_seconds": [45, 60, 75, 90],
+  "hook_rules": {
+    "first_line_templates": [
+      "It sucks to {experience}.",
+      "The worst part about {topic} is not what you think.",
+      "This scam does not start when they steal your money. It starts when you trust the quote.",
+      "By the time you realize what happened, your stuff is already gone."
+    ],
+    "max_first_sentence_words": 12,
+    "must_create_tension_by_second": 3
+  },
+  "tone": {
+    "voice": "calm, ominous, dry, direct",
+    "humor": "dark but not cruel",
+    "energy": "controlled tension",
+    "avoid": [
+      "generic influencer hype",
+      "fake outrage",
+      "defaming active companies without sources",
+      "making victims look stupid"
+    ]
+  },
+  "script_rules": {
+    "sentence_length": "short",
+    "beat_duration_seconds": "3-6",
+    "claims_required": true,
+    "legal_language_required": true,
+    "structure": [
+      "cold_open",
+      "false_safety",
+      "trap_mechanism",
+      "case_or_data_point",
+      "why_it_works",
+      "red_flags",
+      "closing_warning"
+    ]
+  },
+  "visual_rules": {
+    "style_id": "bricktoon",
+    "scene_change_seconds": "2-4",
+    "character_continuity": true,
+    "use_real_faces": false,
+    "use_real_company_logos": false,
+    "preferred_visuals": [
+      "moving truck",
+      "boxes",
+      "phone quote",
+      "invoice jump",
+      "storage unit",
+      "fake review screen",
+      "official source card",
+      "red flag checklist"
+    ]
+  },
+  "audio_rules": {
+    "voice_style": "documentary male or neutral serious narrator",
+    "music": "low dark synth, low volume",
+    "sound_effects": [
+      "low hit",
+      "paper stamp",
+      "phone notification",
+      "truck door slam",
+      "cash register sting"
+    ]
+  },
+  "caption_rules": {
+    "style": "large kinetic center captions",
+    "words_per_caption": "3-7",
+    "emphasis_words": [
+      "cheap",
+      "deposit",
+      "cash",
+      "hostage",
+      "too late",
+      "fake",
+      "quote"
+    ]
+  },
+  "qc_rules": {
+    "fact_check_required": true,
+    "legal_review_required": true,
+    "visual_safety_review_required": true
+  }
+}

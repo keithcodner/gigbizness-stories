@@ -26,6 +26,27 @@ npm run init:topic -- --topic tow_truck_dark_side
 
 This creates `workspaces/tow_truck_dark_side/` with the expected folder tree and starter files.
 
+## Bricktoon Architecture
+
+The repo now supports a bricktoon production layer on top of the existing research and render pipeline:
+
+- `format -> research -> angle -> cast -> script -> scene cards -> voice -> visuals -> animation -> render -> qc`
+- Format recipes live in `formats/`
+- Style rules live in `styles/bricktoon/`
+- Reusable role scaffolds live in `character_library/bricktoon/`
+
+New workspace stages include `00_brief`, `02_angle`, `03_cast`, `05_scene_cards`, `07_visuals`, `08_animation`, and `09_edit_plan`.
+
+Useful commands:
+
+```bash
+npm run format -- --topic fake_moving_companies
+npm run angle -- --topic fake_moving_companies
+npm run cast -- --topic fake_moving_companies
+npm run scene-cards -- --topic fake_moving_companies
+npm run animation -- --topic fake_moving_companies
+```
+
 ## Music Standard
 
 Use music from the local royalty-free library:

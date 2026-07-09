@@ -16,6 +16,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added overnight queue processing with locking, resume support, and morning reports.
 - Added a repo-level `config/music_policy.json` so music sourcing rules are centralized instead of living only in ad hoc notes.
 - Added seeded workspace music-planning files in `04_assets/music/` so every topic documents its soundtrack choice before QC.
+- Added the first bricktoon architecture layer with format recipes, style rules, schemas, and reusable character scaffolds.
 
 ### Changed
 
@@ -26,6 +27,8 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Advanced `fake_moving_companies` through refreshed script, assets, render-plan, QC, and final 1080p export.
 - Updated the render-plan stage to carry a selected music bed into scene metadata and audio planning notes.
 - Updated repo guidance so the default soundtrack source is the local sorted royalty-free library, preferring `@all/good`.
+- Updated the orchestrator to support format, angle, cast, scene-card, and animation/edit-plan stages on top of the legacy workflow.
+- Updated the script, visual, render-plan, and QC stages so they can consume bricktoon preproduction files when present.
 
 ### Fixed
 
@@ -52,6 +55,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Re-ran `fake_moving_companies` under the stricter visual rules so it is now correctly blocked on missing real footage instead of falsely appearing complete.
 - Fixed a workflow gap where music selection had no standard location, no approved-library rule, and no QC validation.
 - Fixed future-topic drift by teaching QC to reject tracks chosen from outside the approved library or directly from the unsorted root of `@all`.
+- Fixed the architecture gap where character-driven cartoon storytelling existed only in planning docs but not in the executable pipeline.
 
 ### Process
 

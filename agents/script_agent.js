@@ -19,6 +19,9 @@ function getPaths(workspaceDir) {
   return {
     topicPath: path.join(configDir, "topic.json"),
     qualityRulesPath: path.join(rootConfigDir, "quality_rules.json"),
+    formatRecipePath: path.join(workspaceDir, "00_brief", "format_recipe.json"),
+    beatSheetPath: path.join(workspaceDir, "02_angle", "beat_sheet.md"),
+    castPath: path.join(workspaceDir, "03_cast", "cast.json"),
     approvedFactsPath: path.join(researchDir, "approved_facts.csv"),
     blockedClaimsPath: path.join(researchDir, "blocked_claims.md"),
     researchDossierPath: path.join(researchDir, "research_dossier.md"),
@@ -36,6 +39,22 @@ function readApprovedFacts(filePath) {
   }
 
   return parseCsv(fs.readFileSync(filePath, "utf8")).rows;
+}
+
+function parseBeatSheet(markdown) {
+  return markdown
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- B"))
+    .map((line) => line.replace(/^- /, ""))
+    .map((line) => {
+      const parts = line.split("|").map((part) => part.trim());
+      return {
+        beat_id: parts[0],
+        beat_type: parts[1] || "story",
+        text: parts.slice(2).join(" | ")
+      };
+    });
 }
 
 function sceneTemplates(topic) {
@@ -166,19 +185,23 @@ function getSceneSourceSupport(scene, approvedFacts) {
   return ["Topic framing only. Add stronger scene-specific sourcing in research."];
 }
 
-function buildScript(topic, approvedFacts, blockedClaimsText, versionLabel) {
+function buildScript(topic, approvedFacts, blockedClaimsText, versionLabel, formatRecipe, beatSheet, castPackage) {
   const scenes = sceneTemplates(topic);
+  const castNames = castPackage?.cast?.map((character) => character.name).join(", ") || "Narrator only";
   const lines = [
     `# ${versionLabel}`,
     "",
     `Working title: ${topic.working_title}`,
     `Video type: ${topic.video_type}`,
+    `Format: ${formatRecipe?.display_name || "Bricktoon documentary"}`,
     `Central question: ${topic.central_question}`,
+    `Cast: ${castNames}`,
     "",
     "## Draft status",
     "",
     "- This script is conservative by design.",
     "- It only uses approved framing plus general structure from the research dossier.",
+    "- Bricktoon dramatization should come from scene cards, while proof should come from official source cards.",
     "- Add stronger sourced examples before final narration.",
     ""
   ];
@@ -186,6 +209,11 @@ function buildScript(topic, approvedFacts, blockedClaimsText, versionLabel) {
   for (const scene of scenes) {
     lines.push(`## ${scene.id} - ${scene.heading}`);
     lines.push("");
+    const beat = beatSheet.find((item, index) => index < scenes.length && scenes[index].id === scene.id);
+    if (beat) {
+      lines.push(`Beat ID: ${beat.beat_id}`);
+      lines.push("");
+    }
     lines.push(`Visual note: ${scene.visual}`);
     lines.push("");
     for (const line of scene.lines) {
@@ -278,13 +306,16 @@ function main() {
     const paths = getPaths(args.workspace);
     const topic = readJson(paths.topicPath);
     const qualityRules = readJson(paths.qualityRulesPath);
+    const formatRecipe = fs.existsSync(paths.formatRecipePath) ? readJson(paths.formatRecipePath) : null;
+    const beatSheet = fs.existsSync(paths.beatSheetPath) ? parseBeatSheet(fs.readFileSync(paths.beatSheetPath, "utf8")) : [];
+    const castPackage = fs.existsSync(paths.castPath) ? readJson(paths.castPath) : { cast: [] };
     const approvedFacts = readApprovedFacts(paths.approvedFactsPath);
     const blockedClaimsText = fs.existsSync(paths.blockedClaimsPath)
       ? fs.readFileSync(paths.blockedClaimsPath, "utf8")
       : "# Blocked Claims\n\n- None.\n";
 
-    writeText(paths.scriptV1Path, buildScript(topic, approvedFacts, blockedClaimsText, "Script V1"));
-    writeText(paths.scriptV2Path, buildScript(topic, approvedFacts, blockedClaimsText, "Script V2 Human Review"));
+    writeText(paths.scriptV1Path, buildScript(topic, approvedFacts, blockedClaimsText, "Script V1", formatRecipe, beatSheet, castPackage));
+    writeText(paths.scriptV2Path, buildScript(topic, approvedFacts, blockedClaimsText, "Script V2 Human Review", formatRecipe, beatSheet, castPackage));
     writeText(paths.shotlistPath, toCsv(buildShotlist(topic), [
       "scene_id",
       "section",

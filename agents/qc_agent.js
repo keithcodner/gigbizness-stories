@@ -33,6 +33,7 @@ function getPaths(workspaceDir) {
     riskReportPath: path.join(researchDir, "source_risk_report.md"),
     scriptPath: path.join(scriptDir, "script_v2_human_review.md"),
     voiceCleanPath: path.join(workspaceDir, "03_voice", "voiceover_clean.wav"),
+    sceneCardsPath: path.join(workspaceDir, "05_scene_cards", "scene_cards.json"),
     sceneManifestPath: path.join(renderPlanDir, "scene_manifest.json"),
     visualManifestPath: path.join(assetsDir, "visual_manifest.csv"),
     musicSelectionPath: path.join(assetsDir, "music", "music_selection.md"),
@@ -51,6 +52,9 @@ function getPaths(workspaceDir) {
     qualityReportPath: path.join(qcDir, "quality_report.md"),
     requiredFixesPath: path.join(qcDir, "required_fixes.md"),
     optionalImprovementsPath: path.join(qcDir, "optional_improvements.md"),
+    factCheckReportPath: path.join(qcDir, "fact_check_report.md"),
+    legalRiskReportPath: path.join(qcDir, "legal_risk_report.md"),
+    visualSafetyReportPath: path.join(qcDir, "visual_safety_report.md"),
     finalApprovalPath: path.join(qcDir, "final_approval.md")
   };
 }
@@ -394,6 +398,62 @@ function buildAudioChecks(qualityRules, musicPolicy, voiceCleanPath, musicSelect
   };
 }
 
+function buildFactCheckReport(topic, approvedFacts, blockedClaims, sceneCards) {
+  const sceneCardsWithClaims = sceneCards.filter((card) => Array.isArray(card.claims) && card.claims.length > 0).length;
+  const lines = [
+    "# Fact Check Report",
+    "",
+    `Topic: ${topic.working_title}`,
+    `Approved fact rows: ${approvedFacts.length}`,
+    `Blocked claims: ${blockedClaims.length}`,
+    `Scene cards with claim links: ${sceneCardsWithClaims} / ${sceneCards.length}`,
+    "",
+    blockedClaims.length > 0
+      ? "- Resolve blocked claims before treating this package as publish-ready."
+      : "- No blocked claims are currently listed.",
+    ""
+  ];
+  return `${lines.join("\n")}\n`;
+}
+
+function buildLegalRiskReport(topic, sceneCards) {
+  const elevated = sceneCards.filter((card) => (card.legal_risk || "").toLowerCase() !== "low");
+  const lines = [
+    "# Legal Risk Report",
+    "",
+    `Topic: ${topic.working_title}`,
+    "",
+    "- Use fictional characters for dramatization.",
+    "- Use exact source-backed language for accusations, lawsuits, charges, convictions, and sentencing.",
+    "- Do not visually imply a real company committed fraud unless the source supports it.",
+    ""
+  ];
+  if (elevated.length === 0) {
+    lines.push("- No elevated-risk scene cards flagged.");
+  } else {
+    for (const card of elevated) {
+      lines.push(`- ${card.scene_id}: legal risk ${card.legal_risk} | claims ${card.claims.join(", ")}`);
+    }
+  }
+  lines.push("");
+  return `${lines.join("\n")}\n`;
+}
+
+function buildVisualSafetyReport(sceneCards) {
+  const lines = [
+    "# Visual Safety Report",
+    "",
+    "- Reject visuals with official toy branding, copyrighted characters, private information, or fake agency logos.",
+    "- Prefer source cards for proof and bricktoon dramatization for pressure scenes.",
+    ""
+  ];
+  for (const card of sceneCards) {
+    lines.push(`- ${card.scene_id}: negative prompt includes branding/privacy guardrails.`);
+  }
+  lines.push("");
+  return `${lines.join("\n")}\n`;
+}
+
 function buildRequiredFixes(checks) {
   const lines = [
     "# Required Fixes",
@@ -525,6 +585,7 @@ function main() {
     const sceneManifest = safeReadJson(paths.sceneManifestPath, { scenes: [] });
     const visualManifest = safeReadCsv(paths.visualManifestPath);
     const musicManifest = safeReadCsv(paths.musicManifestPath);
+    const sceneCards = safeReadJson(paths.sceneCardsPath, { scene_cards: [] }).scene_cards || [];
 
     const titleOptionsText = safeRead(paths.titleOptionsPath);
     const descriptionText = safeRead(paths.descriptionPath);
@@ -570,6 +631,9 @@ function main() {
     writeText(paths.qualityReportPath, buildQualityReport(topic, checks));
     writeText(paths.requiredFixesPath, buildRequiredFixes(checks));
     writeText(paths.optionalImprovementsPath, buildOptionalImprovements(checks));
+    writeText(paths.factCheckReportPath, buildFactCheckReport(topic, approvedFacts, blockedClaims, sceneCards));
+    writeText(paths.legalRiskReportPath, buildLegalRiskReport(topic, sceneCards));
+    writeText(paths.visualSafetyReportPath, buildVisualSafetyReport(sceneCards));
     writeText(paths.finalApprovalPath, buildFinalApproval(checks));
 
     if (!checks.every((check) => check.passed)) {

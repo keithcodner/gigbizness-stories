@@ -22,6 +22,7 @@ function getPaths(workspaceDir) {
     topicPath: path.join(configDir, "topic.json"),
     scriptPath: path.join(scriptDir, "script_v2_human_review.md"),
     shotlistPath: path.join(scriptDir, "shotlist.csv"),
+    sceneCardsPath: path.join(workspaceDir, "05_scene_cards", "scene_cards.json"),
     timingPath: path.join(voiceDir, "voice_timing.json"),
     visualManifestPath: path.join(assetsDir, "visual_manifest.csv"),
     musicManifestPath: path.join(assetsDir, "music", "music_manifest.csv"),
@@ -160,9 +161,11 @@ function pickMusicTrack(musicRows) {
   return musicRows.find((row) => (row.status || "").toLowerCase() === "approved") || null;
 }
 
-function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, assetsDir, selectedMusic) {
+function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, assetsDir, selectedMusic, sceneCards) {
   const timingScenes = timingData.scenes || [];
+  const cardMap = new Map((sceneCards || []).map((card) => [card.scene_id, card]));
   const sceneObjects = scenes.map((scene) => {
+    const card = cardMap.get(scene.id);
     const timing = timingScenes.find((item) => item.scene.startsWith(scene.id));
     const start = timing ? timing.start_seconds : 0;
     const end = timing ? timing.end_seconds : start + 10;
@@ -172,7 +175,7 @@ function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, as
       start,
       end,
       duration_seconds: end - start,
-      narration_excerpt: scene.narration.slice(0, 2).join(" "),
+      narration_excerpt: card?.narration || scene.narration.slice(0, 2).join(" "),
       voiceover_file: "03_voice/voiceover_clean.wav",
       visuals: chooseVisualsForScene(scene.id, manifestRows, assetsDir, end - start),
       music: selectedMusic ? {
@@ -182,9 +185,9 @@ function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, as
         intended_use: selectedMusic.intended_use || "background_bed"
       } : null,
       sfx: [],
-      motion_style: inferMotionStyle(scene.id),
+      motion_style: card?.camera?.movement || inferMotionStyle(scene.id),
       retention_purpose: inferRetentionPurpose(scene.id),
-      notes: inferSceneNotes(scene.id)
+      notes: card ? `${inferSceneNotes(scene.id)} Beat ${card.beat_id}. Caption: ${card.caption_text}` : inferSceneNotes(scene.id)
     };
   });
 
@@ -306,6 +309,9 @@ function main() {
     const scenes = extractSceneTexts(scriptMarkdown);
     const timingData = readJson(paths.timingPath);
     const manifestRows = parseCsv(fs.readFileSync(paths.visualManifestPath, "utf8")).rows;
+    const sceneCards = fs.existsSync(paths.sceneCardsPath)
+      ? readJson(paths.sceneCardsPath).scene_cards || []
+      : [];
     const musicRows = fs.existsSync(paths.musicManifestPath)
       ? parseCsv(fs.readFileSync(paths.musicManifestPath, "utf8")).rows
       : [];
@@ -325,7 +331,8 @@ function main() {
       manifestRows,
       profileName,
       paths.assetsDir,
-      selectedMusic
+      selectedMusic,
+      sceneCards
     );
     const renderPlan = buildRenderPlan(
       topic,
