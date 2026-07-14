@@ -1,0 +1,12 @@
+{
+  "vocabulary_version": "1.0.0",
+  "poses": [
+    { "id": "POSE_POINT", "label": "point" },
+    { "id": "POSE_HANDS_UP", "label": "hands up" },
+    { "id": "POSE_PHONE_CHECK", "label": "phone check" },
+    { "id": "POSE_MOUSTACHE_TWIRL", "label": "moustache twirl" },
+    { "id": "POSE_FOLDERS_OPEN", "label": "folder open" },
+    { "id": "POSE_ARMS_CROSSED", "label": "arms crossed" },
+    { "id": "POSE_NEUTRAL_STAND", "label": "neutral stand" }
+  ]
+}

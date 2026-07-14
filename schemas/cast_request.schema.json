@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["style_id", "reference_ids"],
+  "properties": {
+    "workspace_id": { "type": "string" },
+    "style_id": { "type": "string" },
+    "script_file": { "type": "string" },
+    "scene_cards_file": { "type": "string" },
+    "reference_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    }
+  }
+}

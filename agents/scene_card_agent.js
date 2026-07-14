@@ -8,6 +8,8 @@ function getPaths(workspaceDir) {
   return {
     topicPath: path.join(workspaceDir, "00_config", "topic.json"),
     castPath: path.join(workspaceDir, "03_cast", "cast.json"),
+    sceneCastMapPath: path.join(workspaceDir, "03_cast", "scene_cast_map.json"),
+    propAssignmentsPath: path.join(workspaceDir, "03_cast", "prop_assignments.json"),
     formatRecipePath: path.join(workspaceDir, "00_brief", "format_recipe.json"),
     beatSheetPath: path.join(workspaceDir, "02_angle", "beat_sheet.md"),
     approvedFactsPath: path.join(workspaceDir, "01_research", "approved_facts.csv"),
@@ -61,34 +63,66 @@ function extractSceneNarration(scriptMarkdown) {
 }
 
 function roleToCharacterId(role, castPackage) {
-  const match = castPackage.cast.find((character) => character.role === role);
-  return match ? match.character_id : castPackage.cast[0]?.character_id || "narrator_001";
+  const legacyCast = Array.isArray(castPackage.cast) ? castPackage.cast : [];
+  const match = legacyCast.find((character) => character.role === role);
+  return match ? match.character_id : legacyCast[0]?.character_id || "BT_CHAR_0001";
 }
 
-function buildCard(topic, beat, index, castPackage, narrationMap, approvedFacts, formatRecipe) {
+function getCharacterById(characterId, castPackage) {
+  const legacyCast = Array.isArray(castPackage.cast) ? castPackage.cast : [];
+  return legacyCast.find((character) => character.character_id === characterId) || null;
+}
+
+function loadSceneAssignment(sceneId, beatId, sceneCastMap) {
+  if (!sceneCastMap || !Array.isArray(sceneCastMap.scenes)) {
+    return null;
+  }
+  return sceneCastMap.scenes.find((scene) => scene.scene_id === sceneId || scene.beat_id === beatId) || null;
+}
+
+function environmentIdToDescription(environmentId) {
+  const map = {
+    ENV_GENERIC_STOREFRONT: "generic storefront or booking interface with no real logos",
+    ENV_SUBURBAN_DRIVEWAY: "suburban driveway with moving boxes and a plain white box truck",
+    ENV_OFFICE: "generic office or broker desk with no real company branding",
+    ENV_POLICE_SCENE: "fictional regulator desk with source folders and consumer-protection documents",
+    ENV_NEWS_GRAPHIC_STAGE: "miniature plastic documentary set"
+  };
+  return map[environmentId] || "miniature plastic documentary set";
+}
+
+function buildCard(topic, beat, index, castPackage, sceneCastMap, narrationMap, approvedFacts, formatRecipe) {
   const sceneId = `S${String(index + 1).padStart(2, "0")}`;
   const movingTopic = /moving|mover|relocation/i.test(`${topic.id} ${topic.working_title}`);
   const lower = beat.text.toLowerCase();
-  const roles = ["narrator"];
-  if (movingTopic && /quote|truck|invoice|cash|deposit|customer|move/.test(lower)) {
-    roles.push("victim_customer");
-  }
-  if (movingTopic && /quote|broker|review|phone/.test(lower)) {
-    roles.push("shady_broker");
-  }
-  if (movingTopic && /truck|invoice|cash|hostage|price/.test(lower)) {
-    roles.push("rogue_operator");
-  }
-  if (/regulator|official|source|warning|red flag/.test(lower)) {
-    roles.push("regulator");
+  const assignment = loadSceneAssignment(sceneId, beat.beat_id, sceneCastMap);
+  const characters = assignment
+    ? assignment.cast
+      .map((item) => castPackage.cast_members?.find((member) => member.cast_member_id === item.cast_member_id)?.character_id)
+      .filter(Boolean)
+    : [];
+
+  if (characters.length === 0) {
+    const roles = ["narrator"];
+    if (/service|quote|pressure|customer|invoice|truck|move/.test(lower)) {
+      roles.push("worried_customer");
+    }
+    if (/cheap|quote|price|deposit|cash|fake|scam|invoice/.test(lower)) {
+      roles.push("schemer_villain");
+    }
+    if (/public|official|source|warning|red flag|evidence/.test(lower)) {
+      roles.push("investigator");
+    }
+    characters.push(...new Set(roles.map((role) => roleToCharacterId(role, castPackage))));
   }
 
-  const characters = [...new Set(roles.map((role) => roleToCharacterId(role, castPackage)))];
   const claimRefs = approvedFacts.slice(0, 3).map((_, claimIndex) => `CLAIM_${String(claimIndex + 1).padStart(3, "0")}`);
   const claimForBeat = claimRefs[index % Math.max(claimRefs.length, 1)] || "CLAIM_PENDING";
-  const environment = movingTopic
-    ? inferMovingEnvironment(lower)
-    : "miniature plastic documentary set";
+  const environment = assignment
+    ? environmentIdToDescription(assignment.environment_id)
+    : movingTopic
+      ? inferMovingEnvironment(lower)
+      : "miniature plastic documentary set";
 
   return {
     scene_id: sceneId,
@@ -189,6 +223,7 @@ function main() {
     const paths = getPaths(args.workspace);
     const topic = readJson(paths.topicPath);
     const castPackage = readJson(paths.castPath);
+    const sceneCastMap = fs.existsSync(paths.sceneCastMapPath) ? readJson(paths.sceneCastMapPath) : null;
     const formatRecipe = readJson(paths.formatRecipePath);
     const beatSheet = fs.readFileSync(paths.beatSheetPath, "utf8");
     const approvedFacts = fs.existsSync(paths.approvedFactsPath)
@@ -201,7 +236,7 @@ function main() {
     const beats = parseBeatSheet(beatSheet);
     const narrationMap = extractSceneNarration(scriptMarkdown);
     const sceneCards = beats.map((beat, index) =>
-      buildCard(topic, beat, index, castPackage, narrationMap, approvedFacts, formatRecipe)
+      buildCard(topic, beat, index, castPackage, sceneCastMap, narrationMap, approvedFacts, formatRecipe)
     );
 
     const payload = {

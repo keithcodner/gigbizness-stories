@@ -1,0 +1,6 @@
+{
+  "environment_id": "ENV_POLICE_SCENE",
+  "label": "police scene",
+  "description": "generic investigator or official review scene with no real agency logos",
+  "restricted_traits": []
+}

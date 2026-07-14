@@ -1,0 +1,6 @@
+{
+  "prop_id": "PROP_MOVING_BOX",
+  "label": "moving box",
+  "type": "cargo",
+  "restricted_traits": []
+}

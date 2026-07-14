@@ -1,0 +1,10 @@
+{
+  "archetype_id": "worried_customer",
+  "display_name": "Worried Customer",
+  "story_functions": ["victim", "pressure_target", "viewer_proxy"],
+  "required_readability_traits": ["small_relative_scale", "wide_eyes"],
+  "required_expression_labels": ["worried", "shocked"],
+  "required_action_intents": ["phone in hand", "hands up"],
+  "default_props": ["PROP_PHONE", "PROP_MOVING_BOX"],
+  "default_environment_ids": ["ENV_GENERIC_STOREFRONT", "ENV_SUBURBAN_DRIVEWAY"]
+}

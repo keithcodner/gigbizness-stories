@@ -1,34 +1,48 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Bricktoon Cast",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["style_id", "cast"],
+  "additionalProperties": false,
+  "required": ["workspace_id", "style_id", "status", "cast_members", "cast"],
   "properties": {
+    "workspace_id": { "type": "string" },
     "style_id": { "type": "string" },
     "format_id": { "type": "string" },
+    "status": { "enum": ["draft", "review", "approved", "rejected"] },
+    "cast_members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cast_member_id", "character_id", "role", "name", "beat_ids", "source"],
+        "properties": {
+          "cast_member_id": { "type": "string" },
+          "character_id": { "type": "string" },
+          "role": { "type": "string" },
+          "name": { "type": "string" },
+          "source": { "type": "string" },
+          "beat_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string" }
+          },
+          "legal_notes": { "type": "string" },
+          "blueprint": { "type": "object" }
+        }
+      }
+    },
     "cast": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "character_id",
-          "name",
-          "role",
-          "visual_description",
-          "personality",
-          "use_cases",
-          "legal_notes"
-        ],
+        "additionalProperties": false,
+        "required": ["character_id", "name", "role", "visual_description", "personality", "use_cases", "legal_notes"],
         "properties": {
           "character_id": { "type": "string" },
           "name": { "type": "string" },
           "role": { "type": "string" },
           "visual_description": { "type": "string" },
           "personality": { "type": "string" },
-          "use_cases": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
+          "use_cases": { "type": "array", "items": { "type": "string" } },
           "legal_notes": { "type": "string" }
         }
       }

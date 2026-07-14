@@ -1,0 +1,6 @@
+{
+  "prop_id": "PROP_PHONE",
+  "label": "phone",
+  "type": "device",
+  "restricted_traits": []
+}

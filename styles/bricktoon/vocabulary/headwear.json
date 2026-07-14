@@ -1,0 +1,7 @@
+{
+  "vocabulary_version": "1.0.0",
+  "traits": [
+    { "id": "HEAD_NONE", "label": "none" },
+    { "id": "HEAD_TOP_HAT_BLACK", "label": "black top hat" }
+  ]
+}

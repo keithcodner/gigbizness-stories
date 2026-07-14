@@ -1,0 +1,9 @@
+{
+  "vocabulary_version": "1.0.0",
+  "wardrobe": [
+    { "id": "WARDROBE_BLAZER_NAVY", "label": "navy blazer" },
+    { "id": "WARDROBE_HOODIE_BLUE", "label": "blue hoodie" },
+    { "id": "WARDROBE_FORMAL_DARK_RED", "label": "dark formal coat with red accent" },
+    { "id": "WARDROBE_INVESTIGATOR_JACKET", "label": "investigator jacket" }
+  ]
+}

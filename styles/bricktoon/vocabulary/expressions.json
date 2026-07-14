@@ -1,0 +1,12 @@
+{
+  "vocabulary_version": "1.0.0",
+  "expressions": [
+    { "id": "EXP_NEUTRAL", "label": "neutral" },
+    { "id": "EXP_EXPLAINING", "label": "explaining" },
+    { "id": "EXP_WORRIED", "label": "worried" },
+    { "id": "EXP_SHOCKED", "label": "shocked" },
+    { "id": "EXP_SCHEMING", "label": "scheming" },
+    { "id": "EXP_ANGRY", "label": "angry" },
+    { "id": "EXP_SERIOUS", "label": "serious" }
+  ]
+}

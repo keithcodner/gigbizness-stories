@@ -1,0 +1,10 @@
+{
+  "style_id": "bricktoon",
+  "props": [
+    "PROP_PHONE",
+    "PROP_CONTRACT",
+    "PROP_EVIDENCE_FOLDER",
+    "PROP_MOVING_BOX",
+    "PROP_WARNING_TAPE"
+  ]
+}

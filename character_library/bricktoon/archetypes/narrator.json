@@ -1,0 +1,10 @@
+{
+  "archetype_id": "narrator",
+  "display_name": "Business Narrator",
+  "story_functions": ["narration", "explanation", "transition"],
+  "required_readability_traits": ["clean_silhouette", "calm_expression"],
+  "required_expression_labels": ["neutral", "explaining"],
+  "required_action_intents": ["point", "turn to camera"],
+  "default_props": ["PROP_EVIDENCE_FOLDER"],
+  "default_environment_ids": ["ENV_NEWS_GRAPHIC_STAGE"]
+}

@@ -1,0 +1,10 @@
+{
+  "archetype_id": "business_owner",
+  "display_name": "Business Owner",
+  "story_functions": ["legitimate_comparison", "context"],
+  "required_readability_traits": ["clean_wardrobe"],
+  "required_expression_labels": ["neutral"],
+  "required_action_intents": ["point"],
+  "default_props": ["PROP_CONTRACT"],
+  "default_environment_ids": ["ENV_OFFICE"]
+}

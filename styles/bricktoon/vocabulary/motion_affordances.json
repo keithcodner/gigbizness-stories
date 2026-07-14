@@ -1,0 +1,11 @@
+{
+  "vocabulary_version": "1.0.0",
+  "motions": [
+    { "id": "MOTION_POINT", "label": "point" },
+    { "id": "MOTION_PHONE_IN_HAND", "label": "phone in hand" },
+    { "id": "MOTION_HANDS_UP", "label": "hands up" },
+    { "id": "MOTION_MOUSTACHE_TWIRL", "label": "moustache twirl" },
+    { "id": "MOTION_FOLDER_REVEAL", "label": "folder reveal" },
+    { "id": "MOTION_TURN_TO_CAMERA", "label": "turn to camera" }
+  ]
+}

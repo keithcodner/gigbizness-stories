@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["workspace_id", "scenes"],
+  "properties": {
+    "workspace_id": { "type": "string" },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scene_id", "beat_id", "environment_id", "cast"],
+        "properties": {
+          "scene_id": { "type": "string" },
+          "beat_id": { "type": "string" },
+          "environment_id": { "type": "string" },
+          "cast": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cast_member_id", "expression_id", "pose_id", "action_intent", "screen_position", "prop_ids"],
+              "properties": {
+                "cast_member_id": { "type": "string" },
+                "expression_id": { "type": "string" },
+                "pose_id": { "type": "string" },
+                "action_intent": { "type": "string" },
+                "screen_position": { "type": "string" },
+                "prop_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

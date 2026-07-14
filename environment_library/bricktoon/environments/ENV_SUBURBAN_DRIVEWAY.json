@@ -1,0 +1,6 @@
+{
+  "environment_id": "ENV_SUBURBAN_DRIVEWAY",
+  "label": "suburban driveway",
+  "description": "plain driveway with boxes and generic service vehicle",
+  "restricted_traits": []
+}

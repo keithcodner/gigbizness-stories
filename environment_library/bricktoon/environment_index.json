@@ -1,0 +1,10 @@
+{
+  "style_id": "bricktoon",
+  "environments": [
+    "ENV_GENERIC_STOREFRONT",
+    "ENV_SUBURBAN_DRIVEWAY",
+    "ENV_OFFICE",
+    "ENV_POLICE_SCENE",
+    "ENV_NEWS_GRAPHIC_STAGE"
+  ]
+}

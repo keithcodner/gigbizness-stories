@@ -1,0 +1,10 @@
+{
+  "vocabulary_version": "1.0.0",
+  "roles": [
+    { "id": "narrator", "label": "Narrator" },
+    { "id": "worried_customer", "label": "Worried Customer" },
+    { "id": "schemer_villain", "label": "Schemer Villain" },
+    { "id": "investigator", "label": "Investigator" },
+    { "id": "business_owner", "label": "Business Owner" }
+  ]
+}

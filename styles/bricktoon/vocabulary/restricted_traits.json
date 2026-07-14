@@ -1,0 +1,24 @@
+{
+  "restricted_traits": [
+    {
+      "id": "RESTRICT_OFFICIAL_TOY_LOGO",
+      "patterns": ["official toy logo", "lego logo", "lego"],
+      "severity": "error"
+    },
+    {
+      "id": "RESTRICT_EXACT_CHARACTER_COPY",
+      "patterns": ["exact minifigure", "exact character copy", "copy exact figure"],
+      "severity": "error"
+    },
+    {
+      "id": "RESTRICT_REAL_STORE_LOGO",
+      "patterns": ["real storefront logo", "real company logo"],
+      "severity": "error"
+    },
+    {
+      "id": "RESTRICT_BRANDED_PACKAGING",
+      "patterns": ["official packaging", "branded packaging"],
+      "severity": "error"
+    }
+  ]
+}

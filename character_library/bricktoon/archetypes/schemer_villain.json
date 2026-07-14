@@ -1,0 +1,10 @@
+{
+  "archetype_id": "schemer_villain",
+  "display_name": "Theatrical Schemer",
+  "story_functions": ["antagonist", "deceptive_operator", "broker"],
+  "required_readability_traits": ["dominant_silhouette", "confident_expression", "distinctive_head_or_face_feature"],
+  "required_expression_labels": ["scheming", "angry"],
+  "required_action_intents": ["moustache twirl", "point"],
+  "default_props": ["PROP_CONTRACT"],
+  "default_environment_ids": ["ENV_GENERIC_STOREFRONT", "ENV_OFFICE"]
+}

@@ -1,0 +1,11 @@
+{
+  "vocabulary_version": "1.0.0",
+  "traits": [
+    { "id": "FH_NONE", "label": "none" },
+    {
+      "id": "FH_CURLED_MOUSTACHE_LARGE",
+      "label": "large curled moustache",
+      "animation_parts": ["left_curl", "right_curl"]
+    }
+  ]
+}

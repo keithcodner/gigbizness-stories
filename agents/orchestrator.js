@@ -54,6 +54,14 @@ const WORKSPACE_LAYOUT = [
     dir: "03_cast",
     files: {
       "cast.json": "{\n  \"style_id\": \"bricktoon\",\n  \"cast\": []\n}\n",
+      "cast_request.json": "{\n  \"style_id\": \"bricktoon\",\n  \"reference_ids\": []\n}\n",
+      "role_requirements.json": "{\n  \"required_roles\": []\n}\n",
+      "cast_continuity.json": "{\n  \"characters\": []\n}\n",
+      "scene_cast_map.json": "{\n  \"scenes\": []\n}\n",
+      "prop_assignments.json": "{\n  \"props\": []\n}\n",
+      "reference_usage.json": "{\n  \"references\": []\n}\n",
+      "cast_validation.json": "{\n  \"passed\": false,\n  \"errors\": [],\n  \"warnings\": []\n}\n",
+      "cast_report.md": "# Cast Report\n\n",
       "character_continuity.md": "# Character Continuity\n\n",
       "scene_roles.md": "# Scene Roles\n\n"
     }
@@ -335,6 +343,14 @@ function fileHasContent(filePath) {
   return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
 }
 
+function isFileNewerOrEqual(targetPath, dependencyPath) {
+  if (!fs.existsSync(targetPath) || !fs.existsSync(dependencyPath)) {
+    return false;
+  }
+
+  return fs.statSync(targetPath).mtimeMs >= fs.statSync(dependencyPath).mtimeMs;
+}
+
 function getTopicPaths(topicId) {
   const workspaceDir = getWorkspaceDir(topicId);
   return {
@@ -344,6 +360,14 @@ function getTopicPaths(topicId) {
     formatRecipePath: path.join(workspaceDir, "00_brief", "format_recipe.json"),
     beatSheetPath: path.join(workspaceDir, "02_angle", "beat_sheet.md"),
     castPath: path.join(workspaceDir, "03_cast", "cast.json"),
+    castRequestPath: path.join(workspaceDir, "03_cast", "cast_request.json"),
+    roleRequirementsPath: path.join(workspaceDir, "03_cast", "role_requirements.json"),
+    castContinuityPath: path.join(workspaceDir, "03_cast", "cast_continuity.json"),
+    sceneCastMapPath: path.join(workspaceDir, "03_cast", "scene_cast_map.json"),
+    propAssignmentsPath: path.join(workspaceDir, "03_cast", "prop_assignments.json"),
+    referenceUsagePath: path.join(workspaceDir, "03_cast", "reference_usage.json"),
+    castValidationPath: path.join(workspaceDir, "03_cast", "cast_validation.json"),
+    castReportPath: path.join(workspaceDir, "03_cast", "cast_report.md"),
     manualNotesPath: path.join(workspaceDir, "01_research", "manual_notes.md"),
     researchDossierPath: path.join(workspaceDir, "01_research", "research_dossier.md"),
     sourcesPath: path.join(workspaceDir, "01_research", "sources.csv"),

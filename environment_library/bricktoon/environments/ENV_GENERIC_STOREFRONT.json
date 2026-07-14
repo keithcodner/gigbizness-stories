@@ -1,0 +1,6 @@
+{
+  "environment_id": "ENV_GENERIC_STOREFRONT",
+  "label": "generic storefront",
+  "description": "generic storefront or booking interface with no real logos",
+  "restricted_traits": []
+}

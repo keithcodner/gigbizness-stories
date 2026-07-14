@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["workspace_id", "characters"],
+  "properties": {
+    "workspace_id": { "type": "string" },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cast_member_id", "hard_locks", "allowed_scene_changes", "forbidden_changes"],
+        "properties": {
+          "cast_member_id": { "type": "string" },
+          "hard_locks": { "type": "object" },
+          "allowed_scene_changes": { "type": "array", "items": { "type": "string" } },
+          "forbidden_changes": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
