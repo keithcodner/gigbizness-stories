@@ -6,6 +6,7 @@ const { parseArgs, readJson, writeText } = require("../agents/common");
 const { compileScenePrompt } = require("../src/bricktoon/compileScenePrompt");
 const { validateGeneratedAsset } = require("../src/bricktoon/validateGeneratedAsset");
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
+const { buildCharacterMap } = require("../src/bricktoon/normalizeCast");
 const provider = require("../src/bricktoon/providers/mockImageProvider");
 
 function ensureDir(dirPath) {
@@ -47,7 +48,7 @@ function main() {
     const paths = getPaths(args.workspace);
     const castPackage = readJson(paths.castPath);
     const sceneCards = readJson(paths.sceneCardsPath).scene_cards || [];
-    const castMap = new Map((castPackage.cast || []).map((character) => [character.character_id, character]));
+    const castMap = buildCharacterMap(castPackage);
     let manifest = loadManifest(paths.assetManifestPath, workspaceId);
 
     ensureDir(paths.generatedImagesDir);

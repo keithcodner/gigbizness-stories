@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="520" viewBox="0 0 260 520">
+  <g id="villain_body">
+    <rect x="74" y="120" width="112" height="180" rx="18" fill="#1e232b"/>
+    <rect x="96" y="120" width="68" height="140" fill="#a9282a"/>
+    <rect x="88" y="300" width="34" height="150" fill="#1e232b"/>
+    <rect x="138" y="300" width="34" height="150" fill="#1e232b"/>
+  </g>
+</svg>

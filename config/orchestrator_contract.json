@@ -23,6 +23,7 @@
     "bricktoon-scenes",
     "bricktoon-manifest",
     "animation",
+    "bricktoon-clips",
     "render-contract",
     "render",
     "shorts",

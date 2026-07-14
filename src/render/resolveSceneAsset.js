@@ -22,6 +22,10 @@ function resolveSceneAsset(sceneCard, assetManifest, options = {}) {
     .sort((a, b) => rankAssetType(a.asset_type) - rankAssetType(b.asset_type));
 
   const exact = sceneAssets.find((asset) => asset.asset_type === requiredType);
+  const bestAvailable = sceneAssets[0];
+  if (bestAvailable && rankAssetType(bestAvailable.asset_type) < rankAssetType(requiredType)) {
+    return { asset: bestAvailable, fallback_used: false };
+  }
   if (exact) {
     return { asset: exact, fallback_used: false };
   }

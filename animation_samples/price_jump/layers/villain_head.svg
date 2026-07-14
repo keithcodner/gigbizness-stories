@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <g id="villain_head">
+    <circle cx="130" cy="124" r="78" fill="#f0c24d"/>
+    <rect x="76" y="6" width="108" height="54" fill="#0f1218"/>
+    <rect x="56" y="46" width="148" height="18" fill="#0f1218"/>
+  </g>
+</svg>

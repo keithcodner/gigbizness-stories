@@ -1,0 +1,95 @@
+{
+  "scene_id": "ANIMATION_SAMPLE_001",
+  "duration_seconds": 5,
+  "fps": 30,
+  "resolution": {
+    "width": 1080,
+    "height": 1920
+  },
+  "tracks": [
+    {
+      "target": "camera_group",
+      "property": "scale",
+      "keyframes": [
+        { "time": 0, "value": 1.0 },
+        { "time": 5, "value": 1.1 }
+      ]
+    },
+    {
+      "target": "customer_eyes_closed",
+      "property": "opacity",
+      "keyframes": [
+        { "time": 0.38, "value": 0 },
+        { "time": 0.42, "value": 1 },
+        { "time": 0.50, "value": 0 }
+      ]
+    },
+    {
+      "target": "villain_right_arm",
+      "property": "rotation",
+      "keyframes": [
+        { "time": 1.0, "value": 0 },
+        { "time": 1.5, "value": -35 },
+        { "time": 1.8, "value": -20 }
+      ]
+    },
+    {
+      "target": "villain_moustache",
+      "property": "rotation",
+      "keyframes": [
+        { "time": 1.1, "value": -4 },
+        { "time": 1.35, "value": 8 },
+        { "time": 1.6, "value": -4 }
+      ]
+    },
+    {
+      "target": "invoice",
+      "property": "display_value",
+      "keyframes": [
+        { "time": 0, "value": "$1,200" },
+        { "time": 2.0, "value": "$1,200" },
+        { "time": 2.15, "value": "$3,800" }
+      ]
+    },
+    {
+      "target": "customer_head",
+      "property": "offset_x",
+      "keyframes": [
+        { "time": 2.5, "value": 0 },
+        { "time": 3.2, "value": -36 }
+      ]
+    },
+    {
+      "target": "customer_body",
+      "property": "offset_x",
+      "keyframes": [
+        { "time": 2.5, "value": 0 },
+        { "time": 3.2, "value": -42 }
+      ]
+    },
+    {
+      "target": "customer_body",
+      "property": "offset_y",
+      "keyframes": [
+        { "time": 2.5, "value": 0 },
+        { "time": 3.2, "value": 28 }
+      ]
+    },
+    {
+      "target": "customer_mouth_worried",
+      "property": "opacity",
+      "keyframes": [
+        { "time": 2.45, "value": 0 },
+        { "time": 2.65, "value": 1 }
+      ]
+    },
+    {
+      "target": "warning_icon",
+      "property": "pulse",
+      "keyframes": [
+        { "time": 3.4, "value": 0 },
+        { "time": 4.4, "value": 1 }
+      ]
+    }
+  ]
+}

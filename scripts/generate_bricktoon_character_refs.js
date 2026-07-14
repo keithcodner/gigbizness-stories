@@ -6,6 +6,7 @@ const { parseArgs, readJson, writeText } = require("../agents/common");
 const { compileCharacterPrompt } = require("../src/bricktoon/compileCharacterPrompt");
 const { validateGeneratedAsset } = require("../src/bricktoon/validateGeneratedAsset");
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
+const { getCastMembers, getCharacterBlueprint, getCharacterId } = require("../src/bricktoon/normalizeCast");
 const provider = require("../src/bricktoon/providers/mockImageProvider");
 
 function ensureDir(dirPath) {
@@ -61,7 +62,17 @@ function main() {
     ensureDir(paths.promptsDir);
     ensureDir(paths.tempDir);
 
-    for (const character of castPackage.cast || []) {
+    for (const member of getCastMembers(castPackage)) {
+      const character = {
+        ...getCharacterBlueprint(member),
+        role: member.role || getCharacterBlueprint(member).archetype_id,
+        name: member.name || getCharacterBlueprint(member).name,
+        character_id: getCharacterId(member)
+      };
+      if (!character.character_id) {
+        continue;
+      }
+
       const prompt = compileCharacterPrompt(character, {
         styleBiblePath: paths.styleBiblePath,
         characterRulesPath: paths.characterRulesPath,

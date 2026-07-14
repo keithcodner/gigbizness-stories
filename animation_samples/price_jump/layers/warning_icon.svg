@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <g id="warning_icon">
+    <path d="M 90 16 L 164 150 L 16 150 Z" fill="#ffcf33" stroke="#2a3342" stroke-width="10"/>
+    <rect x="82" y="60" width="16" height="46" rx="8" fill="#2a3342"/>
+    <circle cx="90" cy="126" r="10" fill="#2a3342"/>
+  </g>
+</svg>

@@ -384,6 +384,7 @@ function getTopicPaths(topicId) {
     assetManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
     characterRefsDir: path.join(workspaceDir, "07_visuals", "character_refs"),
     generatedImagesDir: path.join(workspaceDir, "07_visuals", "generated_images"),
+    animatedClipsDir: path.join(workspaceDir, "08_animation", "animated_clips"),
     animationPlanPath: path.join(workspaceDir, "08_animation", "animation_plan.json"),
     editPlanPath: path.join(workspaceDir, "09_edit_plan", "edit_plan.md"),
     renderContractPath: path.join(workspaceDir, "09_edit_plan", "render_contract.json"),
@@ -550,6 +551,12 @@ function isBricktoonScenesReady(topicId) {
 function isBricktoonManifestReady(topicId) {
   const manifestText = readText(getTopicPaths(topicId).assetManifestPath);
   return manifestText.includes("\"asset_id\"") && manifestText.includes("\"assets\"");
+}
+
+function isBricktoonClipsReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  const manifestText = readText(paths.assetManifestPath);
+  return directoryHasFiles(paths.animatedClipsDir) && manifestText.includes("\"bricktoon_animated_clip\"");
 }
 
 function isDraftReady(topicId) {
@@ -774,6 +781,14 @@ function runGuidedPipeline(topicId, mode = "guided") {
     runBricktoonManifestStage(topicId);
   }
 
+  if (!isAnimationReady(topicId)) {
+    runAnimationStage(topicId);
+  }
+
+  if (!isBricktoonClipsReady(topicId)) {
+    runBricktoonClipsStage(topicId);
+  }
+
   block = getVisualSourcingBlock(topicId);
   if (block) {
     writeGuidedStatus(topicId, mode, "blocked", block.title, block.lines);
@@ -782,9 +797,6 @@ function runGuidedPipeline(topicId, mode = "guided") {
   }
 
   if (!isDraftReady(topicId)) {
-    if (!isAnimationReady(topicId)) {
-      runAnimationStage(topicId);
-    }
     if (!isRenderContractReady(topicId)) {
       runRenderContractStage(topicId, "draft", "development");
     }
@@ -1088,6 +1100,19 @@ function runBricktoonManifestStage(topicId) {
   return workspaceDir;
 }
 
+function runBricktoonClipsStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon animated-clip stage for topic '${topicId}'`);
+
+  if (!isAnimationReady(topicId)) {
+    runAnimationStage(topicId);
+  }
+  runNodeScript("scripts/generate_bricktoon_animated_clips.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed bricktoon animated-clip stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runAnimationStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting animation/edit-plan stage for topic '${topicId}'`);
@@ -1130,6 +1155,12 @@ function runRenderStage(topicId, profile = "draft") {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting render stage for topic '${topicId}' with profile '${profile}'`);
 
+  if (!isAnimationReady(topicId)) {
+    runAnimationStage(topicId);
+  }
+  if (!isBricktoonClipsReady(topicId)) {
+    runBricktoonClipsStage(topicId);
+  }
   runNodeAgent("render_plan_agent.js", ["--topic", topicId, "--workspace", workspaceDir, "--profile", profile]);
   runRenderContractStage(topicId, profile, profile === "draft" ? "development" : "production");
   runNodeAgent("render_agent.js", ["--topic", topicId, "--workspace", workspaceDir, "--profile", profile]);
@@ -1202,6 +1233,7 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-characters");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-scenes");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-manifest");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-clips");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage animation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render-contract --profile draft");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render --profile draft");
@@ -1300,7 +1332,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -1327,6 +1359,8 @@ function main() {
         workspaceDir = runBricktoonScenesStage(args.topic);
       } else if (args.stage === "bricktoon-manifest") {
         workspaceDir = runBricktoonManifestStage(args.topic);
+      } else if (args.stage === "bricktoon-clips") {
+        workspaceDir = runBricktoonClipsStage(args.topic);
       } else if (args.stage === "animation") {
         workspaceDir = runAnimationStage(args.topic);
       } else if (args.stage === "render-contract") {

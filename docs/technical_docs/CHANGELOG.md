@@ -25,6 +25,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added the first structured Bricktoon cast-architecture layer with reusable role vocabulary, archetype libraries, prop/environment libraries, cast-package schemas, deterministic cast compilation, and cast regression tests.
 - Added the first real Bricktoon reference-intake records for user-supplied thumbnails, including approved trait abstractions and blocked-copy rules for future compliant asset generation.
 - Added an orchestrator-integration contract plus an audit command so future architecture changes have an explicit checklist and do not get stranded outside guided/stage orchestration.
+- Added an isolated procedural Bricktoon animation sample path so character-layer motion can be proven independently of placeholder generated scene art.
 
 ### Changed
 
@@ -47,6 +48,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Updated orchestrator readiness rules so guided mode now treats cast as a post-script package stage, requires a passing `cast_validation.json`, and automatically invalidates stale scene cards when cast data changes.
 - Updated the reference system so branded thumbnail examples can be stored as analysis-only records with reusable trait extraction instead of being treated like directly copyable assets.
 - Updated project skill guidance so orchestrator wiring is part of the definition of done for reusable pipeline architecture changes.
+- Updated animation architecture direction to support a procedural proof layer first, so later AI-generated character parts can slot into a tested animation engine instead of hiding behind text-card renders.
 
 ### Fixed
 
@@ -79,6 +81,11 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Fixed an orchestrator mismatch where the new cast architecture could still run in the old order and be marked ready by a thin `cast.json` check even when script-driven cast outputs were stale or incomplete.
 - Fixed a future asset-safety gap by documenting brand/logo/storefront elements from user-supplied references as explicit `do_not_copy` and `blocked_traits` data before those examples reach prompt generation.
 - Fixed a process gap where architecture changes could be implemented in code or docs but forgotten in orchestrator integration because there was no persistent contract or audit reminder.
+- Fixed a core validation gap where “animation” could appear successful even when the output was just text or placeholder art, by creating a sample that must animate independently controlled character layers and produce inspectable evidence frames.
+
+- Fixed a cast-schema drift bug where bricktoon visual-generation scripts could still read only the legacy flat `cast` array and silently miss the newer `cast_members` package format.
+- Added a first-class `bricktoon-clips` orchestrator stage that generates approved procedural `bricktoon_animated_clip` assets from the current cast package, scene cards, and animation plan so render planning can prefer moving character scenes over static placeholders.
+- Fixed a workspace-bloat gap by cleaning up per-scene temporary frame folders after procedural clip encoding completes.
 
 ### Process
 

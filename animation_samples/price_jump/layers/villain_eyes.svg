@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <g id="villain_eyes">
+    <line x1="92" y1="112" x2="118" y2="102" stroke="#111111" stroke-width="7" stroke-linecap="round"/>
+    <line x1="142" y1="102" x2="168" y2="112" stroke="#111111" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="108" cy="122" r="7" fill="#111111"/>
+    <circle cx="152" cy="122" r="7" fill="#111111"/>
+  </g>
+</svg>
