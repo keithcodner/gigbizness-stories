@@ -86,6 +86,8 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Fixed a cast-schema drift bug where bricktoon visual-generation scripts could still read only the legacy flat `cast` array and silently miss the newer `cast_members` package format.
 - Added a first-class `bricktoon-clips` orchestrator stage that generates approved procedural `bricktoon_animated_clip` assets from the current cast package, scene cards, and animation plan so render planning can prefer moving character scenes over static placeholders.
 - Fixed a workspace-bloat gap by cleaning up per-scene temporary frame folders after procedural clip encoding completes.
+- Consolidated the split bricktoon architecture and implementation docs into a single condensed guide at `docs/technical_docs/BRICKTOON_PIPELINE_GUIDE.md`.
+- Removed the now-redundant top-level bricktoon architecture/implementation markdown files so there is one primary technical reference instead of parallel docs drifting apart.
 
 ### Process
 

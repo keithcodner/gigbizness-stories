@@ -28,14 +28,11 @@ This creates `workspaces/tow_truck_dark_side/` with the expected folder tree and
 
 ## Bricktoon Architecture
 
-The repo now supports a bricktoon production layer on top of the existing research and render pipeline:
+Use the consolidated guide here:
 
-- `format -> research -> angle -> cast -> script -> scene cards -> voice -> visuals -> animation -> render -> qc`
-- Format recipes live in `formats/`
-- Style rules live in `styles/bricktoon/`
-- Reusable role scaffolds live in `character_library/bricktoon/`
+- [docs/technical_docs/BRICKTOON_PIPELINE_GUIDE.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/BRICKTOON_PIPELINE_GUIDE.md)
 
-New workspace stages include `00_brief`, `02_angle`, `03_cast`, `05_scene_cards`, `07_visuals`, `08_animation`, and `09_edit_plan`.
+That document replaces the older split architecture/implementation docs and explains the orchestrator stages, cast system, animation flow, clip generation, render path, and test commands in one place.
 
 Useful commands:
 
