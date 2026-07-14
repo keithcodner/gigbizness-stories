@@ -1,0 +1,29 @@
+{
+  "reference_id": "REF_0002",
+  "approved_character_traits": [
+    "hooded_hacker",
+    "generic_laptop_operator",
+    "worried_customer_phone_reaction",
+    "casual_foreground_viewer_proxy"
+  ],
+  "approved_prop_traits": [
+    "generic_laptop",
+    "warning_badge",
+    "cyber_alert_panel",
+    "data_folder_icon"
+  ],
+  "approved_composition_traits": [
+    "large_alert_banner",
+    "storefront_center_scene",
+    "foreground_reaction_character",
+    "side_explainer_card"
+  ],
+  "blocked_traits": [
+    "7_eleven_branding",
+    "exact_storefront_color_stripes",
+    "real_brand_logo",
+    "exact_signage_layout"
+  ],
+  "approved_by": "user",
+  "status": "approved"
+}

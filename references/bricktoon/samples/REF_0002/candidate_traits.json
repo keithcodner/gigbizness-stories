@@ -1,0 +1,46 @@
+{
+  "reference_id": "REF_0002",
+  "analysis_version": "1.0.0",
+  "characters_observed": [
+    {
+      "temporary_id": "OBS_CHAR_01",
+      "story_role_guess": "hacker",
+      "silhouette": ["hood_up", "leaning_forward", "elevated_position"],
+      "face": {
+        "eyes": "narrow_mischievous",
+        "eyebrows": "sharp_angle",
+        "mouth": "small_grin"
+      },
+      "wardrobe": ["dark_hooded_top"],
+      "props": ["generic_laptop", "security_alert_icon"],
+      "emotion": ["mischievous", "focused", "predatory"],
+      "animation_affordances": ["typing", "screen_glow", "hood_tilt", "glance_over_shoulder"]
+    },
+    {
+      "temporary_id": "OBS_CHAR_02",
+      "story_role_guess": "worried_customer",
+      "silhouette": ["casual_jacket", "one_hand_on_head", "phone_in_hand"],
+      "wardrobe": ["green_or_dark_casual_jacket"],
+      "emotion": ["panic", "confusion", "stress"],
+      "animation_affordances": ["phone_check", "head_hold", "blink", "step_back"]
+    }
+  ],
+  "props_observed": [
+    "generic_laptop",
+    "cyber_alert_panel",
+    "data_folder_icon",
+    "warning_badge"
+  ],
+  "composition_traits": [
+    "large_alert_banner_top",
+    "storefront_centerpiece",
+    "foreground_customer_reaction",
+    "side_explainer_card",
+    "clear_color_blocking"
+  ],
+  "restricted_observations": [
+    "real_brand_logo",
+    "brand_specific_storefront_colors",
+    "exact_signage_layout"
+  ]
+}

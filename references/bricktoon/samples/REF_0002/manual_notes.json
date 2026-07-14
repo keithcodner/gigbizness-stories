@@ -1,0 +1,28 @@
+{
+  "reference_id": "REF_0002",
+  "useful_traits": [
+    "hooded hacker silhouette perched above storefront",
+    "generic convenience-store exterior shape",
+    "worried customer with phone in foreground",
+    "large alert-banner composition",
+    "big blocky headline hierarchy",
+    "data-breach explainer side card",
+    "clean cyber iconography like lock or skull symbols"
+  ],
+  "do_not_copy": [
+    "7-Eleven name or logo",
+    "exact storefront color striping",
+    "exact poster layout",
+    "exact hacker face design",
+    "exact phone or icon design",
+    "exact text copy",
+    "real brand signage"
+  ],
+  "preferred_reuse": [
+    "hooded_hacker archetype",
+    "worried_customer archetype",
+    "generic convenience-store environment",
+    "cyber-alert overlay template",
+    "data-breach infographic composition"
+  ]
+}

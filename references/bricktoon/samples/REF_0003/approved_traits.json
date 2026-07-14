@@ -1,0 +1,28 @@
+{
+  "reference_id": "REF_0003",
+  "approved_character_traits": [
+    "worried_collector_blue_hoodie",
+    "generic_uniformed_investigator",
+    "background_investigator_lineup"
+  ],
+  "approved_prop_traits": [
+    "giant_scissors",
+    "generic_collectible_evidence_boxes",
+    "split_storefront_sign",
+    "quote_panel"
+  ],
+  "approved_composition_traits": [
+    "metaphor_prop_foreground",
+    "worried_character_lower_corner",
+    "investigator_lineup_background",
+    "story_evidence_staging"
+  ],
+  "blocked_traits": [
+    "bricks_and_minifigs_branding",
+    "official_product_packaging",
+    "exact_quote_copy",
+    "real_store_identity"
+  ],
+  "approved_by": "user",
+  "status": "approved"
+}

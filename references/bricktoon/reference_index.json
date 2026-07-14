@@ -1,4 +1,32 @@
 {
   "style_id": "bricktoon",
-  "references": []
+  "references": [
+    {
+      "reference_id": "REF_0001",
+      "title": "Toy collectibles storefront dispute thumbnail",
+      "status": "approved_for_trait_reuse",
+      "reference_type": "style_and_character_sample",
+      "source_record": "references/bricktoon/samples/REF_0001/source_metadata.json",
+      "approved_traits_record": "references/bricktoon/samples/REF_0001/approved_traits.json",
+      "notes": "Use for theatrical schemer, worried collector, generic investigators, oversized evidence props, and comic-news composition. Do not copy store branding, packaging, or exact figure styling."
+    },
+    {
+      "reference_id": "REF_0002",
+      "title": "Convenience-store cyberattack alert thumbnail",
+      "status": "approved_for_trait_reuse",
+      "reference_type": "style_and_environment_sample",
+      "source_record": "references/bricktoon/samples/REF_0002/source_metadata.json",
+      "approved_traits_record": "references/bricktoon/samples/REF_0002/approved_traits.json",
+      "notes": "Use for hooded hacker, worried customer, cybersecurity alert-card composition, and generic chain storefront cues. Do not copy 7-Eleven branding, logo layout, or exact signage."
+    },
+    {
+      "reference_id": "REF_0003",
+      "title": "Storefront sign-cut dispute thumbnail",
+      "status": "approved_for_trait_reuse",
+      "reference_type": "style_and_prop_sample",
+      "source_record": "references/bricktoon/samples/REF_0003/source_metadata.json",
+      "approved_traits_record": "references/bricktoon/samples/REF_0003/approved_traits.json",
+      "notes": "Use for generic franchise break-up visuals, giant scissors prop, worried collector, and investigator lineup. Do not copy Bricks & Minifigs branding, product packaging, or exact storefront identity."
+    }
+  ]
 }

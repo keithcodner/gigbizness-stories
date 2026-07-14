@@ -23,6 +23,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added a static pre-render snapshot plus `npm run test-story:render` so the regression fixture can restore known-good inputs and draft-render immediately.
 - Added first-class bricktoon image-generation scripts for character refs, scene images, asset-manifest assembly, render-contract compilation, and implementation auditing.
 - Added the first structured Bricktoon cast-architecture layer with reusable role vocabulary, archetype libraries, prop/environment libraries, cast-package schemas, deterministic cast compilation, and cast regression tests.
+- Added the first real Bricktoon reference-intake records for user-supplied thumbnails, including approved trait abstractions and blocked-copy rules for future compliant asset generation.
 
 ### Changed
 
@@ -42,6 +43,8 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Tightened the static test-render command so it verifies the produced draft file is non-trivial instead of only trusting the renderer exit code.
 - Updated the orchestrator so bricktoon character generation, scene-image generation, manifest assembly, render-contract compilation, and bricktoon auditing are all callable as native stages and are included in guided/render flow.
 - Updated the character and scene-card pipeline so `03_cast` now produces and consumes a real cast package: `cast_request.json`, `role_requirements.json`, `cast_continuity.json`, `scene_cast_map.json`, `prop_assignments.json`, `reference_usage.json`, `cast_validation.json`, and `cast_report.md`.
+- Updated orchestrator readiness rules so guided mode now treats cast as a post-script package stage, requires a passing `cast_validation.json`, and automatically invalidates stale scene cards when cast data changes.
+- Updated the reference system so branded thumbnail examples can be stored as analysis-only records with reusable trait extraction instead of being treated like directly copyable assets.
 
 ### Fixed
 
@@ -71,6 +74,8 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Fixed the architecture gap where character-driven cartoon storytelling existed only in planning docs but not in the executable pipeline.
 - Fixed a workflow gap where the new bricktoon visual scripts existed but were not yet attached to orchestrator stage dispatch, guided sequencing, or render preparation.
 - Fixed a long-term architecture gap where cast creation only wrote a flat `cast.json`, leaving no deterministic role extraction, continuity rules, prop mapping, scene cast assignments, or testable validation contract for future visual generation.
+- Fixed an orchestrator mismatch where the new cast architecture could still run in the old order and be marked ready by a thin `cast.json` check even when script-driven cast outputs were stale or incomplete.
+- Fixed a future asset-safety gap by documenting brand/logo/storefront elements from user-supplied references as explicit `do_not_copy` and `blocked_traits` data before those examples reach prompt generation.
 
 ### Process
 

@@ -1,0 +1,40 @@
+{
+  "reference_id": "REF_0003",
+  "analysis_version": "1.0.0",
+  "characters_observed": [
+    {
+      "temporary_id": "OBS_CHAR_01",
+      "story_role_guess": "worried_customer",
+      "silhouette": ["seated_pose", "curly_hair", "slumped_shoulders"],
+      "wardrobe": ["blue_hoodie"],
+      "emotion": ["sadness", "worry", "disappointment"],
+      "animation_affordances": ["sit_slump", "head_in_hand", "blink", "look_down"]
+    },
+    {
+      "temporary_id": "OBS_CHAR_02",
+      "story_role_guess": "investigator",
+      "silhouette": ["uniformed_group", "arms_crossed", "upright_posture"],
+      "wardrobe": ["generic_dark_uniform"],
+      "emotion": ["serious", "watchful"],
+      "animation_affordances": ["head_turn", "arms_crossed_hold", "step_forward"]
+    }
+  ],
+  "props_observed": [
+    "giant_scissors",
+    "collectible_evidence_boxes",
+    "split_storefront_sign",
+    "quote_panel"
+  ],
+  "composition_traits": [
+    "large_metaphor_prop_foreground",
+    "worried_character_bottom_left",
+    "investigator_lineup_background",
+    "top_quote_panel",
+    "story_evidence_staging"
+  ],
+  "restricted_observations": [
+    "brand_specific_storefront",
+    "copyrighted_packaging",
+    "exact_headline_copy"
+  ]
+}

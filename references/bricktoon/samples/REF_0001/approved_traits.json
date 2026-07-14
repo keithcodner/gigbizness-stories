@@ -1,0 +1,33 @@
+{
+  "reference_id": "REF_0001",
+  "approved_character_traits": [
+    "theatrical_schemer",
+    "large_curled_moustache",
+    "tall_black_top_hat",
+    "black_and_red_formal_wardrobe",
+    "angular_confident_eyebrows",
+    "wide_smirk",
+    "worried_customer_blue_hoodie",
+    "generic_uniformed_investigator"
+  ],
+  "approved_prop_traits": [
+    "evidence_box",
+    "generic_product_box",
+    "warning_tape",
+    "quote_panel"
+  ],
+  "approved_composition_traits": [
+    "dominant_center_antagonist",
+    "worried_customer_foreground",
+    "supporting_investigators_background",
+    "oversized_story_props"
+  ],
+  "blocked_traits": [
+    "official_logo",
+    "brand_specific_storefront",
+    "branded_packaging",
+    "exact_character_copy"
+  ],
+  "approved_by": "user",
+  "status": "approved"
+}

@@ -485,7 +485,16 @@ function isAngleReady(topicId) {
 
 function isCastReady(topicId) {
   const paths = getTopicPaths(topicId);
-  return readText(paths.castPath).includes("\"character_id\"");
+  const validationText = readText(paths.castValidationPath);
+  return validationText.includes("\"passed\": true") &&
+    readText(paths.castPath).includes("\"cast_members\"") &&
+    readText(paths.roleRequirementsPath).includes("\"required_roles\"") &&
+    readText(paths.castContinuityPath).includes("\"hard_locks\"") &&
+    readText(paths.sceneCastMapPath).includes("\"environment_id\"") &&
+    readText(paths.propAssignmentsPath).includes("\"prop_id\"") &&
+    fileHasContent(paths.castReportPath) &&
+    isFileNewerOrEqual(paths.castValidationPath, paths.scriptPath) &&
+    isFileNewerOrEqual(paths.castValidationPath, paths.beatSheetPath);
 }
 
 function isScriptReady(topicId) {
@@ -496,7 +505,8 @@ function isScriptReady(topicId) {
 
 function isSceneCardsReady(topicId) {
   const paths = getTopicPaths(topicId);
-  return readText(paths.sceneCardsPath).includes("\"scene_id\"");
+  return readText(paths.sceneCardsPath).includes("\"scene_id\"") &&
+    isFileNewerOrEqual(paths.sceneCardsPath, paths.castValidationPath);
 }
 
 function isVoiceReady(topicId) {
@@ -732,12 +742,12 @@ function runGuidedPipeline(topicId, mode = "guided") {
     runAngleStage(topicId);
   }
 
-  if (!isCastReady(topicId)) {
-    runCastStage(topicId);
-  }
-
   if (!isScriptReady(topicId)) {
     runScriptStage(topicId);
+  }
+
+  if (!isCastReady(topicId)) {
+    runCastStage(topicId);
   }
 
   if (!isSceneCardsReady(topicId)) {

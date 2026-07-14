@@ -1,0 +1,50 @@
+{
+  "reference_id": "REF_0001",
+  "analysis_version": "1.0.0",
+  "characters_observed": [
+    {
+      "temporary_id": "OBS_CHAR_01",
+      "story_role_guess": "schemer_villain",
+      "silhouette": ["tall_headwear", "broad_shoulders", "dominant_center_frame"],
+      "face": {
+        "eyes": "narrow_confident",
+        "eyebrows": "strong_downward_angle",
+        "mouth": "wide_smirk",
+        "facial_hair": "large_curled_moustache"
+      },
+      "wardrobe": ["formal_black_suit", "red_vest_accent", "white_shirt"],
+      "props": ["top_hat", "collectible_box", "gesture_to_moustache"],
+      "emotion": ["confident", "scheming", "theatrical"],
+      "animation_affordances": ["moustache_twill", "hat_tip", "eyebrow_raise", "forward_lean"]
+    },
+    {
+      "temporary_id": "OBS_CHAR_02",
+      "story_role_guess": "worried_customer",
+      "silhouette": ["small_relative_scale", "curly_hair", "raised_hands"],
+      "wardrobe": ["blue_hoodie"],
+      "emotion": ["fear", "confusion", "helplessness"],
+      "animation_affordances": ["hands_up", "step_back", "blink", "head_tilt"]
+    }
+  ],
+  "props_observed": [
+    "evidence_box",
+    "generic_collectible_box",
+    "warning_tape",
+    "quote_panel"
+  ],
+  "composition_traits": [
+    "central_dominant_antagonist",
+    "worried_customer_foreground",
+    "supporting_investigators_at_edges",
+    "large_quote_panel",
+    "oversized_story_props",
+    "high_saturation",
+    "strong_outline"
+  ],
+  "restricted_observations": [
+    "official_toy_logo",
+    "brand_specific_storefront",
+    "copyrighted_packaging",
+    "exact_character_copy"
+  ]
+}

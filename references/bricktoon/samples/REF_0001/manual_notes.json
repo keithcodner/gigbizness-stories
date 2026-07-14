@@ -1,0 +1,31 @@
+{
+  "reference_id": "REF_0001",
+  "useful_traits": [
+    "large theatrical antagonist silhouette",
+    "large curled moustache used as a readable villain cue",
+    "black top hat",
+    "black suit with red accent vest",
+    "angular eyebrows and smug grin",
+    "worried collector or customer in blue casual clothing",
+    "generic investigators in the background",
+    "oversized evidence props and collectible boxes",
+    "high-contrast comic-news composition"
+  ],
+  "do_not_copy": [
+    "exact toy-figure proportions",
+    "exact face design",
+    "official toy logos",
+    "store branding",
+    "branded packaging",
+    "copyrighted product box art",
+    "exact headline layout",
+    "exact storefront architecture"
+  ],
+  "preferred_reuse": [
+    "schemer_villain archetype",
+    "worried_customer archetype",
+    "investigator archetype",
+    "evidence-scene props",
+    "thumbnail composition language"
+  ]
+}
