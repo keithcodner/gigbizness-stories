@@ -47,6 +47,24 @@ npm run scene-cards -- --topic fake_moving_companies
 npm run animation -- --topic fake_moving_companies
 ```
 
+## Test Story Fixture
+
+Use `topics/test_story_template.json` as the default regression fixture when changing agent, orchestrator, render-plan, or QC behavior.
+
+Quick commands:
+
+```bash
+npm run test-story:init
+npm run test-story:restart
+npm run test-story:guided
+npm run test-story:full
+npm run test-story:render
+```
+
+The goal is not to publish this story. It is a stable test case for the end-to-end pipeline.
+
+`npm run test-story:render` restores a static pre-render snapshot and exports a fresh draft immediately, so visual/render changes can be checked without rerunning research, script, or asset generation first.
+
 ## Music Standard
 
 Use music from the local royalty-free library:

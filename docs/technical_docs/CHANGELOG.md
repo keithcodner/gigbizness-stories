@@ -17,6 +17,10 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added a repo-level `config/music_policy.json` so music sourcing rules are centralized instead of living only in ad hoc notes.
 - Added seeded workspace music-planning files in `04_assets/music/` so every topic documents its soundtrack choice before QC.
 - Added the first bricktoon architecture layer with format recipes, style rules, schemas, and reusable character scaffolds.
+- Added a dedicated `test_story_template` topic fixture plus npm shortcuts so pipeline changes can be regression-tested against a stable story.
+- Added seeded research notes for `test_story_template` so guided-mode regression runs start with realistic input instead of an empty stub.
+- Added seeded source rows and fact-table rows for `test_story_template` so the research stage can clear approval thresholds after a reset.
+- Added a static pre-render snapshot plus `npm run test-story:render` so the regression fixture can restore known-good inputs and draft-render immediately.
 
 ### Changed
 
@@ -29,6 +33,11 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Updated repo guidance so the default soundtrack source is the local sorted royalty-free library, preferring `@all/good`.
 - Updated the orchestrator to support format, angle, cast, scene-card, and animation/edit-plan stages on top of the legacy workflow.
 - Updated the script, visual, render-plan, and QC stages so they can consume bricktoon preproduction files when present.
+- Updated repo docs so the test-story fixture is the standard quick-check path after workflow changes.
+- Updated workspace initialization so topic-specific fixture content can be backfilled into older test workspaces automatically.
+- Updated `research_agent` so the test-story fixture loads template research CSVs instead of regenerating weak placeholder rows.
+- Updated the test-story workflow so render checks can skip dynamic upstream generation and use a fixed snapshot for faster visual verification.
+- Tightened the static test-render command so it verifies the produced draft file is non-trivial instead of only trusting the renderer exit code.
 
 ### Fixed
 

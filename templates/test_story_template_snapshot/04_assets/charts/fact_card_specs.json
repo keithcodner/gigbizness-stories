@@ -1,0 +1,54 @@
+{
+  "topic_id": "test_story_template",
+  "cards": [
+    {
+      "scene_id": "S01",
+      "title": "Hook And Stakes",
+      "subtitle": "0s-29s",
+      "body": "bricktoon documentary, generic service van or truck, contracts and invoices, opening pressure montage, paperwork, fast quote contrast",
+      "output_filename": "s01_fact_card_01.png"
+    },
+    {
+      "scene_id": "S02",
+      "title": "The Legitimate Business Model",
+      "subtitle": "29s-61s",
+      "body": "bricktoon documentary, generic service van or truck, contracts and invoices, normal workflow, inventory, estimate, route card",
+      "output_filename": "s02_fact_card_01.png"
+    },
+    {
+      "scene_id": "S03",
+      "title": "How The Money Works",
+      "subtitle": "61s-84s",
+      "body": "bricktoon documentary, generic service van or truck, contracts and invoices, invoice stack animation, contract terms, fee card",
+      "output_filename": "s03_fact_card_01.png"
+    },
+    {
+      "scene_id": "S04",
+      "title": "Where Pressure Enters",
+      "subtitle": "84s-112s",
+      "body": "bricktoon documentary, generic service van or truck, contracts and invoices, warning signs, invoice closeups, customer deadline pressure",
+      "output_filename": "s04_fact_card_01.png"
+    },
+    {
+      "scene_id": "S05",
+      "title": "Evidence Gap And Public Cases",
+      "subtitle": "112s-140s",
+      "body": "bricktoon documentary, generic service van or truck, contracts and invoices, court document cards, regulator notices, public case wall",
+      "output_filename": "s05_fact_card_01.png"
+    },
+    {
+      "scene_id": "S06",
+      "title": "Warning Signs For Viewers",
+      "subtitle": "140s-164s",
+      "body": "bricktoon documentary, generic service van or truck, contracts and invoices, checklist card, document highlights, red-flag recap",
+      "output_filename": "s06_fact_card_01.png"
+    },
+    {
+      "scene_id": "S07",
+      "title": "Final Takeaway",
+      "subtitle": "164s-185s",
+      "body": "bricktoon documentary, generic service van or truck, contracts and invoices, takeaway card, map, closing service visual",
+      "output_filename": "s07_fact_card_01.png"
+    }
+  ]
+}

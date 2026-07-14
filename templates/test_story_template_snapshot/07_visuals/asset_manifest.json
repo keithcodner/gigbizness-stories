@@ -1,0 +1,84 @@
+{
+  "style": "bricktoon",
+  "generated_from": "scene_cards",
+  "assets": [
+    {
+      "scene_id": "S01",
+      "beat_id": "B01",
+      "characters": [
+        "narrator_001"
+      ],
+      "environment": "miniature plastic documentary set",
+      "prompt_file": "07_visuals/image_prompts/S01.txt",
+      "caption_file": "07_visuals/caption_chunks/S01.txt",
+      "animation_file": "07_visuals/animation_tasks/S01.txt"
+    },
+    {
+      "scene_id": "S02",
+      "beat_id": "B02",
+      "characters": [
+        "narrator_001"
+      ],
+      "environment": "miniature plastic documentary set",
+      "prompt_file": "07_visuals/image_prompts/S02.txt",
+      "caption_file": "07_visuals/caption_chunks/S02.txt",
+      "animation_file": "07_visuals/animation_tasks/S02.txt"
+    },
+    {
+      "scene_id": "S03",
+      "beat_id": "B03",
+      "characters": [
+        "narrator_001"
+      ],
+      "environment": "miniature plastic documentary set",
+      "prompt_file": "07_visuals/image_prompts/S03.txt",
+      "caption_file": "07_visuals/caption_chunks/S03.txt",
+      "animation_file": "07_visuals/animation_tasks/S03.txt"
+    },
+    {
+      "scene_id": "S04",
+      "beat_id": "B04",
+      "characters": [
+        "narrator_001"
+      ],
+      "environment": "miniature plastic documentary set",
+      "prompt_file": "07_visuals/image_prompts/S04.txt",
+      "caption_file": "07_visuals/caption_chunks/S04.txt",
+      "animation_file": "07_visuals/animation_tasks/S04.txt"
+    },
+    {
+      "scene_id": "S05",
+      "beat_id": "B05",
+      "characters": [
+        "narrator_001"
+      ],
+      "environment": "miniature plastic documentary set",
+      "prompt_file": "07_visuals/image_prompts/S05.txt",
+      "caption_file": "07_visuals/caption_chunks/S05.txt",
+      "animation_file": "07_visuals/animation_tasks/S05.txt"
+    },
+    {
+      "scene_id": "S06",
+      "beat_id": "B06",
+      "characters": [
+        "narrator_001",
+        "regulator_001"
+      ],
+      "environment": "miniature plastic documentary set",
+      "prompt_file": "07_visuals/image_prompts/S06.txt",
+      "caption_file": "07_visuals/caption_chunks/S06.txt",
+      "animation_file": "07_visuals/animation_tasks/S06.txt"
+    },
+    {
+      "scene_id": "S07",
+      "beat_id": "B07",
+      "characters": [
+        "narrator_001"
+      ],
+      "environment": "miniature plastic documentary set",
+      "prompt_file": "07_visuals/image_prompts/S07.txt",
+      "caption_file": "07_visuals/caption_chunks/S07.txt",
+      "animation_file": "07_visuals/animation_tasks/S07.txt"
+    }
+  ]
+}

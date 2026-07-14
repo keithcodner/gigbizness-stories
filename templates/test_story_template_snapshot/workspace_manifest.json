@@ -1,0 +1,9 @@
+{
+  "topic_id": "test_story_template",
+  "working_title": "Test Story Template: Fake Service Trap",
+  "video_type": "business_crime_story",
+  "created_from": "topics/test_story_template.json",
+  "created_at": "2026-07-14T01:33:30.482Z",
+  "phase": 1,
+  "status": "initialized"
+}

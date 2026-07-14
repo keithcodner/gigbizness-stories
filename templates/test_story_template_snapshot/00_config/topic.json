@@ -1,0 +1,47 @@
+{
+  "id": "test_story_template",
+  "video_type": "business_crime_story",
+  "format_id": "bleak_explainer_bricktoon",
+  "working_title": "Test Story Template: Fake Service Trap",
+  "central_question": "How does a normal-looking service quote turn into a pressure situation once the customer loses leverage?",
+  "target_length_minutes": 2,
+  "tone": "serious, clear, consumer-protection focused",
+  "audience": "internal pipeline testing for research, script, bricktoon visuals, render planning, and QC",
+  "value_promise": "This fixture should exercise the full workflow with a stable scam-style structure, reusable bricktoon cast roles, and visual proof beats.",
+  "must_include": [
+    "normal service workflow",
+    "low-quote or low-price tension",
+    "leverage shift after commitment",
+    "official-source proof scene",
+    "viewer red flags"
+  ],
+  "must_avoid": [
+    "naming real private actors",
+    "graphic victim storytelling",
+    "operational scam instructions",
+    "overly topic-specific edge cases"
+  ],
+  "visual_style": [
+    "bricktoon documentary",
+    "generic service van or truck",
+    "contracts and invoices",
+    "phone quote screen",
+    "official source card",
+    "red flag checklist"
+  ],
+  "asset_keywords": [
+    "generic service truck",
+    "invoice closeup",
+    "phone quote",
+    "consumer complaint graphic",
+    "checklist warning"
+  ],
+  "music_style": "low tension documentary",
+  "humor_level": "minimal",
+  "publish_priority": "low",
+  "testing_notes": [
+    "Use this topic as the default regression fixture when changing orchestrator or agent logic.",
+    "Keep it generic so it survives prompt, cast, render-plan, and QC changes.",
+    "Prefer stable structure over novelty."
+  ]
+}

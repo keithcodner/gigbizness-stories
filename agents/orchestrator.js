@@ -12,6 +12,7 @@ const OUTPUT_LOGS_DIR = path.join(ROOT, "output", "logs");
 const AGENTS_DIR = __dirname;
 const ROOT_CONFIG_DIR = path.join(ROOT, "config");
 const QUEUE_PATH = path.join(ROOT, "topics", "queue.csv");
+const TEMPLATES_DIR = path.join(ROOT, "templates");
 
 const WORKSPACE_LAYOUT = [
   {
@@ -256,6 +257,26 @@ function ensureWorkspaceStandards(workspaceDir) {
     path.join(musicDir, "music_manifest.csv"),
     "track_path,track_title,source_library,mood,intended_use,status,notes\n"
   );
+}
+
+function ensureTopicFixtureContent(topicId, workspaceDir) {
+  if (topicId !== "test_story_template") {
+    return;
+  }
+
+  const fixtureManualNotesPath = path.join(TEMPLATES_DIR, "test_story_template", "manual_notes.md");
+  const workspaceManualNotesPath = path.join(workspaceDir, "01_research", "manual_notes.md");
+
+  if (!fs.existsSync(fixtureManualNotesPath) || !fs.existsSync(workspaceManualNotesPath)) {
+    return;
+  }
+
+  const currentText = fs.readFileSync(workspaceManualNotesPath, "utf8");
+  const isDefaultStub = currentText.includes("Add rough research notes, pasted excerpts, candidate sources, and open questions here before running the research stage.");
+  if (isDefaultStub) {
+    const fixtureText = fs.readFileSync(fixtureManualNotesPath, "utf8");
+    fs.writeFileSync(workspaceManualNotesPath, fixtureText, "utf8");
+  }
 }
 
 function ensureWorkspaceLayout(workspaceDir, topicPath = null) {
@@ -738,6 +759,7 @@ function initTopicWorkspace(topicId) {
 
   ensureWorkspaceLayout(workspaceDir, topicPath);
   ensureWorkspaceStandards(workspaceDir);
+  ensureTopicFixtureContent(topic.id, workspaceDir);
 
   const manifestPath = path.join(workspaceDir, "workspace_manifest.json");
   const manifest = {
@@ -771,9 +793,10 @@ function ensureWorkspace(topicId) {
     return initTopicWorkspace(topicId);
   }
 
-  const { topicPath } = loadTopic(topicId);
+  const { topic, topicPath } = loadTopic(topicId);
   ensureWorkspaceLayout(workspaceDir, topicPath);
   ensureWorkspaceStandards(workspaceDir);
+  ensureTopicFixtureContent(topic.id, workspaceDir);
   return workspaceDir;
 }
 

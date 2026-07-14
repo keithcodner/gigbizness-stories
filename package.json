@@ -23,6 +23,11 @@
     "guided": "node agents/orchestrator.js --guided",
     "full": "node agents/orchestrator.js --full",
     "restart": "node agents/orchestrator.js --restart",
+    "test-story:init": "node agents/orchestrator.js --topic test_story_template --init",
+    "test-story:restart": "node agents/orchestrator.js --topic test_story_template --restart",
+    "test-story:guided": "node agents/orchestrator.js --topic test_story_template --guided",
+    "test-story:full": "node agents/orchestrator.js --topic test_story_template --full",
+    "test-story:render": "node scripts/run_test_story_render.js",
     "publish:record": "node agents/orchestrator.js --record-publish",
     "analytics": "node agents/orchestrator.js --analytics-review",
     "overnight": "node agents/orchestrator.js --overnight"

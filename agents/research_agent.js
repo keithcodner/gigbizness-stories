@@ -13,6 +13,7 @@ const {
 function getResearchPaths(workspaceDir) {
   const researchDir = path.join(workspaceDir, "01_research");
   const configDir = path.join(workspaceDir, "00_config");
+  const templatesDir = path.join(path.resolve(__dirname, ".."), "templates");
 
   return {
     researchDir,
@@ -23,7 +24,9 @@ function getResearchPaths(workspaceDir) {
     factTablePath: path.join(researchDir, "fact_table.csv"),
     claimsPath: path.join(researchDir, "claims_to_verify.md"),
     caseTimelinePath: path.join(researchDir, "case_timeline.md"),
-    riskReportPath: path.join(researchDir, "source_risk_report.md")
+    riskReportPath: path.join(researchDir, "source_risk_report.md"),
+    fixtureSourcesPath: path.join(templatesDir, "test_story_template", "sources.csv"),
+    fixtureFactTablePath: path.join(templatesDir, "test_story_template", "fact_table.csv")
   };
 }
 
@@ -128,6 +131,14 @@ function buildSeedFacts(topic, noteBullets) {
   }));
 
   return [...baseFacts, ...derivedFacts];
+}
+
+function readFixtureCsvRows(filePath) {
+  const { parseCsv } = require("./common");
+  if (!fs.existsSync(filePath)) {
+    return [];
+  }
+  return parseCsv(fs.readFileSync(filePath, "utf8")).rows;
 }
 
 function inferClaimType(text, topic) {
@@ -314,8 +325,12 @@ function main() {
       : "";
     const noteBullets = extractBulletsFromNotes(manualNotes);
 
-    const sourceRows = buildSeedSources(topic);
-    const factRows = buildSeedFacts(topic, noteBullets);
+    const sourceRows = topic.id === "test_story_template"
+      ? readFixtureCsvRows(paths.fixtureSourcesPath)
+      : buildSeedSources(topic);
+    const factRows = topic.id === "test_story_template"
+      ? readFixtureCsvRows(paths.fixtureFactTablePath)
+      : buildSeedFacts(topic, noteBullets);
 
     writeText(paths.researchDossierPath, buildDossier(topic, noteBullets, manualNotes));
     writeText(paths.sourcesPath, toCsv(sourceRows, [

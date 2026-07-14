@@ -1,0 +1,18 @@
+scene_id,asset_type,search_query,filename,source_url,license,usage,priority,status
+S01,document,miniature plastic documentary set bricktoon documentary visual,s01_source_card_01.mp4,,manual-source-needed,Hook And Stakes primary visual (0s-29s),high,planned
+S01,generated_graphic,test_story_template Hook And Stakes explainer card,s01_fact_card_01.png,local-generated,project-original,Hook And Stakes explainer card,high,generated
+S02,document,miniature plastic documentary set bricktoon documentary visual,s02_source_card_01.mp4,,manual-source-needed,The Legitimate Business Model primary visual (29s-61s),medium,planned
+S02,generated_graphic,test_story_template The Legitimate Business Model explainer card,s02_fact_card_01.png,local-generated,project-original,The Legitimate Business Model explainer card,high,generated
+S03,document,miniature plastic documentary set bricktoon documentary visual,s03_source_card_01.mp4,,manual-source-needed,How The Money Works primary visual (61s-84s),high,planned
+S03,generated_graphic,test_story_template How The Money Works explainer card,s03_fact_card_01.png,local-generated,project-original,How The Money Works explainer card,high,generated
+S04,document,miniature plastic documentary set bricktoon documentary visual,s04_source_card_01.mp4,,manual-source-needed,Where Pressure Enters primary visual (84s-112s),medium,planned
+S04,generated_graphic,test_story_template Where Pressure Enters explainer card,s04_fact_card_01.png,local-generated,project-original,Where Pressure Enters explainer card,high,generated
+S05,document,miniature plastic documentary set bricktoon documentary visual,s05_source_card_01.mp4,,manual-source-needed,Evidence Gap And Public Cases primary visual (112s-140s),high,planned
+S05,generated_graphic,test_story_template Evidence Gap And Public Cases explainer card,s05_fact_card_01.png,local-generated,project-original,Evidence Gap And Public Cases explainer card,high,generated
+S05,document,test_story_template regulator complaint court filing,s05_public_doc_01.png,,source-required,public case evidence card,high,missing_source
+S06,document,miniature plastic documentary set bricktoon documentary visual,s06_source_card_01.mp4,,manual-source-needed,Warning Signs For Viewers primary visual (140s-164s),high,planned
+S06,generated_graphic,test_story_template Warning Signs For Viewers explainer card,s06_fact_card_01.png,local-generated,project-original,Warning Signs For Viewers explainer card,high,generated
+S07,document,miniature plastic documentary set bricktoon documentary visual,s07_source_card_01.mp4,,manual-source-needed,Final Takeaway primary visual (164s-185s),medium,planned
+S07,generated_graphic,test_story_template Final Takeaway explainer card,s07_fact_card_01.png,local-generated,project-original,Final Takeaway explainer card,high,generated
+S07,map,test_story_template city map graphic,s07_map_01.png,,manual-source-needed,Final Takeaway location context,medium,planned
+ALL,chart,test_story_template scene timing overview,narration_timing_overview.png,local-generated,project-original,editing reference,medium,generated

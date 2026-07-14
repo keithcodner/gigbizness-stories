@@ -1,0 +1,18 @@
+asset_name,asset_type,source_url,license,status,notes
+s01_source_card_01.mp4,document,,manual-source-needed,planned,Add source URL or license details before final edit.
+s01_fact_card_01.png,generated_graphic,local-generated,project-original,generated,Generated locally or source recorded.
+s02_source_card_01.mp4,document,,manual-source-needed,planned,Add source URL or license details before final edit.
+s02_fact_card_01.png,generated_graphic,local-generated,project-original,generated,Generated locally or source recorded.
+s03_source_card_01.mp4,document,,manual-source-needed,planned,Add source URL or license details before final edit.
+s03_fact_card_01.png,generated_graphic,local-generated,project-original,generated,Generated locally or source recorded.
+s04_source_card_01.mp4,document,,manual-source-needed,planned,Add source URL or license details before final edit.
+s04_fact_card_01.png,generated_graphic,local-generated,project-original,generated,Generated locally or source recorded.
+s05_source_card_01.mp4,document,,manual-source-needed,planned,Add source URL or license details before final edit.
+s05_fact_card_01.png,generated_graphic,local-generated,project-original,generated,Generated locally or source recorded.
+s05_public_doc_01.png,document,,source-required,missing_source,Add source URL or license details before final edit.
+s06_source_card_01.mp4,document,,manual-source-needed,planned,Add source URL or license details before final edit.
+s06_fact_card_01.png,generated_graphic,local-generated,project-original,generated,Generated locally or source recorded.
+s07_source_card_01.mp4,document,,manual-source-needed,planned,Add source URL or license details before final edit.
+s07_fact_card_01.png,generated_graphic,local-generated,project-original,generated,Generated locally or source recorded.
+s07_map_01.png,map,,manual-source-needed,planned,Add source URL or license details before final edit.
+narration_timing_overview.png,chart,local-generated,project-original,generated,Generated locally or source recorded.

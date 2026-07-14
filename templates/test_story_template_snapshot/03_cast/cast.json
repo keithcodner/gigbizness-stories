@@ -1,0 +1,33 @@
+{
+  "style_id": "bricktoon",
+  "format_id": "bleak_explainer_bricktoon",
+  "cast": [
+    {
+      "character_id": "narrator_001",
+      "name": "The Gigbizness Guide",
+      "role": "narrator",
+      "visual_description": "blocky toy business narrator, navy blazer, calm face, cinematic miniature lighting",
+      "personality": "dry, sharp, explains scams clearly",
+      "use_cases": [
+        "intro",
+        "explainers",
+        "checklists",
+        "transitions"
+      ],
+      "legal_notes": "fictional character, not based on a real person"
+    },
+    {
+      "character_id": "regulator_001",
+      "name": "Inspector Dana",
+      "role": "regulator",
+      "visual_description": "blocky toy investigator with folder, glasses, generic badge icon",
+      "personality": "serious, clear, evidence-driven",
+      "use_cases": [
+        "official sources",
+        "enforcement",
+        "consumer checklist"
+      ],
+      "legal_notes": "fictional regulator, not representing a specific agency"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "generated_existing_count": 8,
+  "real_existing_count": 0,
+  "stock_video_count": 0,
+  "document_count": 0,
+  "unresolved_high_priority_count": 5,
+  "unresolved_high_priority": [
+    {
+      "scene_id": "S01",
+      "asset_type": "document",
+      "filename": "s01_source_card_01.mp4",
+      "status": "planned"
+    },
+    {
+      "scene_id": "S03",
+      "asset_type": "document",
+      "filename": "s03_source_card_01.mp4",
+      "status": "planned"
+    },
+    {
+      "scene_id": "S05",
+      "asset_type": "document",
+      "filename": "s05_source_card_01.mp4",
+      "status": "planned"
+    },
+    {
+      "scene_id": "S05",
+      "asset_type": "document",
+      "filename": "s05_public_doc_01.png",
+      "status": "missing_source"
+    },
+    {
+      "scene_id": "S06",
+      "asset_type": "document",
+      "filename": "s06_source_card_01.mp4",
+      "status": "planned"
+    }
+  ]
+}

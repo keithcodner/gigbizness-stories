@@ -1,0 +1,133 @@
+# Script V1
+
+Working title: Test Story Template: Fake Service Trap
+Video type: business_crime_story
+Format: Bricktoon documentary
+Central question: How does a normal-looking service quote turn into a pressure situation once the customer loses leverage?
+Cast: The Gigbizness Guide, Inspector Dana
+
+## Draft status
+
+- This script is conservative by design.
+- It only uses approved framing plus general structure from the research dossier.
+- Bricktoon dramatization should come from scene cards, while proof should come from official source cards.
+- Add stronger sourced examples before final narration.
+
+## S01 - Hook And Stakes
+
+Beat ID: B01
+
+Visual note: bricktoon documentary, generic service van or truck, contracts and invoices, opening pressure montage, paperwork, fast quote contrast
+
+The bigger problem can start after the basic service is already underway.
+The first number is easy to sell. The harder part is everything that can come after the customer loses the ability to walk away.
+This story is not about saying every business works the same way.
+It is about understanding how a normal service can turn into a high-pressure situation for the customer.
+
+Source support:
+- Topic framing only. Add stronger scene-specific sourcing in research.
+
+## S02 - The Legitimate Business Model
+
+Beat ID: B02
+
+Visual note: bricktoon documentary, generic service van or truck, contracts and invoices, normal workflow, inventory, estimate, route card
+
+At the basic level, a legitimate business solves a real problem.
+In the honest version of this normal business workflow, the customer gets a clear estimate, clear paperwork, and a service that matches the promise.
+In the legitimate version of the business, the company is selling labor, logistics, equipment, and reliability when it is needed.
+That normal model matters, because you cannot understand the abuse risk until you understand the honest version first.
+
+Source support:
+- Official consumer-protection agencies publish complaint and fraud-reporting channels that consumers can use when a business misleads them.
+- Written estimates and clear paperwork reduce ambiguity better than vague verbal promises or shifting quote language.
+
+## S03 - How The Money Works
+
+Beat ID: B03
+
+Visual note: bricktoon documentary, generic service van or truck, contracts and invoices, invoice stack animation, contract terms, fee card
+
+The bill does not always end with the first advertised price.
+There can be the basic service, then storage, release fees, or extra charges tied to timing and paperwork.
+That changes the customer's position.
+They are no longer choosing a service. They are trying to recover what they already own.
+
+Source support:
+- Official consumer-protection agencies publish complaint and fraud-reporting channels that consumers can use when a business misleads them.
+- Written estimates and clear paperwork reduce ambiguity better than vague verbal promises or shifting quote language.
+
+## S04 - Where Pressure Enters
+
+Beat ID: B04
+
+Visual note: bricktoon documentary, generic service van or truck, contracts and invoices, warning signs, invoice closeups, customer deadline pressure
+
+This is where the business can shift from service to pressure.
+If the customer has limited time, limited transportation, or a bill that grows daily, the leverage changes fast.
+Even before you get into any public case, the structure alone can explain why people feel trapped.
+The key business question is simple: who has the leverage once the customer cannot easily reverse the situation?
+
+Source support:
+- Official consumer-protection agencies publish complaint and fraud-reporting channels that consumers can use when a business misleads them.
+- Written estimates and clear paperwork reduce ambiguity better than vague verbal promises or shifting quote language.
+
+## S05 - Evidence Gap And Public Cases
+
+Beat ID: B05
+
+Visual note: bricktoon documentary, generic service van or truck, contracts and invoices, court document cards, regulator notices, public case wall
+
+This is the point where strong sourcing matters most.
+If a video names a company, a person, or a public enforcement action, the wording has to match the evidence exactly.
+That means alleged cannot become proven, and a lawsuit claim cannot turn into narration that sounds like a conviction.
+In this draft, the case section stays conservative until stronger official sourcing is added.
+
+Source support:
+- Topic framing only. Add stronger scene-specific sourcing in research.
+
+## S06 - Warning Signs For Viewers
+
+Beat ID: B06
+
+Visual note: bricktoon documentary, generic service van or truck, contracts and invoices, checklist card, document highlights, red-flag recap
+
+For the viewer, the practical lesson is to watch the paperwork, the fee structure, and the timing pressure.
+A business that stays vague about charges has more room to trap you later.
+A business that explains the process clearly leaves less space for surprise leverage.
+That difference matters more than any dramatic headline.
+
+Source support:
+- Topic framing only. Add stronger scene-specific sourcing in research.
+
+## S07 - Final Takeaway
+
+Beat ID: B07
+
+Visual note: bricktoon documentary, generic service van or truck, contracts and invoices, takeaway card, map, closing service visual
+
+Business is a real service, but it is also a business built around moments when the customer has very little flexibility.
+That is why the line between legitimate cost and predatory pressure matters so much.
+If you understand where the leverage appears, you understand the story.
+
+Source support:
+- Topic framing only. Add stronger scene-specific sourcing in research.
+
+## Human review focus
+
+- Strengthen the case-study scene with official sources.
+- Check that any numbers added later appear in approved_facts.csv first.
+- Replace generic placeholders with concrete examples once validated.
+
+## Blocked claims snapshot
+
+```markdown
+# Blocked Claims
+
+These claims should stay out of the script until better sourcing or tighter wording is added.
+
+- Checking complaint history
+  - Unknown source type 'USA.gov consumer complaints guide'.
+  - Missing source title.
+```
+

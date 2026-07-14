@@ -1,0 +1,35 @@
+{
+  "title": "Test Story Template: Fake Service Trap Scene Timing Overview",
+  "subtitle": "Estimated narration timing by scene",
+  "output_filename": "narration_timing_overview.png",
+  "scenes": [
+    {
+      "label": "S01 - Hook And Stakes",
+      "seconds": 29
+    },
+    {
+      "label": "S02 - The Legitimate Business Model",
+      "seconds": 32
+    },
+    {
+      "label": "S03 - How The Money Works",
+      "seconds": 23
+    },
+    {
+      "label": "S04 - Where Pressure Enters",
+      "seconds": 28
+    },
+    {
+      "label": "S05 - Evidence Gap And Public Cases",
+      "seconds": 28
+    },
+    {
+      "label": "S06 - Warning Signs For Viewers",
+      "seconds": 24
+    },
+    {
+      "label": "S07 - Final Takeaway",
+      "seconds": 21
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+Movement: slow push in
+Shot type: medium close
+Focus: character reaction
+SFX: none
