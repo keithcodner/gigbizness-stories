@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "purpose": "Guardrail for pipeline architecture work so new systems are not considered complete until they are wired into the orchestrator.",
+  "requirements": [
+    "Every new pipeline subsystem must define whether it is a new orchestrator stage, part of an existing stage, or both.",
+    "Every new stage must appear in orchestrator stage dispatch, usage text, and supported-stage validation.",
+    "Every new stage must define at least one readiness/output contract that guided mode can check.",
+    "If a stage depends on upstream files, guided mode must run it after those dependencies and invalidate stale downstream outputs when inputs change.",
+    "If a stage changes workspace structure, ensureWorkspaceLayout must seed the required files or folders.",
+    "Every reusable pipeline addition must document its orchestrator wiring in docs/technical_docs/CHANGELOG.md.",
+    "Every reusable pipeline addition should have at least one test-story or audit command when practical."
+  ],
+  "current_pipeline_order": [
+    "format",
+    "research",
+    "angle",
+    "script",
+    "cast",
+    "scene-cards",
+    "bricktoon-characters",
+    "voice",
+    "assets",
+    "bricktoon-scenes",
+    "bricktoon-manifest",
+    "animation",
+    "render-contract",
+    "render",
+    "shorts",
+    "qc",
+    "bricktoon-audit"
+  ]
+}

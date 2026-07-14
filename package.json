@@ -35,6 +35,7 @@
     "test-story:full": "node agents/orchestrator.js --topic test_story_template --full",
     "test-story:cast": "node scripts/run_test_story_cast.js",
     "test-story:render": "node scripts/run_test_story_render.js",
+    "audit:orchestrator": "node scripts/audit_orchestrator_contract.js",
     "publish:record": "node agents/orchestrator.js --record-publish",
     "analytics": "node agents/orchestrator.js --analytics-review",
     "overnight": "node agents/orchestrator.js --overnight"

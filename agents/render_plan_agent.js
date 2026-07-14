@@ -9,6 +9,7 @@ const {
   toCsv,
   writeText
 } = require("./common");
+const { resolveSceneAsset } = require("../src/render/resolveSceneAsset");
 
 function getPaths(workspaceDir) {
   const configDir = path.join(workspaceDir, "00_config");
@@ -32,7 +33,9 @@ function getPaths(workspaceDir) {
     renderProfilesPath: path.join(rootConfigDir, "render_profiles.json"),
     sceneManifestPath: path.join(renderPlanDir, "scene_manifest.json"),
     renderPlanPath: path.join(renderPlanDir, "render_plan.json"),
-    visualTimingPath: path.join(renderPlanDir, "visual_timing.csv")
+    visualTimingPath: path.join(renderPlanDir, "visual_timing.csv"),
+    assetManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
+    renderContractPath: path.join(workspaceDir, "09_edit_plan", "render_contract.json")
   };
 }
 
@@ -153,6 +156,49 @@ function inferEffect(row) {
   return "gentle_pan";
 }
 
+function inferBricktoonEffect(sceneCard, assetType) {
+  const motion = sceneCard?.camera?.movement || "";
+  if (assetType === "bricktoon_animated_clip") {
+    return "play_clip";
+  }
+  if (motion === "quick zoom") {
+    return "impact_push";
+  }
+  if ((sceneCard?.camera?.shot_type || "").includes("overhead")) {
+    return "documentary_hold";
+  }
+  return "slow_zoom";
+}
+
+function buildBricktoonVisuals(scene, sceneCard, renderContract, assetManifest) {
+  const contractScene = (renderContract?.scenes || []).find((item) => item.scene_id === scene.id);
+  const resolved = resolveSceneAsset(sceneCard || { scene_id: scene.id }, assetManifest || { assets: [] }, { render_mode: renderContract?.render_mode || "development" });
+  if (!resolved.asset || !resolved.asset.file) {
+    return [];
+  }
+
+  const baseVisual = {
+    type: resolved.asset.asset_type,
+    file: resolved.asset.file,
+    source_status: resolved.fallback_used ? "fallback" : "approved",
+    effect: inferBricktoonEffect(sceneCard, resolved.asset.asset_type),
+    usage: contractScene?.required_asset_ids?.[0]
+      ? `${scene.id} primary visual from render contract`
+      : `${scene.id} approved bricktoon visual`
+  };
+
+  const visualTarget = Math.max(3, Math.ceil(((scene.end - scene.start) || 0) / 8));
+  const visuals = [baseVisual];
+  while (visuals.length < visualTarget) {
+    visuals.push({
+      ...baseVisual,
+      usage: `${baseVisual.usage} (timing variation ${visuals.length})`
+    });
+  }
+
+  return visuals;
+}
+
 function pickMusicTrack(musicRows) {
   const selected = musicRows.find((row) => (row.status || "").toLowerCase() === "selected");
   if (selected) {
@@ -161,7 +207,7 @@ function pickMusicTrack(musicRows) {
   return musicRows.find((row) => (row.status || "").toLowerCase() === "approved") || null;
 }
 
-function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, assetsDir, selectedMusic, sceneCards) {
+function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, assetsDir, selectedMusic, sceneCards, renderContract, assetManifest) {
   const timingScenes = timingData.scenes || [];
   const cardMap = new Map((sceneCards || []).map((card) => [card.scene_id, card]));
   const sceneObjects = scenes.map((scene) => {
@@ -169,6 +215,7 @@ function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, as
     const timing = timingScenes.find((item) => item.scene.startsWith(scene.id));
     const start = timing ? timing.start_seconds : 0;
     const end = timing ? timing.end_seconds : start + 10;
+    const preferredBricktoonVisuals = buildBricktoonVisuals(scene, card, renderContract, assetManifest);
     return {
       id: scene.id,
       title: scene.title,
@@ -177,7 +224,9 @@ function buildSceneManifest(topic, scenes, timingData, manifestRows, profile, as
       duration_seconds: end - start,
       narration_excerpt: card?.narration || scene.narration.slice(0, 2).join(" "),
       voiceover_file: "03_voice/voiceover_clean.wav",
-      visuals: chooseVisualsForScene(scene.id, manifestRows, assetsDir, end - start),
+      visuals: preferredBricktoonVisuals.length > 0
+        ? preferredBricktoonVisuals
+        : chooseVisualsForScene(scene.id, manifestRows, assetsDir, end - start),
       music: selectedMusic ? {
         track_path: selectedMusic.track_path,
         track_title: selectedMusic.track_title || "",
@@ -312,6 +361,12 @@ function main() {
     const sceneCards = fs.existsSync(paths.sceneCardsPath)
       ? readJson(paths.sceneCardsPath).scene_cards || []
       : [];
+    const assetManifest = fs.existsSync(paths.assetManifestPath)
+      ? readJson(paths.assetManifestPath)
+      : { assets: [] };
+    const renderContract = fs.existsSync(paths.renderContractPath)
+      ? readJson(paths.renderContractPath)
+      : { scenes: [], render_mode: "development" };
     const musicRows = fs.existsSync(paths.musicManifestPath)
       ? parseCsv(fs.readFileSync(paths.musicManifestPath, "utf8")).rows
       : [];
@@ -332,7 +387,9 @@ function main() {
       profileName,
       paths.assetsDir,
       selectedMusic,
-      sceneCards
+      sceneCards,
+      renderContract,
+      assetManifest
     );
     const renderPlan = buildRenderPlan(
       topic,
