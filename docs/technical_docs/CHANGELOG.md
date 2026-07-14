@@ -21,6 +21,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added seeded research notes for `test_story_template` so guided-mode regression runs start with realistic input instead of an empty stub.
 - Added seeded source rows and fact-table rows for `test_story_template` so the research stage can clear approval thresholds after a reset.
 - Added a static pre-render snapshot plus `npm run test-story:render` so the regression fixture can restore known-good inputs and draft-render immediately.
+- Added first-class bricktoon image-generation scripts for character refs, scene images, asset-manifest assembly, render-contract compilation, and implementation auditing.
 
 ### Changed
 
@@ -38,6 +39,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Updated `research_agent` so the test-story fixture loads template research CSVs instead of regenerating weak placeholder rows.
 - Updated the test-story workflow so render checks can skip dynamic upstream generation and use a fixed snapshot for faster visual verification.
 - Tightened the static test-render command so it verifies the produced draft file is non-trivial instead of only trusting the renderer exit code.
+- Updated the orchestrator so bricktoon character generation, scene-image generation, manifest assembly, render-contract compilation, and bricktoon auditing are all callable as native stages and are included in guided/render flow.
 
 ### Fixed
 
@@ -65,6 +67,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Fixed a workflow gap where music selection had no standard location, no approved-library rule, and no QC validation.
 - Fixed future-topic drift by teaching QC to reject tracks chosen from outside the approved library or directly from the unsorted root of `@all`.
 - Fixed the architecture gap where character-driven cartoon storytelling existed only in planning docs but not in the executable pipeline.
+- Fixed a workflow gap where the new bricktoon visual scripts existed but were not yet attached to orchestrator stage dispatch, guided sequencing, or render preparation.
 
 ### Process
 

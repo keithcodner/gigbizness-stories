@@ -357,8 +357,12 @@ function getTopicPaths(topicId) {
     visualPlanPath: path.join(workspaceDir, "04_assets", "visual_plan.md"),
     visualReadinessPath: path.join(workspaceDir, "04_assets", "visual_readiness.json"),
     assetGapsPath: path.join(workspaceDir, "04_assets", "asset_gaps.md"),
+    assetManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
+    characterRefsDir: path.join(workspaceDir, "07_visuals", "character_refs"),
+    generatedImagesDir: path.join(workspaceDir, "07_visuals", "generated_images"),
     animationPlanPath: path.join(workspaceDir, "08_animation", "animation_plan.json"),
     editPlanPath: path.join(workspaceDir, "09_edit_plan", "edit_plan.md"),
+    renderContractPath: path.join(workspaceDir, "09_edit_plan", "render_contract.json"),
     draftRenderPath: path.join(workspaceDir, "06_renders", "draft_01.mp4"),
     shortOnePath: path.join(workspaceDir, "07_shorts", "short_01.mp4"),
     thumbnailPath: path.join(workspaceDir, "08_thumbnail", "final_thumbnail.jpg"),
@@ -483,6 +487,37 @@ function isAssetsReady(topicId) {
     fileHasContent(paths.visualReadinessPath);
 }
 
+function directoryHasFiles(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    return false;
+  }
+
+  return fs.readdirSync(dirPath, { withFileTypes: true }).some((entry) => {
+    if (entry.isFile()) {
+      return true;
+    }
+    if (!entry.isDirectory()) {
+      return false;
+    }
+
+    const nestedPath = path.join(dirPath, entry.name);
+    return fs.readdirSync(nestedPath, { withFileTypes: true }).some((nestedEntry) => nestedEntry.isFile());
+  });
+}
+
+function isBricktoonCharactersReady(topicId) {
+  return directoryHasFiles(getTopicPaths(topicId).characterRefsDir);
+}
+
+function isBricktoonScenesReady(topicId) {
+  return directoryHasFiles(getTopicPaths(topicId).generatedImagesDir);
+}
+
+function isBricktoonManifestReady(topicId) {
+  const manifestText = readText(getTopicPaths(topicId).assetManifestPath);
+  return manifestText.includes("\"asset_id\"") && manifestText.includes("\"assets\"");
+}
+
 function isDraftReady(topicId) {
   return fileHasContent(getTopicPaths(topicId).draftRenderPath);
 }
@@ -490,6 +525,11 @@ function isDraftReady(topicId) {
 function isAnimationReady(topicId) {
   const paths = getTopicPaths(topicId);
   return fileHasContent(paths.animationPlanPath) && fileHasContent(paths.editPlanPath);
+}
+
+function isRenderContractReady(topicId) {
+  const contractText = readText(getTopicPaths(topicId).renderContractPath);
+  return contractText.includes("\"render_mode\"") && contractText.includes("\"scene_assets\"");
 }
 
 function isShortsPackageReady(topicId) {
@@ -680,12 +720,24 @@ function runGuidedPipeline(topicId, mode = "guided") {
     runSceneCardStage(topicId);
   }
 
+  if (!isBricktoonCharactersReady(topicId)) {
+    runBricktoonCharactersStage(topicId);
+  }
+
   if (!isVoiceReady(topicId)) {
     runVoiceStage(topicId);
   }
 
   if (!isAssetsReady(topicId)) {
     runAssetsStage(topicId);
+  }
+
+  if (!isBricktoonScenesReady(topicId)) {
+    runBricktoonScenesStage(topicId);
+  }
+
+  if (!isBricktoonManifestReady(topicId)) {
+    runBricktoonManifestStage(topicId);
   }
 
   block = getVisualSourcingBlock(topicId);
@@ -698,6 +750,9 @@ function runGuidedPipeline(topicId, mode = "guided") {
   if (!isDraftReady(topicId)) {
     if (!isAnimationReady(topicId)) {
       runAnimationStage(topicId);
+    }
+    if (!isRenderContractReady(topicId)) {
+      runRenderContractStage(topicId, "draft", "development");
     }
     runRenderStage(topicId, "draft");
   }
@@ -866,6 +921,26 @@ function runNodeAgent(scriptName, args) {
   }
 }
 
+function runNodeScript(relativeScriptPath, args) {
+  const scriptPath = path.join(ROOT, relativeScriptPath);
+  const result = spawnSync(process.execPath, [scriptPath, ...args], {
+    cwd: ROOT,
+    encoding: "utf8"
+  });
+
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+
+  if (result.stderr) {
+    process.stderr.write(result.stderr);
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`Script failed: ${relativeScriptPath}`);
+  }
+}
+
 function runResearchStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting research stage for topic '${topicId}'`);
@@ -949,6 +1024,36 @@ function runAssetsStage(topicId) {
   return workspaceDir;
 }
 
+function runBricktoonCharactersStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon character-ref stage for topic '${topicId}'`);
+
+  runNodeScript("scripts/generate_bricktoon_character_refs.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed bricktoon character-ref stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runBricktoonScenesStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon scene-image stage for topic '${topicId}'`);
+
+  runNodeScript("scripts/generate_bricktoon_scene_images.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed bricktoon scene-image stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runBricktoonManifestStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon asset-manifest stage for topic '${topicId}'`);
+
+  runNodeScript("scripts/build_bricktoon_asset_manifest.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed bricktoon asset-manifest stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runAnimationStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting animation/edit-plan stage for topic '${topicId}'`);
@@ -960,11 +1065,39 @@ function runAnimationStage(topicId) {
   return workspaceDir;
 }
 
+function runRenderContractStage(topicId, profile = "draft", mode = "development") {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting render-contract stage for topic '${topicId}' with profile '${profile}'`);
+
+  runNodeScript("scripts/compile_render_contract.js", [
+    "--workspace",
+    workspaceDir,
+    "--profile",
+    profile,
+    "--mode",
+    mode
+  ]);
+
+  writeLog(`Completed render-contract stage for topic '${topicId}' with profile '${profile}'`);
+  return workspaceDir;
+}
+
+function runBricktoonAuditStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon audit stage for topic '${topicId}'`);
+
+  runNodeScript("scripts/audit_bricktoon_implementation.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed bricktoon audit stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runRenderStage(topicId, profile = "draft") {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting render stage for topic '${topicId}' with profile '${profile}'`);
 
   runNodeAgent("render_plan_agent.js", ["--topic", topicId, "--workspace", workspaceDir, "--profile", profile]);
+  runRenderContractStage(topicId, profile, profile === "draft" ? "development" : "production");
   runNodeAgent("render_agent.js", ["--topic", topicId, "--workspace", workspaceDir, "--profile", profile]);
 
   writeLog(`Completed render stage for topic '${topicId}' with profile '${profile}'`);
@@ -1032,8 +1165,13 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-cards");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage voice");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage assets");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-characters");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-scenes");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-manifest");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage animation");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage render-contract --profile draft");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render --profile draft");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-audit");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shorts");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage qc");
   console.log("  node agents/orchestrator.js --topic <topic_id> --guided");
@@ -1128,7 +1266,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "animation", "render", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -1149,10 +1287,24 @@ function main() {
         workspaceDir = runVoiceStage(args.topic);
       } else if (args.stage === "assets") {
         workspaceDir = runAssetsStage(args.topic);
+      } else if (args.stage === "bricktoon-characters") {
+        workspaceDir = runBricktoonCharactersStage(args.topic);
+      } else if (args.stage === "bricktoon-scenes") {
+        workspaceDir = runBricktoonScenesStage(args.topic);
+      } else if (args.stage === "bricktoon-manifest") {
+        workspaceDir = runBricktoonManifestStage(args.topic);
       } else if (args.stage === "animation") {
         workspaceDir = runAnimationStage(args.topic);
+      } else if (args.stage === "render-contract") {
+        workspaceDir = runRenderContractStage(
+          args.topic,
+          args.profile || "draft",
+          args.mode || ((args.profile || "draft") === "draft" ? "development" : "production")
+        );
       } else if (args.stage === "render") {
         workspaceDir = runRenderStage(args.topic, args.profile || "draft");
+      } else if (args.stage === "bricktoon-audit") {
+        workspaceDir = runBricktoonAuditStage(args.topic);
       } else if (args.stage === "qc") {
         workspaceDir = runQcStage(args.topic);
       } else {
