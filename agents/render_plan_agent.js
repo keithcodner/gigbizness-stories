@@ -158,7 +158,7 @@ function inferEffect(row) {
 
 function inferBricktoonEffect(sceneCard, assetType) {
   const motion = sceneCard?.camera?.movement || "";
-  if (assetType === "bricktoon_animated_clip") {
+  if (["bricktoon_scene_sequence", "bricktoon_animated_clip", "bricktoon_shot_clip"].includes(assetType)) {
     return "play_clip";
   }
   if (motion === "quick zoom") {

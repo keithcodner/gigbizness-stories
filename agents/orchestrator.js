@@ -111,12 +111,36 @@ const WORKSPACE_LAYOUT = [
     ]
   },
   {
+    dir: "06_scene_beats",
+    files: {
+      "scene_beats.json": "{\n  \"scenes\": []\n}\n",
+      "scene_beats_report.md": "# Scene Beats Report\n\n",
+      "scene_beats_validation.json": "{\n  \"passed\": false,\n  \"warnings\": [],\n  \"errors\": []\n}\n"
+    },
+    subdirs: [
+      "scenes"
+    ]
+  },
+  {
+    dir: "07_shot_plans",
+    files: {
+      "shot_plan.json": "{\n  \"scenes\": []\n}\n",
+      "layout_assignments.json": "{\n  \"layout_assignments\": []\n}\n",
+      "shot_plan_report.md": "# Shot Plan Report\n\n",
+      "shot_plan_validation.json": "{\n  \"passed\": false,\n  \"warnings\": [],\n  \"errors\": []\n}\n"
+    },
+    subdirs: [
+      "scenes"
+    ]
+  },
+  {
     dir: "07_visuals",
     files: {
       "asset_manifest.json": "{\n  \"style\": \"bricktoon\",\n  \"assets\": []\n}\n"
     },
     subdirs: [
       "generated_images",
+      "generated_images/shot_posters",
       "character_refs",
       "backgrounds",
       "overlays",
@@ -151,7 +175,9 @@ const WORKSPACE_LAYOUT = [
       "camera_moves.json": "[]\n"
     },
     subdirs: [
-      "animated_clips"
+      "animated_clips",
+      "shot_clips",
+      "scene_sequences"
     ]
   },
   {
@@ -339,6 +365,18 @@ function readText(filePath) {
   return fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
 }
 
+function readJson(filePath, fallbackValue) {
+  if (!fs.existsSync(filePath)) {
+    return fallbackValue;
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (error) {
+    return fallbackValue;
+  }
+}
+
 function fileHasContent(filePath) {
   return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
 }
@@ -381,10 +419,14 @@ function getTopicPaths(topicId) {
     visualPlanPath: path.join(workspaceDir, "04_assets", "visual_plan.md"),
     visualReadinessPath: path.join(workspaceDir, "04_assets", "visual_readiness.json"),
     assetGapsPath: path.join(workspaceDir, "04_assets", "asset_gaps.md"),
+    sceneBeatsPath: path.join(workspaceDir, "06_scene_beats", "scene_beats.json"),
+    shotPlanPath: path.join(workspaceDir, "07_shot_plans", "shot_plan.json"),
     assetManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
     characterRefsDir: path.join(workspaceDir, "07_visuals", "character_refs"),
     generatedImagesDir: path.join(workspaceDir, "07_visuals", "generated_images"),
     animatedClipsDir: path.join(workspaceDir, "08_animation", "animated_clips"),
+    shotClipsDir: path.join(workspaceDir, "08_animation", "shot_clips"),
+    sceneSequencesDir: path.join(workspaceDir, "08_animation", "scene_sequences"),
     animationPlanPath: path.join(workspaceDir, "08_animation", "animation_plan.json"),
     editPlanPath: path.join(workspaceDir, "09_edit_plan", "edit_plan.md"),
     renderContractPath: path.join(workspaceDir, "09_edit_plan", "render_contract.json"),
@@ -540,6 +582,24 @@ function directoryHasFiles(dirPath) {
   });
 }
 
+function getExpectedShotIds(topicId) {
+  const shotPlan = readJson(getTopicPaths(topicId).shotPlanPath, {});
+  const scenes = Array.isArray(shotPlan.scenes) ? shotPlan.scenes : [];
+  return scenes.flatMap((scene) => Array.isArray(scene.shots) ? scene.shots.map((shot) => shot.shot_id).filter(Boolean) : []);
+}
+
+function getExpectedSceneIds(topicId) {
+  const sceneCards = readJson(getTopicPaths(topicId).sceneCardsPath, {});
+  const cards = Array.isArray(sceneCards.scene_cards) ? sceneCards.scene_cards : [];
+  return cards.map((card) => card.scene_id).filter(Boolean);
+}
+
+function countManifestAssetsByType(topicId, assetTypes) {
+  const manifest = readJson(getTopicPaths(topicId).assetManifestPath, {});
+  const assets = Array.isArray(manifest.assets) ? manifest.assets : [];
+  return assets.filter((asset) => assetTypes.includes(asset.asset_type) && asset.status === "approved").length;
+}
+
 function isBricktoonCharactersReady(topicId) {
   return directoryHasFiles(getTopicPaths(topicId).characterRefsDir);
 }
@@ -553,10 +613,42 @@ function isBricktoonManifestReady(topicId) {
   return manifestText.includes("\"asset_id\"") && manifestText.includes("\"assets\"");
 }
 
+function isSceneBeatsReady(topicId) {
+  const text = readText(getTopicPaths(topicId).sceneBeatsPath);
+  return text.includes("\"beats\"");
+}
+
+function isShotPlannerReady(topicId) {
+  const text = readText(getTopicPaths(topicId).shotPlanPath);
+  return text.includes("\"shot_id\"");
+}
+
 function isBricktoonClipsReady(topicId) {
   const paths = getTopicPaths(topicId);
-  const manifestText = readText(paths.assetManifestPath);
-  return directoryHasFiles(paths.animatedClipsDir) && manifestText.includes("\"bricktoon_animated_clip\"");
+  const expectedSceneIds = getExpectedSceneIds(topicId);
+  if (!expectedSceneIds.length) {
+    return false;
+  }
+
+  const existingSequenceCount = expectedSceneIds.filter((sceneId) =>
+    fileHasContent(path.join(paths.sceneSequencesDir, `${sceneId}_sequence.mp4`))
+  ).length;
+  const manifestSequenceCount = countManifestAssetsByType(topicId, ["bricktoon_scene_sequence", "bricktoon_animated_clip"]);
+
+  return existingSequenceCount >= expectedSceneIds.length && manifestSequenceCount >= expectedSceneIds.length;
+}
+
+function isBricktoonShotsReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  const expectedShotIds = getExpectedShotIds(topicId);
+  if (!expectedShotIds.length) {
+    return false;
+  }
+
+  const existingShotCount = expectedShotIds.filter((shotId) =>
+    fileHasContent(path.join(paths.shotClipsDir, `${shotId}.mp4`))
+  ).length;
+  return existingShotCount >= expectedShotIds.length;
 }
 
 function isDraftReady(topicId) {
@@ -773,6 +865,14 @@ function runGuidedPipeline(topicId, mode = "guided") {
     runAssetsStage(topicId);
   }
 
+  if (!isSceneBeatsReady(topicId)) {
+    runSceneBeatsStage(topicId);
+  }
+
+  if (!isShotPlannerReady(topicId)) {
+    runShotPlannerStage(topicId);
+  }
+
   if (!isBricktoonScenesReady(topicId)) {
     runBricktoonScenesStage(topicId);
   }
@@ -783,6 +883,10 @@ function runGuidedPipeline(topicId, mode = "guided") {
 
   if (!isAnimationReady(topicId)) {
     runAnimationStage(topicId);
+  }
+
+  if (!isBricktoonShotsReady(topicId)) {
+    runBricktoonShotsStage(topicId);
   }
 
   if (!isBricktoonClipsReady(topicId)) {
@@ -1070,6 +1174,26 @@ function runAssetsStage(topicId) {
   return workspaceDir;
 }
 
+function runSceneBeatsStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting scene-beats stage for topic '${topicId}'`);
+
+  runNodeScript("scripts/generate_scene_beats.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed scene-beats stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runShotPlannerStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting shot-planner stage for topic '${topicId}'`);
+
+  runNodeScript("scripts/generate_shot_plan.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed shot-planner stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runBricktoonCharactersStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting bricktoon character-ref stage for topic '${topicId}'`);
@@ -1102,14 +1226,55 @@ function runBricktoonManifestStage(topicId) {
 
 function runBricktoonClipsStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
-  writeLog(`Starting bricktoon animated-clip stage for topic '${topicId}'`);
+  writeLog(`Starting bricktoon animated-clip compatibility stage for topic '${topicId}'`);
 
+  if (!isSceneBeatsReady(topicId)) {
+    runSceneBeatsStage(topicId);
+  }
+  if (!isShotPlannerReady(topicId)) {
+    runShotPlannerStage(topicId);
+  }
   if (!isAnimationReady(topicId)) {
     runAnimationStage(topicId);
   }
-  runNodeScript("scripts/generate_bricktoon_animated_clips.js", ["--workspace", workspaceDir]);
+  if (!isBricktoonShotsReady(topicId)) {
+    runBricktoonShotsStage(topicId);
+  }
+  runSceneAssemblyStage(topicId);
 
-  writeLog(`Completed bricktoon animated-clip stage for topic '${topicId}'`);
+  writeLog(`Completed bricktoon animated-clip compatibility stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runBricktoonShotsStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon-shots stage for topic '${topicId}'`);
+
+  if (!isSceneBeatsReady(topicId)) {
+    runSceneBeatsStage(topicId);
+  }
+  if (!isShotPlannerReady(topicId)) {
+    runShotPlannerStage(topicId);
+  }
+  if (!isAnimationReady(topicId)) {
+    runAnimationStage(topicId);
+  }
+  runNodeScript("scripts/generate_bricktoon_shot_clips.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed bricktoon-shots stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runSceneAssemblyStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting scene-assembly stage for topic '${topicId}'`);
+
+  if (!isBricktoonShotsReady(topicId)) {
+    runBricktoonShotsStage(topicId);
+  }
+  runNodeScript("scripts/assemble_bricktoon_scene_sequences.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed scene-assembly stage for topic '${topicId}'`);
   return workspaceDir;
 }
 
@@ -1157,6 +1322,9 @@ function runRenderStage(topicId, profile = "draft") {
 
   if (!isAnimationReady(topicId)) {
     runAnimationStage(topicId);
+  }
+  if (!isBricktoonShotsReady(topicId)) {
+    runBricktoonShotsStage(topicId);
   }
   if (!isBricktoonClipsReady(topicId)) {
     runBricktoonClipsStage(topicId);
@@ -1230,9 +1398,13 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-cards");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage voice");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage assets");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-beats");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-planner");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-characters");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-scenes");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-manifest");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-shots");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-assembly");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-clips");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage animation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render-contract --profile draft");
@@ -1332,7 +1504,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "scene-beats", "shot-planner", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "scene-assembly", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -1353,12 +1525,20 @@ function main() {
         workspaceDir = runVoiceStage(args.topic);
       } else if (args.stage === "assets") {
         workspaceDir = runAssetsStage(args.topic);
+      } else if (args.stage === "scene-beats") {
+        workspaceDir = runSceneBeatsStage(args.topic);
+      } else if (args.stage === "shot-planner") {
+        workspaceDir = runShotPlannerStage(args.topic);
       } else if (args.stage === "bricktoon-characters") {
         workspaceDir = runBricktoonCharactersStage(args.topic);
       } else if (args.stage === "bricktoon-scenes") {
         workspaceDir = runBricktoonScenesStage(args.topic);
       } else if (args.stage === "bricktoon-manifest") {
         workspaceDir = runBricktoonManifestStage(args.topic);
+      } else if (args.stage === "bricktoon-shots") {
+        workspaceDir = runBricktoonShotsStage(args.topic);
+      } else if (args.stage === "scene-assembly") {
+        workspaceDir = runSceneAssemblyStage(args.topic);
       } else if (args.stage === "bricktoon-clips") {
         workspaceDir = runBricktoonClipsStage(args.topic);
       } else if (args.stage === "animation") {

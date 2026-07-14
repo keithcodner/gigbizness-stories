@@ -39,3 +39,30 @@ test("resolveSceneAsset prefers animated clips over static bricktoon scenes", ()
   assert.equal(resolved.asset.asset_type, "bricktoon_animated_clip");
   assert.equal(resolved.asset.file, "08_animation/animated_clips/S03_clip.mp4");
 });
+
+test("resolveSceneAsset prefers scene sequences over animated clips", () => {
+  const resolved = resolveSceneAsset({
+    scene_id: "S03",
+    visual_type: "bricktoon_scene",
+    allowed_fallback_types: ["bricktoon_scene", "text_card"]
+  }, {
+    assets: [
+      {
+        asset_id: "CLIP_S03_MAIN",
+        asset_type: "bricktoon_animated_clip",
+        scene_ids: ["S03"],
+        status: "approved",
+        file: "08_animation/scene_sequences/S03_sequence.mp4"
+      },
+      {
+        asset_id: "SEQ_S03_MAIN",
+        asset_type: "bricktoon_scene_sequence",
+        scene_ids: ["S03"],
+        status: "approved",
+        file: "08_animation/scene_sequences/S03_sequence.mp4"
+      }
+    ]
+  });
+
+  assert.equal(resolved.asset.asset_type, "bricktoon_scene_sequence");
+});

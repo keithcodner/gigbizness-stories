@@ -2,6 +2,31 @@
 
 This log tracks implementation changes, bug fixes, and incidental fixes discovered while working on the pipeline.
 
+## 2026-07-14
+
+### Added
+
+- Added a scene-sequence upgrade layer for bricktoon animation with new orchestrator stages: `scene-beats`, `shot-planner`, `bricktoon-shots`, and `scene-assembly`.
+- Added `scripts/generate_scene_beats.js` so scene cards and timing data can be split into structured multi-beat visual sequences.
+- Added `scripts/generate_shot_plan.js` so each scene beat becomes a concrete timed shot with framing, continuity, and camera instructions.
+- Added `scripts/generate_bricktoon_shot_clips.js` so the pipeline now renders multiple procedural shot clips per scene instead of relying on one animated poster-style clip.
+- Added `scripts/assemble_bricktoon_scene_sequences.js` so shot clips are concatenated into preferred scene-level assets.
+- Added `src/bricktoon/proceduralSequenceRenderer.js` as the shared renderer for higher-variety shot compositions, closeups, inserts, and reaction framing.
+- Added shot-level animation performance output at `08_animation/shot_performances.json`.
+- Added test-story sequence outputs and preview evidence so the upgraded animation path can be inspected quickly during regression checks.
+
+### Changed
+
+- Updated the orchestrator contract and npm scripts so the new shot-based stages are first-class workflow steps instead of side experiments.
+- Updated render asset resolution to prefer `bricktoon_scene_sequence` over older animated and static bricktoon assets.
+- Updated the bricktoon compatibility stage so `bricktoon-clips` now acts as a wrapper around the newer sequence pipeline rather than a separate legacy generator.
+- Updated the condensed bricktoon technical guide so it reflects the current multi-shot animation workflow and troubleshooting path.
+
+### Fixed
+
+- Fixed a workflow limitation where "animation" could still look like one held text card by introducing multiple timed shots inside a scene before final render assembly.
+- Fixed a pipeline-readiness gap where shot generation and scene assembly could appear complete as soon as any file existed in the output folders; readiness now checks expected shot and scene coverage against planning data and approved manifest assets.
+
 ## 2026-07-09
 
 ### Added

@@ -15,7 +15,7 @@ The pipeline has two goals:
 
 The orchestrator is the source of truth for stage order and execution. The current practical flow is:
 
-`format -> research -> angle -> script -> cast -> scene-cards -> bricktoon-characters -> voice -> assets -> bricktoon-scenes -> bricktoon-manifest -> animation -> bricktoon-clips -> render-contract -> render -> shorts -> qc -> bricktoon-audit`
+`format -> research -> angle -> script -> cast -> scene-cards -> scene-beats -> shot-planner -> bricktoon-characters -> voice -> assets -> bricktoon-scenes -> bricktoon-manifest -> animation -> bricktoon-shots -> scene-assembly -> bricktoon-clips -> render-contract -> render -> shorts -> qc -> bricktoon-audit`
 
 Main orchestrator file:
 
@@ -93,6 +93,29 @@ Key files:
 - `05_scene_cards/scene_cards.json`
 - `05_scene_cards/shot_list.md`
 
+`scene-beats`
+
+- Breaks each scene into smaller visual story beats so a single scene no longer has to live inside one static poster composition.
+- Creates the first structured bridge from narration timing into multi-shot animation planning.
+
+Key files:
+
+- `06_scene_beats/scene_beats.json`
+- `06_scene_beats/scenes/*_beats.json`
+- `06_scene_beats/scene_beats_report.md`
+
+`shot-planner`
+
+- Converts scene beats into concrete shots with framing, timing, camera movement, and continuity rules.
+- This is where one scene becomes a sequence of wides, mediums, inserts, reactions, and closeups.
+
+Key files:
+
+- `07_shot_plans/shot_plan.json`
+- `07_shot_plans/scenes/*_shots.json`
+- `07_shot_plans/layout_assignments.json`
+- `07_shot_plans/shot_plan_report.md`
+
 `bricktoon-characters`
 
 - Generates character reference assets and prompt files.
@@ -142,26 +165,49 @@ Key file:
 
 `animation`
 
-- Produces scene-level motion directives from scene cards and cast assignments.
+- Produces motion directives from scene cards, cast assignments, and shot plans.
+- The current implementation now includes shot-level performance timing in addition to scene-level motion intent.
 - This is where the system decides whether a scene should use things like blink passes, talk emphasis, invoice counters, villain emphasis, proof reveals, typing overlays, or impact shake.
 
 Key files:
 
 - `08_animation/animation_plan.json`
+- `08_animation/shot_performances.json`
 - `08_animation/camera_moves.json`
 - `09_edit_plan/edit_plan.md`
 
-`bricktoon-clips`
+`bricktoon-shots`
 
-- Generates procedural animated scene clips from the current cast package, scene cards, and animation plan.
-- This is the current bridge between static planning data and actual moving bricktoon scenes.
-- The output asset type is `bricktoon_animated_clip`.
+- Generates procedural animated shot clips from the current cast package, shot plan, and animation plan.
+- This is the first stage that turns planning into actual moving bricktoon footage.
 
 Key outputs:
 
-- `08_animation/animated_clips/*.mp4`
-- `07_visuals/generated_images/*_procedural_poster.png`
-- `07_visuals/asset_manifest.json` updated with approved animated-clip assets
+- `08_animation/shot_clips/*.mp4`
+- `07_visuals/generated_images/shot_posters/*.png`
+
+`scene-assembly`
+
+- Concatenates shot clips into per-scene motion sequences.
+- Writes the preferred scene-level animated asset used by render planning.
+- The primary output asset type is now `bricktoon_scene_sequence`.
+
+Key outputs:
+
+- `08_animation/scene_sequences/*_sequence.mp4`
+- `08_animation/scene_sequences/scene_sequence_report.json`
+- `07_visuals/asset_manifest.json` updated with approved scene-sequence assets
+
+`bricktoon-clips`
+
+- Compatibility wrapper stage.
+- Ensures scene beats, shot plans, animation, shot clips, and scene assembly are complete.
+- Keeps older commands and habits working while the internals use the newer shot-based sequence system.
+
+Key outputs:
+
+- `08_animation/scene_sequences/*_sequence.mp4`
+- `07_visuals/asset_manifest.json` updated with approved `bricktoon_scene_sequence` and compatibility `bricktoon_animated_clip` entries
 
 `render-contract`
 
@@ -206,10 +252,12 @@ Key files:
 
 The renderer does not blindly trust one file type. It resolves approved scene assets in this priority order:
 
-1. `bricktoon_animated_clip`
-2. `bricktoon_layered_scene`
-3. `bricktoon_scene`
-4. source/document/chart/text fallbacks
+1. `bricktoon_scene_sequence`
+2. `bricktoon_animated_clip`
+3. `bricktoon_shot_clip`
+4. `bricktoon_layered_scene`
+5. `bricktoon_scene`
+6. source/document/chart/text fallbacks
 
 That logic lives in:
 
@@ -219,7 +267,7 @@ This means a scene can still render if only static assets exist, but the pipelin
 
 ## Current Animation Model
 
-Right now the animation system is procedural, not full character rigging.
+Right now the animation system is procedural, not full character rigging. The important upgrade is that it is now shot-based, so each scene can cut between multiple compositions instead of holding on one text-heavy frame.
 
 What it already supports:
 
@@ -257,6 +305,14 @@ That next layer should plug into the existing `bricktoon-clips` stage rather tha
 
 - defines motion directives for each scene
 
+`shot_plan.json`
+
+- defines the shots, framing, and timing inside each scene
+
+`shot_performances.json`
+
+- defines shot-level character performance cues
+
 `asset_manifest.json`
 
 - declares approved character refs, static scenes, and animated clips
@@ -276,9 +332,14 @@ Useful commands:
 ```powershell
 npm run test:cast
 npm run test:bricktoon
+npm run scene-beats -- --topic test_story_template
+npm run shot-planner -- --topic test_story_template
+npm run bricktoon:shots -- --topic test_story_template
+npm run scene:assembly -- --topic test_story_template
 npm run animation:sample
 npm run animation:sample:test
 npm run test-story:bricktoon-preview
+npm run test-story:sequence
 npm run test-story:render
 npm run audit:orchestrator
 ```
@@ -286,7 +347,9 @@ npm run audit:orchestrator
 What they are for:
 
 - `animation:sample` proves isolated character-layer motion works at all
-- `test-story:bricktoon-preview` regenerates procedural bricktoon clips for the stable test story
+- `bricktoon:shots` regenerates shot-level motion clips from the current test-story shot plan
+- `scene:assembly` assembles those shot clips into per-scene animated sequences
+- `test-story:bricktoon-preview` runs the compatibility wrapper for the full animated-sequence path
 - `test-story:render` produces a fresh draft render using current pipeline logic
 - `audit:orchestrator` checks that new architecture work is actually wired into the orchestrator
 
@@ -295,7 +358,9 @@ What they are for:
 If clips are not moving:
 
 - inspect `08_animation/animation_plan.json`
-- inspect `08_animation/animated_clips/`
+- inspect `08_animation/shot_performances.json`
+- inspect `08_animation/shot_clips/`
+- inspect `08_animation/scene_sequences/`
 - inspect `07_visuals/asset_manifest.json`
 
 If render falls back to static/text visuals:
@@ -326,9 +391,12 @@ If you want to trace execution after this:
 
 1. [agents/orchestrator.js](C:/xampp/htdocs/apps/gigbizness-stories/agents/orchestrator.js)
 2. [agents/animation_agent.js](C:/xampp/htdocs/apps/gigbizness-stories/agents/animation_agent.js)
-3. [scripts/generate_bricktoon_animated_clips.js](C:/xampp/htdocs/apps/gigbizness-stories/scripts/generate_bricktoon_animated_clips.js)
-4. [agents/render_plan_agent.js](C:/xampp/htdocs/apps/gigbizness-stories/agents/render_plan_agent.js)
-5. [scripts/ffmpeg_render.py](C:/xampp/htdocs/apps/gigbizness-stories/scripts/ffmpeg_render.py)
+3. [scripts/generate_scene_beats.js](C:/xampp/htdocs/apps/gigbizness-stories/scripts/generate_scene_beats.js)
+4. [scripts/generate_shot_plan.js](C:/xampp/htdocs/apps/gigbizness-stories/scripts/generate_shot_plan.js)
+5. [scripts/generate_bricktoon_shot_clips.js](C:/xampp/htdocs/apps/gigbizness-stories/scripts/generate_bricktoon_shot_clips.js)
+6. [scripts/assemble_bricktoon_scene_sequences.js](C:/xampp/htdocs/apps/gigbizness-stories/scripts/assemble_bricktoon_scene_sequences.js)
+7. [agents/render_plan_agent.js](C:/xampp/htdocs/apps/gigbizness-stories/agents/render_plan_agent.js)
+8. [scripts/ffmpeg_render.py](C:/xampp/htdocs/apps/gigbizness-stories/scripts/ffmpeg_render.py)
 
 ## Bottom Line
 
@@ -336,7 +404,9 @@ The pipeline now works like this:
 
 - research and scripting produce a controlled story package
 - cast and scene-card stages turn that package into reusable bricktoon scene intent
-- animation turns scene intent into motion directives
-- `bricktoon-clips` turns those directives into real moving scene assets
+- scene-beats and shot-planner turn each scene into a multi-shot sequence design
+- animation turns that sequence design into motion directives and shot performances
+- `bricktoon-shots` generates the moving shot footage
+- `scene-assembly` turns those shots into real per-scene animated assets
 - render prefers those moving assets and produces the draft video
 - QC decides whether the result is publishable

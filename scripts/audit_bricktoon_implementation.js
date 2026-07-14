@@ -30,7 +30,9 @@ function main() {
     console.log("");
 
     let failures = 0;
-    if (fs.existsSync(castPath) && (readJson(castPath).cast || []).length > 0) pass("cast schema");
+    const castPackage = fs.existsSync(castPath) ? readJson(castPath) : null;
+    const castMembers = castPackage?.cast_members || castPackage?.cast?.cast_members || castPackage?.cast || [];
+    if (fs.existsSync(castPath) && castMembers.length > 0) pass("cast schema");
     else {
       fail("cast schema", "missing or empty cast");
       failures += 1;
@@ -45,6 +47,7 @@ function main() {
 
     const refsDir = path.join(workspaceDir, "07_visuals", "character_refs");
     const generatedImagesDir = path.join(workspaceDir, "07_visuals", "generated_images");
+    const sceneSequenceDir = path.join(workspaceDir, "08_animation", "scene_sequences");
     if (fs.existsSync(refsDir) && fs.readdirSync(refsDir).length > 0) pass("character references");
     else {
       fail("character references", "missing");
@@ -55,10 +58,15 @@ function main() {
       fail("scene images", "missing");
       failures += 1;
     }
+    if (fs.existsSync(sceneSequenceDir) && fs.readdirSync(sceneSequenceDir).some((entry) => entry.endsWith(".mp4"))) pass("scene sequences");
+    else fail("scene sequences", "not generated yet");
 
     if (fs.existsSync(assetManifestPath)) {
       const manifest = readJson(assetManifestPath);
-      const approvedSceneAssets = (manifest.assets || []).filter((asset) => asset.status === "approved" && asset.asset_type === "bricktoon_scene");
+      const approvedSceneAssets = (manifest.assets || []).filter((asset) =>
+        asset.status === "approved" &&
+        ["bricktoon_scene_sequence", "bricktoon_animated_clip", "bricktoon_scene"].includes(asset.asset_type)
+      );
       if (approvedSceneAssets.length >= sceneCards.filter((scene) => (scene.visual_type || "bricktoon_scene") === "bricktoon_scene").length) {
         pass("asset_manifest coverage");
       } else {
