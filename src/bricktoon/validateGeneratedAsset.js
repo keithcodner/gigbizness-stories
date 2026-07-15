@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
 
 function readBmpDimensions(filePath) {
   const buffer = fs.readFileSync(filePath);
@@ -12,6 +13,31 @@ function readBmpDimensions(filePath) {
   };
 }
 
+function readMediaDimensions(filePath) {
+  const result = spawnSync("ffprobe", [
+    "-v",
+    "error",
+    "-select_streams",
+    "v:0",
+    "-show_entries",
+    "stream=width,height",
+    "-of",
+    "csv=p=0:s=x",
+    filePath
+  ], { encoding: "utf8" });
+
+  if (result.status !== 0) {
+    return { width: 0, height: 0 };
+  }
+
+  const value = (result.stdout || "").trim();
+  const [width, height] = value.split("x").map((item) => Number(item));
+  return {
+    width: Number.isFinite(width) ? width : 0,
+    height: Number.isFinite(height) ? height : 0
+  };
+}
+
 function validateGeneratedAsset(filePath, expected = {}) {
   if (!fs.existsSync(filePath)) {
     return { valid: false, reason: "missing_file" };
@@ -21,6 +47,8 @@ function validateGeneratedAsset(filePath, expected = {}) {
   let dimensions = { width: 0, height: 0 };
   if (ext === ".bmp") {
     dimensions = readBmpDimensions(filePath);
+  } else if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) {
+    dimensions = readMediaDimensions(filePath);
   }
 
   const size = fs.statSync(filePath).size;

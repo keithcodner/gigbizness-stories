@@ -159,11 +159,13 @@ Key files:
 
 - Generates mock higher-quality shot keyframes and keeps them inside the manifest/approval system.
 - This stage is the bridge into provider-agnostic image-generation later.
+- The architecture now defaults image generation to OpenAI, with automatic fallback to `mock` when `OPENAI_API_KEY` is not configured.
 
 Key files:
 
 - `07_visuals/generated_keyframes/`
 - `07_visuals/approved_keyframes/`
+- `config/visual_generation.json`
 
 `asset-consistency-validation`
 
@@ -425,6 +427,10 @@ That next layer should plug into the existing `bricktoon-clips` stage rather tha
 
 - declares approved character refs, bibles, composition guides, keyframes, layers, motion passes, and animated clips
 
+`visual_generation.json`
+
+- sets the default image provider and fallback behavior
+
 `render_contract.json`
 
 - resolves which asset each scene should actually consume
@@ -512,6 +518,7 @@ If guided mode blocks:
 - all reusable architecture changes should be wired into orchestrator flow
 - incidental fixes should be documented in `docs/technical_docs/CHANGELOG.md`
 - visual references are interpreted as quality/style benchmarks, not copy instructions
+- OpenAI is the default image-generation provider for character refs, scene stills, and shot keyframes unless explicitly overridden
 
 ## Recommended Reading Order
 

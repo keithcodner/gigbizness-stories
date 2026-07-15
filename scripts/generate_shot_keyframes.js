@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
+const fs = require("fs");
 const path = require("path");
 const {
   assetTimestamp,
-  createPlaceholderPng,
   ensureDir,
   inferQualityTier,
   loadManifest,
@@ -14,6 +14,7 @@ const {
   writeJson
 } = require("../src/bricktoon/aiQualityPipeline");
 const { parseArgs } = require("../agents/common");
+const { withImageProvider } = require("../src/bricktoon/providers");
 
 function keyframeCountForTier(tier) {
   if (tier === "hero") {
@@ -25,7 +26,7 @@ function keyframeCountForTier(tier) {
   return 1;
 }
 
-function main() {
+async function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (!args.workspace) {
@@ -57,29 +58,29 @@ function main() {
           const baseName = `${shot.shot_id}_KF_${String(index).padStart(2, "0")}`;
           const generatedPath = path.join(generatedDir, `${baseName}.png`);
           const approvedPath = path.join(approvedDir, `${baseName}.png`);
-          createPlaceholderPng(generatedPath, {
-            width: 1920,
-            height: 1080,
-            color: tier === "hero" ? "0x111827" : "0x1f2937",
-            boxes: tier === "hero"
-              ? [
-                { x: 380, y: 160, w: 720, h: 760, color: "0xf59e0b@0.9" },
-                { x: 1180, y: 260, w: 280, h: 360, color: "0x38bdf8@0.85" }
-              ]
-              : [
-                { x: 260, y: 190, w: 540, h: 660, color: "0xf59e0b@0.9" },
-                { x: 900, y: 220, w: 420, h: 560, color: "0x38bdf8@0.85" }
-              ]
+          const prompt = {
+            prompt_text: [
+              `Scene ${scene.scene_id} shot ${shot.shot_id}.`,
+              `Shot type: ${shot.shot_type}.`,
+              `Purpose: ${shot.purpose}.`,
+              `Camera movement: ${shot.camera?.movement || "steady_push"}.`,
+              "Premium editorial bricktoon quality, cinematic lighting, strong depth, stable character identity.",
+              "No embedded text or logos."
+            ].join(" ")
+          };
+          const providerUsed = await withImageProvider(`shot keyframe ${baseName}`, async (provider, providerName, providerConfig) => {
+            await provider.renderShotKeyframe({
+              prompt,
+              outputPath: generatedPath,
+              width: 1920,
+              height: 1080,
+              qualityTier: tier,
+              shotId: shot.shot_id,
+              providerConfig
+            });
+            return providerName;
           });
-          createPlaceholderPng(approvedPath, {
-            width: 1920,
-            height: 1080,
-            color: tier === "hero" ? "0x172554" : "0x0f172a",
-            boxes: [
-              { x: 320, y: 140, w: 600, h: 760, color: "0xf8fafc@0.92" },
-              { x: 1040, y: 220, w: 520, h: 620, color: "0xf59e0b@0.88" }
-            ]
-          });
+          fs.copyFileSync(generatedPath, approvedPath);
 
           approvalRecord.approved_keyframes.push({
             keyframe_id: baseName,
@@ -95,6 +96,10 @@ function main() {
             file: relativeWorkspacePath(workspaceDir, generatedPath),
             status: "generated",
             quality_tier: tier,
+            generator: {
+              provider: providerUsed,
+              workflow: "bricktoon_shot_keyframe_v1"
+            },
             created_at: assetTimestamp()
           });
           upsertAsset(manifest, {
@@ -105,6 +110,10 @@ function main() {
             file: relativeWorkspacePath(workspaceDir, approvedPath),
             status: "approved",
             quality_tier: tier,
+            generator: {
+              provider: providerUsed,
+              workflow: "bricktoon_shot_keyframe_v1"
+            },
             created_at: assetTimestamp()
           });
         }

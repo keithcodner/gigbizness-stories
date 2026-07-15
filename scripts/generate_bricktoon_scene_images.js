@@ -7,7 +7,7 @@ const { compileScenePrompt } = require("../src/bricktoon/compileScenePrompt");
 const { validateGeneratedAsset } = require("../src/bricktoon/validateGeneratedAsset");
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
 const { buildCharacterMap } = require("../src/bricktoon/normalizeCast");
-const provider = require("../src/bricktoon/providers/mockImageProvider");
+const { withImageProvider } = require("../src/bricktoon/providers");
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -37,7 +37,7 @@ function loadManifest(filePath, workspaceId) {
   return readJson(filePath);
 }
 
-function main() {
+async function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (!args.workspace) {
@@ -73,14 +73,18 @@ function main() {
         continue;
       }
 
-      const outputPath = path.join(paths.generatedImagesDir, `${sceneCard.scene_id}_main.bmp`);
-      provider.renderSceneImage({
-        sceneCard,
-        prompt,
-        outputPath,
-        tempDir: paths.tempDir,
-        width: 768,
-        height: 1344
+      const outputPath = path.join(paths.generatedImagesDir, `${sceneCard.scene_id}_main.png`);
+      const providerUsed = await withImageProvider(`scene image ${sceneCard.scene_id}`, async (provider, providerName, providerConfig) => {
+        await provider.renderSceneImage({
+          sceneCard,
+          prompt,
+          outputPath,
+          tempDir: paths.tempDir,
+          width: 768,
+          height: 1344,
+          providerConfig
+        });
+        return providerName;
       });
 
       const validation = validateGeneratedAsset(outputPath, { width: 768, height: 1344 });
@@ -94,13 +98,13 @@ function main() {
         asset_type: "bricktoon_scene",
         scene_ids: [sceneCard.scene_id],
         character_ids: sceneCard.characters || [],
-        file: `07_visuals/generated_images/${sceneCard.scene_id}_main.bmp`,
+        file: `07_visuals/generated_images/${sceneCard.scene_id}_main.png`,
         width: validation.width,
         height: validation.height,
         status: "approved",
         generator: {
-          provider: "mock",
-          workflow: "bricktoon_scene_v1",
+          provider: providerUsed,
+          workflow: "bricktoon_scene_v2",
           seed: sceneCard.scene_id.length * 2003
         },
         character_reference_assets: characterRefs,

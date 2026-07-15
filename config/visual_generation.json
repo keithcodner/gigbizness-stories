@@ -1,0 +1,13 @@
+{
+  "default_image_provider": "openai",
+  "fallback_image_provider": "mock",
+  "default_motion_provider": "procedural",
+  "provider_mode": "remote_api",
+  "openai": {
+    "model": "gpt-image-1",
+    "quality": "high",
+    "background": "opaque",
+    "download_format": "png",
+    "strict": false
+  }
+}

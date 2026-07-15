@@ -7,7 +7,7 @@ const { compileCharacterPrompt } = require("../src/bricktoon/compileCharacterPro
 const { validateGeneratedAsset } = require("../src/bricktoon/validateGeneratedAsset");
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
 const { getCastMembers, getCharacterBlueprint, getCharacterId } = require("../src/bricktoon/normalizeCast");
-const provider = require("../src/bricktoon/providers/mockImageProvider");
+const { withImageProvider } = require("../src/bricktoon/providers");
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -34,19 +34,7 @@ function loadManifest(filePath, workspaceId) {
   return readJson(filePath);
 }
 
-function renderVariant(character, variant, outputPath, prompt, paths) {
-  provider.renderCharacterReference({
-    character,
-    prompt,
-    outputPath,
-    tempDir: paths.tempDir,
-    width: 1024,
-    height: 1024,
-    variant
-  });
-}
-
-function main() {
+async function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (!args.workspace) {
@@ -86,16 +74,29 @@ function main() {
       writeText(path.join(paths.promptsDir, `${character.character_id}.txt`), prompt.prompt_text);
 
       const variants = {
-        master: path.join(characterDir, "master.bmp"),
-        front: path.join(characterDir, "front.bmp"),
-        three_quarter: path.join(characterDir, "three_quarter.bmp"),
-        side: path.join(characterDir, "side.bmp"),
-        worried: path.join(expressionsDir, "worried.bmp"),
-        talking: path.join(expressionsDir, "talking.bmp")
+        master: path.join(characterDir, "master.png"),
+        front: path.join(characterDir, "front.png"),
+        three_quarter: path.join(characterDir, "three_quarter.png"),
+        side: path.join(characterDir, "side.png"),
+        worried: path.join(expressionsDir, "worried.png"),
+        talking: path.join(expressionsDir, "talking.png")
       };
 
+      let providerUsed = process.env.BRICKTOON_IMAGE_PROVIDER || "openai";
       for (const [variant, outputPath] of Object.entries(variants)) {
-        renderVariant(character, variant, outputPath, prompt, paths);
+        providerUsed = await withImageProvider(`character reference ${character.character_id}/${variant}`, async (provider, providerName, providerConfig) => {
+          await provider.renderCharacterReference({
+            character,
+            prompt,
+            outputPath,
+            tempDir: paths.tempDir,
+            width: 1024,
+            height: 1024,
+            variant,
+            providerConfig
+          });
+          return providerName;
+        });
       }
 
       const masterValidation = validateGeneratedAsset(variants.master, { width: 1024, height: 1024 });
@@ -107,13 +108,13 @@ function main() {
         asset_id: `CHAR_${character.character_id}_MASTER`,
         asset_type: "character_reference",
         character_ids: [character.character_id],
-        file: `07_visuals/character_refs/${character.character_id}/master.bmp`,
+        file: `07_visuals/character_refs/${character.character_id}/master.png`,
         width: masterValidation.width,
         height: masterValidation.height,
         status: "approved",
         generator: {
-          provider: "mock",
-          workflow: "bricktoon_character_ref_v1",
+          provider: providerUsed,
+          workflow: "bricktoon_character_ref_v2",
           seed: character.character_id.length * 1001
         },
         prompt_file: `07_visuals/prompts/characters/${character.character_id}.txt`,
