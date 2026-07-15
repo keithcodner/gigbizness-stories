@@ -29,6 +29,9 @@ function normalizePromptText(prompt) {
 }
 
 function promptForCharacter(args) {
+  if (args.workflowRequest?.prompt_contract?.prompt_text) {
+    return normalizePromptText(args.workflowRequest.prompt_contract.prompt_text);
+  }
   return normalizePromptText([
     args.prompt.prompt_text,
     `Variant: ${args.variant || "master"}.`,
@@ -38,6 +41,9 @@ function promptForCharacter(args) {
 }
 
 function promptForScene(args) {
+  if (args.workflowRequest?.prompt_contract?.prompt_text) {
+    return normalizePromptText(args.workflowRequest.prompt_contract.prompt_text);
+  }
   return normalizePromptText([
     args.prompt.prompt_text,
     "Return a single polished editorial bricktoon still.",
@@ -46,6 +52,9 @@ function promptForScene(args) {
 }
 
 function promptForShotKeyframe(args) {
+  if (args.workflowRequest?.prompt_contract?.prompt_text) {
+    return normalizePromptText(args.workflowRequest.prompt_contract.prompt_text);
+  }
   return normalizePromptText([
     args.prompt.prompt_text,
     `Shot ID: ${args.shotId}.`,
@@ -155,6 +164,16 @@ async function renderCharacterReference(args) {
     quality: config.quality,
     background: config.background
   }, args.width || 1024, args.height || 1024);
+  return {
+    passResults: (args.providerConfig.workflowTemplate?.pass_plan || ["generate"]).map((passName) => ({
+      pass: passName,
+      status: "completed"
+    })),
+    metrics: {
+      model: config.model,
+      quality: config.quality
+    }
+  };
 }
 
 async function renderSceneImage(args) {
@@ -171,6 +190,16 @@ async function renderSceneImage(args) {
     quality: config.quality,
     background: config.background
   }, args.width || 1024, args.height || 1536);
+  return {
+    passResults: (args.providerConfig.workflowTemplate?.pass_plan || ["generate"]).map((passName) => ({
+      pass: passName,
+      status: "completed"
+    })),
+    metrics: {
+      model: config.model,
+      quality: config.quality
+    }
+  };
 }
 
 async function renderShotKeyframe(args) {
@@ -187,6 +216,16 @@ async function renderShotKeyframe(args) {
     quality: config.quality,
     background: config.background
   }, args.width || 1536, args.height || 1024);
+  return {
+    passResults: (args.providerConfig.workflowTemplate?.pass_plan || ["generate"]).map((passName) => ({
+      pass: passName,
+      status: "completed"
+    })),
+    metrics: {
+      model: config.model,
+      quality: config.quality
+    }
+  };
 }
 
 module.exports = {

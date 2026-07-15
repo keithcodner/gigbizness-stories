@@ -1,4 +1,5 @@
 const { resolveSceneAsset } = require("./resolveSceneAsset");
+const { qualityClassificationForAsset } = require("../bricktoon/workflowContracts");
 
 function buildCaptionChunks(sceneCard, startSeconds, endSeconds) {
   return [
@@ -43,6 +44,9 @@ function compileRenderContract(input) {
         allowed_fallback_types: sceneCard?.allowed_fallback_types || [],
         required_characters: sceneCard?.characters || [],
         required_asset_ids: resolved.asset?.asset_id ? [resolved.asset.asset_id] : [],
+        selected_asset_type: resolved.asset?.asset_type || "text_card",
+        asset_selection_reason: resolved.asset?.selection_reason || (resolved.fallback_used ? "fallback asset selected" : "primary approved asset selected"),
+        asset_quality_classification: resolved.asset?.quality_classification || qualityClassificationForAsset(resolved.asset?.asset_type),
         caption_chunks: buildCaptionChunks(sceneCard || {}, scene.start, scene.end),
         camera_motion: scene.motion_style || sceneCard?.camera?.movement || "steady_documentary",
         evidence_frame_seconds: [

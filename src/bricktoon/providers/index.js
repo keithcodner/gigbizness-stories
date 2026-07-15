@@ -1,10 +1,12 @@
 const fs = require("fs");
 const path = require("path");
+const { loadEnv } = require("../../loadEnv");
 const mockProvider = require("./mockImageProvider");
 const openaiProvider = require("./openaiImageProvider");
 const comfyuiProvider = require("./comfyuiImageProvider");
 
 const ROOT = path.resolve(__dirname, "..", "..", "..");
+loadEnv(ROOT);
 
 function envFlag(name, fallback = false) {
   const value = process.env[name];
@@ -44,8 +46,14 @@ function providerByName(name) {
   return mockProvider;
 }
 
-function strictMode(config) {
-  return envFlag("OPENAI_IMAGE_STRICT", Boolean(config.openai?.strict));
+function strictMode(config, providerName) {
+  if (providerName === "openai") {
+    return envFlag("OPENAI_IMAGE_STRICT", Boolean(config.openai?.strict));
+  }
+  if (providerName === "comfyui") {
+    return envFlag("COMFYUI_STRICT", Boolean(config.comfyui?.strict));
+  }
+  return false;
 }
 
 function getImageProvider() {
@@ -59,7 +67,7 @@ function getImageProvider() {
     config,
     primaryName,
     fallbackName,
-    strict: strictMode(config),
+    strict: strictMode(config, primaryName),
     primary,
     fallback
   };

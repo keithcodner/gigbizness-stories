@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { getCastMembers } = require("../src/bricktoon/normalizeCast");
 const { resolveSceneAsset } = require("../src/render/resolveSceneAsset");
+const { loadVisualGenerationConfig, resolveWorkflowTemplate, qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
 
 test("normalizeCast supports legacy and cast-package schemas", () => {
   const legacy = { cast: [{ character_id: "LEGACY_1" }] };
@@ -92,4 +93,24 @@ test("resolveSceneAsset prefers composited scene sequences over standard scene s
   });
 
   assert.equal(resolved.asset.asset_type, "bricktoon_composited_shot_sequence");
+});
+
+test("visual generation config defaults to comfyui-first managed workflows", () => {
+  const config = loadVisualGenerationConfig();
+  assert.equal(config.default_image_provider, "comfyui");
+  assert.equal(config.workflow_selection.character_reference, "character_ref_v1");
+  assert.equal(config.workflow_selection.scene_still, "scene_still_v1");
+});
+
+test("hero shot workflow resolves to managed hero refinement template", () => {
+  const config = loadVisualGenerationConfig();
+  const template = resolveWorkflowTemplate(config, "shot_keyframe", { qualityTier: "hero", providerName: "comfyui" });
+  assert.equal(template.workflow_id, "hero_refine_v1");
+  assert.equal(template.output.width, 1920);
+  assert.ok(template.pass_plan.includes("hero_refine"));
+});
+
+test("quality classification favors composited motion outputs", () => {
+  assert.equal(qualityClassificationForAsset("composited_shot_clip"), "premium_motion");
+  assert.equal(qualityClassificationForAsset("approved_keyframe"), "premium_still");
 });

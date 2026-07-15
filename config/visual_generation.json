@@ -1,13 +1,191 @@
 {
-  "default_image_provider": "openai",
+  "default_image_provider": "comfyui",
   "fallback_image_provider": "mock",
   "default_motion_provider": "procedural",
   "provider_mode": "remote_api",
+  "workflow_selection": {
+    "character_reference": "character_ref_v1",
+    "character_variant": "character_variant_v1",
+    "scene_still": "scene_still_v1",
+    "shot_keyframe": {
+      "hero": "hero_refine_v1",
+      "standard": "shot_keyframe_v1",
+      "utility": "shot_keyframe_v1",
+      "default": "shot_keyframe_v1"
+    },
+    "motion_pass_source": "motion_pass_source_v1",
+    "default": "shot_keyframe_v1"
+  },
+  "quality_tier_defaults": {
+    "hero": {
+      "width": 1920,
+      "height": 1080,
+      "aspect_ratio": "16:9"
+    },
+    "standard": {
+      "width": 1920,
+      "height": 1080,
+      "aspect_ratio": "16:9"
+    },
+    "utility": {
+      "width": 1600,
+      "height": 900,
+      "aspect_ratio": "16:9"
+    }
+  },
   "openai": {
     "model": "gpt-image-1",
     "quality": "high",
     "background": "opaque",
     "download_format": "png",
     "strict": false
+  },
+  "comfyui": {
+    "base_url": "http://127.0.0.1:8188",
+    "checkpoint": "v1-5-pruned-emaonly.safetensors",
+    "sampler": "euler",
+    "scheduler": "normal",
+    "steps": 28,
+    "cfg": 6.5,
+    "denoise": 1,
+    "timeout_ms": 240000,
+    "poll_interval_ms": 2000,
+    "negative_prompt": "",
+    "strict": false,
+    "sampler_profiles": {
+      "editorial_standard": {
+        "steps": 30,
+        "cfg": 6.5,
+        "sampler": "euler",
+        "scheduler": "normal",
+        "denoise": 1,
+        "detailer_strength": 0.35
+      },
+      "editorial_hero": {
+        "steps": 36,
+        "cfg": 7,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 0.85,
+        "detailer_strength": 0.45
+      },
+      "motion_source": {
+        "steps": 28,
+        "cfg": 6,
+        "sampler": "euler",
+        "scheduler": "normal",
+        "denoise": 0.7,
+        "detailer_strength": 0.2
+      }
+    },
+    "workflow_templates": {
+      "character_ref_v1": {
+        "required_inputs": ["prompt_text", "character_identity"],
+        "optional_inputs": ["character_reference_images", "negative_prompt_text"],
+        "sampler_profile": "editorial_standard",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1024,
+          "height": 1024,
+          "aspect_ratio": "1:1",
+          "filename_pattern": "{character_id}/{variant}.png"
+        },
+        "pass_plan": ["generate", "detail"],
+        "prompt_additions": [
+          "High-quality bricktoon turnaround sheet.",
+          "Strong toy-brick material rendering, clean identity lock, no captions."
+        ],
+        "negative_prompt_additions": [
+          "extra limbs, malformed hands, unreadable text, logo duplication"
+        ]
+      },
+      "character_variant_v1": {
+        "required_inputs": ["prompt_text", "character_identity", "master_reference"],
+        "optional_inputs": ["negative_prompt_text"],
+        "sampler_profile": "editorial_standard",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1024,
+          "height": 1024,
+          "aspect_ratio": "1:1",
+          "filename_pattern": "{character_id}/{variant}.png"
+        },
+        "pass_plan": ["generate", "detail"]
+      },
+      "scene_still_v1": {
+        "required_inputs": ["prompt_text", "scene_context"],
+        "optional_inputs": ["character_reference_images", "mask_guides"],
+        "sampler_profile": "editorial_standard",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1024,
+          "height": 1536,
+          "aspect_ratio": "2:3",
+          "filename_pattern": "{scene_id}_main.png"
+        },
+        "pass_plan": ["composition", "detail"]
+      },
+      "shot_keyframe_v1": {
+        "required_inputs": ["prompt_text", "shot_plan", "art_direction"],
+        "optional_inputs": ["character_reference_images", "composition_guides", "scene_still"],
+        "sampler_profile": "editorial_standard",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "aspect_ratio": "16:9",
+          "filename_pattern": "{shot_id}.png"
+        },
+        "pass_plan": ["composition", "detail", "upscale"]
+      },
+      "hero_refine_v1": {
+        "required_inputs": ["prompt_text", "shot_plan", "art_direction", "character_reference_images"],
+        "optional_inputs": ["composition_guides", "scene_still", "masks"],
+        "sampler_profile": "editorial_hero",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "aspect_ratio": "16:9",
+          "filename_pattern": "{shot_id}.png"
+        },
+        "pass_plan": ["composition", "detail", "hero_refine", "upscale"],
+        "prompt_additions": [
+          "Premium cinematic bricktoon hero keyframe.",
+          "Strong expression, dramatic depth, dimensional plastic lighting."
+        ]
+      },
+      "motion_pass_source_v1": {
+        "required_inputs": ["prompt_text", "shot_keyframe"],
+        "optional_inputs": ["depth_map", "layer_manifest", "motion_recipe"],
+        "sampler_profile": "motion_source",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "aspect_ratio": "16:9",
+          "filename_pattern": "{shot_id}_motion.mp4"
+        },
+        "pass_plan": ["motion_source"]
+      }
+    }
   }
 }

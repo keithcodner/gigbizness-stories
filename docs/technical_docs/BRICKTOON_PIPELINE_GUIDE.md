@@ -159,7 +159,7 @@ Key files:
 
 - Generates mock higher-quality shot keyframes and keeps them inside the manifest/approval system.
 - This stage is the bridge into provider-agnostic image-generation later.
-- The architecture now defaults image generation to OpenAI, with automatic fallback to `mock` when `OPENAI_API_KEY` is not configured.
+- The architecture now defaults premium image generation to ComfyUI, keeps OpenAI available as a compatibility provider, and falls back to `mock` when the selected provider is unavailable and strict mode is off.
 
 Key files:
 
@@ -431,6 +431,49 @@ That next layer should plug into the existing `bricktoon-clips` stage rather tha
 
 - sets the default image provider and fallback behavior
 
+## Image Providers
+
+The asset-generation family now supports three image-provider modes:
+
+1. `openai`
+2. `comfyui`
+3. `mock`
+
+Default behavior:
+
+- `comfyui` is the default premium architecture provider
+- `mock` remains the default fallback provider
+- `openai` remains a supported compatibility provider for asset-generation, character refs, scene stills, and shot keyframes
+
+Provider selection order:
+
+- `BRICKTOON_IMAGE_PROVIDER` from `.env` or shell env
+- `config/visual_generation.json`
+- fallback to `mock`
+
+ComfyUI setup:
+
+- Run ComfyUI locally with its API server reachable at `http://127.0.0.1:8188`
+- Install a checkpoint and set its exact filename in `COMFYUI_CHECKPOINT` or `config/visual_generation.json`
+- Set `BRICKTOON_IMAGE_PROVIDER=comfyui`
+- Leave `COMFYUI_STRICT=0` if you want automatic fallback to `mock`
+- Set `COMFYUI_STRICT=1` if you want the pipeline to fail loudly instead of silently falling back
+
+Useful command:
+
+```powershell
+npm run asset-generation -- --topic test_story_template
+```
+
+If you want to force ComfyUI for that run from PowerShell:
+
+```powershell
+$env:BRICKTOON_IMAGE_PROVIDER="comfyui"
+npm run asset-generation -- --topic test_story_template
+```
+
+The provider loader now reads repo `.env` automatically, so setting `BRICKTOON_IMAGE_PROVIDER` and ComfyUI values there is enough.
+
 `render_contract.json`
 
 - resolves which asset each scene should actually consume
@@ -518,7 +561,8 @@ If guided mode blocks:
 - all reusable architecture changes should be wired into orchestrator flow
 - incidental fixes should be documented in `docs/technical_docs/CHANGELOG.md`
 - visual references are interpreted as quality/style benchmarks, not copy instructions
-- OpenAI is the default image-generation provider for character refs, scene stills, and shot keyframes unless explicitly overridden
+- ComfyUI is the default premium image-generation provider for character refs, scene stills, and shot keyframes unless explicitly overridden
+- OpenAI remains a supported compatibility path when a workstation prefers a remote provider
 
 ## Recommended Reading Order
 

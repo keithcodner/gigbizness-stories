@@ -2,7 +2,7 @@
 
 const path = require("path");
 const { parseArgs } = require("../agents/common");
-const { readJsonSafe, writeJson } = require("../src/bricktoon/aiQualityPipeline");
+const { loadManifest, readJsonSafe, relativeWorkspacePath, saveManifest, upsertAsset, writeJson, assetTimestamp } = require("../src/bricktoon/aiQualityPipeline");
 
 function main() {
   try {
@@ -14,12 +14,21 @@ function main() {
     const workspaceDir = path.resolve(args.workspace);
     const visualBible = readJsonSafe(path.join(workspaceDir, "03_cast", "visual_character_bible.json"), {});
     const rigsRoot = path.join(workspaceDir, "07_visuals", "character_rigs");
+    const manifest = loadManifest(workspaceDir);
 
     for (const character of visualBible.characters || []) {
-      writeJson(path.join(rigsRoot, `${character.character_id}.json`), {
+      const rigPath = path.join(rigsRoot, `${character.character_id}.json`);
+      writeJson(rigPath, {
         character_id: character.character_id,
         rig_version: 1,
         rig_type: "hybrid_2d_ai",
+        motion_states: {
+          blink: ["neutral", "blink_closed", "blink_half"],
+          talk: ["neutral", "talk_open", "talk_emphasis"],
+          head: ["neutral", "head_nod", "head_turn_left", "head_turn_right"],
+          arms: ["neutral", "gesture_point", "gesture_open", "gesture_hold_prop"],
+          props: ["neutral", "prop_reveal"]
+        },
         parts: [
           "body",
           "head",
@@ -36,8 +45,17 @@ function main() {
           "shadow_layer"
         ]
       });
+      upsertAsset(manifest, {
+        asset_id: `RIG_${character.character_id}`,
+        asset_type: "character_rig",
+        character_ids: [character.character_id],
+        file: relativeWorkspacePath(workspaceDir, rigPath),
+        status: "approved",
+        created_at: assetTimestamp()
+      });
     }
 
+    saveManifest(workspaceDir, manifest);
     console.log(`Character rigs built for '${path.basename(workspaceDir)}'.`);
   } catch (error) {
     console.error(`Error: ${error.message}`);

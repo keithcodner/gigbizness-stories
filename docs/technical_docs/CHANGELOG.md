@@ -6,8 +6,12 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Added
 
+- Added `docs/technical_docs/BRICKTOON_COMFYUI_IMPLEMENTATION.md` as the new source-of-truth implementation document for the ComfyUI-first bricktoon rendering path.
 - Added `docs/technical_docs/VISUAL_REFERENCE_INTERPRETATION.md` so reference-driven quality targets are documented as style/quality matching rules instead of copy instructions.
+- Added a repo-local `.env` loader so provider configuration now works from `.env` without requiring the shell to pre-export variables first.
 - Added `config/visual_generation.json` so visual-provider defaults are centralized and the architecture can prefer OpenAI image generation while preserving fallback behavior.
+- Added a first-class ComfyUI image provider for local asset-generation using the standard ComfyUI prompt/history/view API flow.
+- Added a managed workflow-template registry, quality-tier mapping, and workflow-request/provider-report metadata layer for ComfyUI-first character refs, scene stills, and shot keyframes.
 - Added a scene-sequence upgrade layer for bricktoon animation with new orchestrator stages: `scene-beats`, `shot-planner`, `bricktoon-shots`, and `scene-assembly`.
 - Added `scripts/generate_scene_beats.js` so scene cards and timing data can be split into structured multi-beat visual sequences.
 - Added `scripts/generate_shot_plan.js` so each scene beat becomes a concrete timed shot with framing, continuity, and camera instructions.
@@ -24,6 +28,9 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 ### Changed
 
 - Updated the orchestrator contract and npm scripts so the new shot-based stages are first-class workflow steps instead of side experiments.
+- Updated the architecture so ComfyUI is now the default premium image provider, with repo-managed workflow ids deciding how character refs, scene stills, keyframes, and motion sources are requested.
+- Updated visual-bible, layer-extraction, rigging, motion-pass, compositing, render-contract, and audit outputs so they carry richer continuity, selection-reason, and quality metadata instead of only output existence.
+- Updated visual-provider configuration so ComfyUI is now the default premium image provider, OpenAI remains a supported compatibility option, and provider selection can now be controlled from `.env` as well as shell env.
 - Updated render asset resolution to prefer `bricktoon_scene_sequence` over older animated and static bricktoon assets.
 - Updated the bricktoon compatibility stage so `bricktoon-clips` now acts as a wrapper around the newer sequence pipeline rather than a separate legacy generator.
 - Updated the condensed bricktoon technical guide so it reflects the current multi-shot animation workflow and troubleshooting path.
@@ -34,6 +41,9 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 ### Fixed
 
 - Fixed a workflow limitation where "animation" could still look like one held text card by introducing multiple timed shots inside a scene before final render assembly.
+- Fixed a contract gap where premium image-generation stages could produce files but not the request/report metadata needed to rerun, debug, or audit a managed ComfyUI workflow stack.
+- Fixed a QC/audit reliability gap where some missing premium-output artifacts could print as failures without actually affecting the final audit status.
+- Fixed a configuration gap where users could define image-provider settings in `.env` but the pipeline would ignore them unless the current shell session had already loaded those variables.
 - Fixed a pipeline-readiness gap where shot generation and scene assembly could appear complete as soon as any file existed in the output folders; readiness now checks expected shot and scene coverage against planning data and approved manifest assets.
 - Fixed a voice-stage gap where draft renders could contain a formal audio stream but no audible narration because the pipeline was normalizing silent placeholder WAVs; draft voice generation now attempts Windows built-in TTS first and only falls back to silence if synthesis is unavailable.
 - Fixed an architecture gap where premium AI-quality visual work could be described in docs but had no orchestrator stages, seeded workspace outputs, or manifest-compatible fallback path in the executable pipeline.

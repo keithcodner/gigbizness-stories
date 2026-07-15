@@ -15,6 +15,13 @@ const {
 } = require("../src/bricktoon/aiQualityPipeline");
 const { parseArgs } = require("../agents/common");
 const { withImageProvider } = require("../src/bricktoon/providers");
+const {
+  buildExecutionResult,
+  buildWorkflowRequest,
+  loadVisualGenerationConfig,
+  writeExecutionReport,
+  writeWorkflowRequest
+} = require("../src/bricktoon/workflowContracts");
 
 function keyframeCountForTier(tier) {
   if (tier === "hero") {
@@ -38,7 +45,11 @@ async function main() {
     const artDirectionDir = path.join(workspaceDir, "07_visuals", "art_direction");
     const generatedDir = path.join(workspaceDir, "07_visuals", "generated_keyframes");
     const approvedDir = path.join(workspaceDir, "07_visuals", "approved_keyframes");
+    const visualBible = readJsonSafe(path.join(workspaceDir, "03_cast", "visual_character_bible.json"), {});
+    const sceneCards = readJsonSafe(path.join(workspaceDir, "05_scene_cards", "scene_cards.json"), {});
+    const productionRoutes = readJsonSafe(path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json"), {});
     const manifest = loadManifest(workspaceDir);
+    const visualConfig = loadVisualGenerationConfig();
 
     ensureDir(generatedDir);
     ensureDir(approvedDir);
@@ -47,11 +58,14 @@ async function main() {
       for (const shot of scene.shots || []) {
         const tier = inferQualityTier(shot);
         const count = keyframeCountForTier(tier);
+        const route = (productionRoutes.routes || []).find((item) => item.shot_id === shot.shot_id) || {};
+        const sceneCard = (sceneCards.scene_cards || []).find((item) => item.scene_id === scene.scene_id) || {};
         const approvalRecord = {
           shot_id: shot.shot_id,
           scene_id: scene.scene_id,
           quality_tier: tier,
-          approved_keyframes: []
+          approved_keyframes: [],
+          workflow_template_id: null
         };
 
         for (let index = 1; index <= count; index += 1) {
@@ -66,26 +80,75 @@ async function main() {
               `Camera movement: ${shot.camera?.movement || "steady_push"}.`,
               "Premium editorial bricktoon quality, cinematic lighting, strong depth, stable character identity.",
               "No embedded text or logos."
-            ].join(" ")
+            ].join(" "),
+            negative_prompt_text: "unreadable text, extra limbs, malformed hands, off-model face"
           };
-          const providerUsed = await withImageProvider(`shot keyframe ${baseName}`, async (provider, providerName, providerConfig) => {
-            await provider.renderShotKeyframe({
+          const workflowRequest = buildWorkflowRequest({
+            workspaceDir,
+            kind: "shot_keyframe",
+            providerName: process.env.BRICKTOON_IMAGE_PROVIDER || visualConfig.default_image_provider || "comfyui",
+            outputFile: relativeWorkspacePath(workspaceDir, generatedPath),
+            stage: "asset-generation",
+            qualityTier: tier,
+            sceneId: scene.scene_id,
+            shotId: shot.shot_id,
+            promptText: prompt.prompt_text,
+            negativePromptText: prompt.negative_prompt_text,
+            promptComponents: ["shot_plan", "art_direction", "production_route", "scene_card", "quality_profile"],
+            continuitySourceRefs: [
+              `03_cast/visual_character_bible.json`,
+              `07_visuals/production_routes/production_routes.json#${shot.shot_id}`,
+              `07_visuals/art_direction/${shot.shot_id}.json`
+            ],
+            references: (shot.cast_member_ids || []).map((characterId) => ({
+              type: "character_reference",
+              asset_id: `CHAR_${characterId}_MASTER`
+            })),
+            productionMode: route.production_mode,
+            context: {
+              visualQualityProfile: visualBible.style_lock_package ? { production_target: visualBible.style_lock_package, avoid: visualBible.style_lock_package.never_generate } : {}
+            },
+            config: visualConfig,
+            selectionReason: tier === "hero"
+              ? "Hero-tier shot uses managed hero refinement workflow."
+              : "Shot uses managed premium keyframe workflow."
+          });
+          approvalRecord.workflow_template_id = workflowRequest.workflow_template_id;
+          const requestFile = writeWorkflowRequest(workspaceDir, workflowRequest);
+          const run = await withImageProvider(`shot keyframe ${baseName}`, async (provider, providerName, providerConfig) => {
+            const providerResult = await provider.renderShotKeyframe({
               prompt,
               outputPath: generatedPath,
-              width: 1920,
-              height: 1080,
+              width: workflowRequest.output_contract.width,
+              height: workflowRequest.output_contract.height,
               qualityTier: tier,
               shotId: shot.shot_id,
-              providerConfig
+              workflowRequest,
+              providerConfig: {
+                ...providerConfig,
+                workflowTemplate: workflowRequest.workflow_template
+              }
             });
-            return providerName;
+            return {
+              providerName,
+              providerResult
+            };
           });
+          const providerUsed = run.providerName;
+          const reportFile = writeExecutionReport(workspaceDir, workflowRequest, buildExecutionResult(workflowRequest, {
+            status: "completed",
+            promptId: run.providerResult?.promptId || null,
+            passResults: run.providerResult?.passResults,
+            metrics: run.providerResult?.metrics
+          }));
           fs.copyFileSync(generatedPath, approvedPath);
 
           approvalRecord.approved_keyframes.push({
             keyframe_id: baseName,
             generated_file: relativeWorkspacePath(workspaceDir, generatedPath),
-            approved_file: relativeWorkspacePath(workspaceDir, approvedPath)
+            approved_file: relativeWorkspacePath(workspaceDir, approvedPath),
+            workflow_request_file: requestFile,
+            provider_report_file: reportFile
           });
 
           upsertAsset(manifest, {
@@ -98,8 +161,11 @@ async function main() {
             quality_tier: tier,
             generator: {
               provider: providerUsed,
-              workflow: "bricktoon_shot_keyframe_v1"
+              workflow: workflowRequest.workflow_template_id
             },
+            workflow_request_file: requestFile,
+            provider_report_file: reportFile,
+            continuity_source_refs: workflowRequest.prompt_contract.continuity_source_refs,
             created_at: assetTimestamp()
           });
           upsertAsset(manifest, {
@@ -112,8 +178,11 @@ async function main() {
             quality_tier: tier,
             generator: {
               provider: providerUsed,
-              workflow: "bricktoon_shot_keyframe_v1"
+              workflow: workflowRequest.workflow_template_id
             },
+            workflow_request_file: requestFile,
+            provider_report_file: reportFile,
+            continuity_source_refs: workflowRequest.prompt_contract.continuity_source_refs,
             created_at: assetTimestamp()
           });
         }

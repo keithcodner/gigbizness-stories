@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { parseArgs } = require("../agents/common");
 const { assetTimestamp, loadManifest, readJsonSafe, relativeWorkspacePath, saveManifest, upsertAsset, writeJson } = require("../src/bricktoon/aiQualityPipeline");
+const { qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
 
 function main() {
   try {
@@ -26,6 +27,7 @@ function main() {
         const stabilizedPath = path.join(stabilizedDir, `${shot.shot_id}_stabilized.mp4`);
         const fallbackPath = path.join(baseShotDir, `${shot.shot_id}.mp4`);
         const source = fs.existsSync(stabilizedPath) ? stabilizedPath : fallbackPath;
+        const sourceAssetType = fs.existsSync(stabilizedPath) ? "stabilized_motion_pass" : "bricktoon_shot_clip";
         if (!fs.existsSync(source)) {
           continue;
         }
@@ -34,6 +36,11 @@ function main() {
         report.shots.push({
           shot_id: shot.shot_id,
           scene_id: scene.scene_id,
+          winning_source_type: sourceAssetType,
+          selection_reason: fs.existsSync(stabilizedPath)
+            ? "stabilized AI motion chosen"
+            : "procedural fallback chosen",
+          quality_classification: qualityClassificationForAsset(sourceAssetType),
           source: relativeWorkspacePath(workspaceDir, source),
           composited_file: relativeWorkspacePath(workspaceDir, target)
         });
@@ -44,6 +51,10 @@ function main() {
           scene_ids: [scene.scene_id],
           file: relativeWorkspacePath(workspaceDir, target),
           status: "approved",
+          selection_reason: fs.existsSync(stabilizedPath)
+            ? "stabilized AI motion chosen"
+            : "procedural fallback chosen",
+          quality_classification: qualityClassificationForAsset(sourceAssetType),
           created_at: assetTimestamp()
         });
       }

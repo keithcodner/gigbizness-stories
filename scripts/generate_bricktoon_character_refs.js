@@ -8,6 +8,13 @@ const { validateGeneratedAsset } = require("../src/bricktoon/validateGeneratedAs
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
 const { getCastMembers, getCharacterBlueprint, getCharacterId } = require("../src/bricktoon/normalizeCast");
 const { withImageProvider } = require("../src/bricktoon/providers");
+const {
+  buildExecutionResult,
+  buildWorkflowRequest,
+  loadVisualGenerationConfig,
+  writeExecutionReport,
+  writeWorkflowRequest
+} = require("../src/bricktoon/workflowContracts");
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -21,6 +28,7 @@ function getPaths(workspaceDir) {
     refsDir: path.join(workspaceDir, "07_visuals", "character_refs"),
     promptsDir: path.join(workspaceDir, "07_visuals", "prompts", "characters"),
     tempDir: path.join(workspaceDir, "07_visuals", "_tmp_specs"),
+    visualBiblePath: path.join(workspaceDir, "03_cast", "visual_character_bible.json"),
     styleBiblePath: path.join(rootDir, "styles", "bricktoon", "style_bible.md"),
     characterRulesPath: path.join(rootDir, "styles", "bricktoon", "character_prompt_rules.md"),
     negativePromptsPath: path.join(rootDir, "styles", "bricktoon", "negative_prompts.md")
@@ -44,7 +52,9 @@ async function main() {
     const workspaceId = path.basename(args.workspace);
     const paths = getPaths(args.workspace);
     const castPackage = readJson(paths.castPath);
+    const visualBible = fs.existsSync(paths.visualBiblePath) ? readJson(paths.visualBiblePath) : {};
     let manifest = loadManifest(paths.assetManifestPath, workspaceId);
+    const visualConfig = loadVisualGenerationConfig();
 
     ensureDir(paths.refsDir);
     ensureDir(paths.promptsDir);
@@ -82,20 +92,68 @@ async function main() {
         talking: path.join(expressionsDir, "talking.png")
       };
 
-      let providerUsed = process.env.BRICKTOON_IMAGE_PROVIDER || "openai";
+      let providerUsed = process.env.BRICKTOON_IMAGE_PROVIDER || visualConfig.default_image_provider || "comfyui";
+      const executionReports = [];
       for (const [variant, outputPath] of Object.entries(variants)) {
-        providerUsed = await withImageProvider(`character reference ${character.character_id}/${variant}`, async (provider, providerName, providerConfig) => {
-          await provider.renderCharacterReference({
+        const workflowRequest = buildWorkflowRequest({
+          workspaceDir: args.workspace,
+          kind: "character_reference",
+          providerName: providerUsed,
+          outputFile: path.relative(args.workspace, outputPath).replaceAll("\\", "/"),
+          stage: "bricktoon-characters",
+          qualityTier: variant === "master" ? "hero" : "standard",
+          variant,
+          characterId: character.character_id,
+          promptText: prompt.prompt_text,
+          negativePromptText: prompt.negative_prompt_text,
+          promptComponents: ["character_blueprint", "style_bible", "character_rules", "negative_prompts"],
+          continuitySourceRefs: [`03_cast/visual_character_bible.json#${character.character_id}`],
+          references: [{
+            type: "visual_character_bible",
+            file: "03_cast/visual_character_bible.json"
+          }],
+          context: {
+            visualQualityProfile: visualBible.style_lock_package ? { production_target: visualBible.style_lock_package, avoid: visualBible.style_lock_package.never_generate } : {}
+          },
+          config: visualConfig,
+          selectionReason: variant === "master"
+            ? "Managed character identity workflow for canonical master reference."
+            : `Managed character variant workflow for ${variant}.`
+        });
+        const requestFile = writeWorkflowRequest(args.workspace, workflowRequest);
+        const run = await withImageProvider(`character reference ${character.character_id}/${variant}`, async (provider, providerName, providerConfig) => {
+          const providerResult = await provider.renderCharacterReference({
             character,
             prompt,
             outputPath,
             tempDir: paths.tempDir,
-            width: 1024,
-            height: 1024,
+            width: workflowRequest.output_contract.width,
+            height: workflowRequest.output_contract.height,
             variant,
-            providerConfig
+            workflowRequest,
+            providerConfig: {
+              ...providerConfig,
+              workflowTemplate: workflowRequest.workflow_template
+            }
           });
-          return providerName;
+          return {
+            providerName,
+            providerResult
+          };
+        });
+        providerUsed = run.providerName;
+        const executionResult = buildExecutionResult(workflowRequest, {
+          status: "completed",
+          promptId: run.providerResult?.promptId || null,
+          passResults: run.providerResult?.passResults,
+          metrics: run.providerResult?.metrics,
+          warnings: [providerUsed === "mock" ? "Generated via fallback provider." : null].filter(Boolean)
+        });
+        const reportFile = writeExecutionReport(args.workspace, workflowRequest, executionResult);
+        executionReports.push({
+          variant,
+          request_file: requestFile,
+          report_file: reportFile
         });
       }
 
@@ -114,10 +172,13 @@ async function main() {
         status: "approved",
         generator: {
           provider: providerUsed,
-          workflow: "bricktoon_character_ref_v2",
+          workflow: "character_ref_v1",
           seed: character.character_id.length * 1001
         },
         prompt_file: `07_visuals/prompts/characters/${character.character_id}.txt`,
+        workflow_request_files: executionReports.map((item) => item.request_file),
+        provider_report_files: executionReports.map((item) => item.report_file),
+        continuity_source_refs: [`03_cast/visual_character_bible.json#${character.character_id}`],
         created_at: new Date().toISOString()
       });
     }

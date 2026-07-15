@@ -75,6 +75,32 @@ function main() {
           "eyebrow design",
           "signature accessory"
         ],
+        reference_slots: {
+          neutral_turnaround: `${characterId}/front.png`,
+          expression_sheet: `${characterId}/expression_sheet.png`,
+          action_pose_sheet: `${characterId}/hand_sheet.png`,
+          outfit_prop_sheet: `${characterId}/outfit_sheet.png`
+        },
+        continuity_anchors: [
+          "face_print_layout",
+          "hair_or_hat_silhouette",
+          "primary_outfit_palette",
+          "signature_prop_zone"
+        ],
+        approved_visual_locks: {
+          material_finish: "painted plastic with dimensional highlights",
+          lighting_behavior: "cinematic directional key with controlled rim light",
+          face_construction: "stable bricktoon geometry and eye spacing",
+          hand_arm_safety: "avoid extra fingers, fused hands, or missing wrists",
+          environment_density: "rich but controlled detail",
+          never_generate: [
+            "blurry faces",
+            "distorted hands",
+            "extra limbs",
+            "floating props",
+            "unreadable embedded text"
+          ]
+        },
         palette: defaultPalette(member, blueprint),
         created_at: assetTimestamp()
       };
@@ -111,6 +137,9 @@ function main() {
         character_id: characterId,
         definition_file: relativeWorkspacePath(workspaceDir, path.join(characterDir, "character_definition.json")),
         palette_file: relativeWorkspacePath(workspaceDir, palettePath),
+        continuity_anchors: definition.continuity_anchors,
+        approved_visual_locks: definition.approved_visual_locks,
+        reference_slots: definition.reference_slots,
         views: imageFiles.map((fileName) => relativeWorkspacePath(workspaceDir, path.join(characterDir, fileName)))
       });
 
@@ -127,6 +156,14 @@ function main() {
 
     writeJson(topLevelBiblePath, {
       visual_bible_version: 1,
+      style_lock_package: {
+        material_finish: "painted plastic with dimensional highlights",
+        lighting_behavior: "dramatic directional lighting",
+        face_rules: ["stable eye spacing", "clean face print geometry"],
+        hand_arm_rules: ["no extra fingers", "no fused hands", "preserve wrist silhouette"],
+        environment_density: "rich but controlled detail",
+        never_generate: ["blurry faces", "distorted hands", "extra limbs", "floating props", "unreadable generated text"]
+      },
       characters: characterBibles
     });
 

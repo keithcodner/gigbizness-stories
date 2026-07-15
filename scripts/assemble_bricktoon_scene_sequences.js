@@ -66,6 +66,12 @@ function main() {
           provider: "procedural",
           workflow
         },
+        selection_reason: workflow === "bricktoon_composited_scene_sequence_v1"
+          ? "AI or hybrid composited shots available for sequence assembly."
+          : "Procedural shot clips used because no composited shots were available.",
+        quality_classification: workflow === "bricktoon_composited_scene_sequence_v1"
+          ? "premium_motion"
+          : "motion_ready",
         created_at: new Date().toISOString()
       });
 

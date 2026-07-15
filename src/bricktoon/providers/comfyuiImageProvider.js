@@ -56,7 +56,24 @@ function comfyConfig(config = {}) {
   };
 }
 
+function applyWorkflowTemplate(config, template = {}) {
+  const sampler = template.sampler_profile || {};
+  const checkpointBundle = template.checkpoint_bundle || {};
+  return {
+    ...config,
+    checkpoint: checkpointBundle.checkpoint || config.checkpoint,
+    steps: Number(sampler.steps || config.steps),
+    cfg: Number(sampler.cfg || config.cfg),
+    sampler: sampler.sampler || config.sampler,
+    scheduler: sampler.scheduler || config.scheduler,
+    denoise: Number(sampler.denoise || config.denoise)
+  };
+}
+
 function promptForCharacter(args) {
+  if (args.workflowRequest?.prompt_contract?.prompt_text) {
+    return normalizePromptText(args.workflowRequest.prompt_contract.prompt_text);
+  }
   return normalizePromptText([
     args.prompt.prompt_text,
     `Variant: ${args.variant || "master"}.`,
@@ -66,6 +83,9 @@ function promptForCharacter(args) {
 }
 
 function promptForScene(args) {
+  if (args.workflowRequest?.prompt_contract?.prompt_text) {
+    return normalizePromptText(args.workflowRequest.prompt_contract.prompt_text);
+  }
   return normalizePromptText([
     args.prompt.prompt_text,
     "High-quality bricktoon editorial scene still.",
@@ -74,6 +94,9 @@ function promptForScene(args) {
 }
 
 function promptForShotKeyframe(args) {
+  if (args.workflowRequest?.prompt_contract?.prompt_text) {
+    return normalizePromptText(args.workflowRequest.prompt_contract.prompt_text);
+  }
   return normalizePromptText([
     args.prompt.prompt_text,
     `Shot ID: ${args.shotId}.`,
@@ -202,7 +225,7 @@ async function downloadImage(baseUrl, imageInfo) {
 }
 
 async function generateImage(outputPath, { prompt, negativePrompt, width, height, providerConfig }) {
-  const config = comfyConfig(providerConfig);
+  const config = applyWorkflowTemplate(comfyConfig(providerConfig), providerConfig.workflowTemplate);
   const workflow = buildWorkflow({
     prompt,
     negativePrompt,
@@ -224,6 +247,21 @@ async function generateImage(outputPath, { prompt, negativePrompt, width, height
       fs.unlinkSync(tempPath);
     }
   }
+  return {
+    promptId,
+    passResults: (providerConfig.workflowTemplate?.pass_plan || ["generate"]).map((passName) => ({
+      pass: passName,
+      status: "completed"
+    })),
+    metrics: {
+      width,
+      height,
+      sampler: config.sampler,
+      scheduler: config.scheduler,
+      steps: config.steps,
+      cfg: config.cfg
+    }
+  };
 }
 
 function isConfigured() {
@@ -231,9 +269,9 @@ function isConfigured() {
 }
 
 async function renderCharacterReference(args) {
-  await generateImage(args.outputPath, {
+  return generateImage(args.outputPath, {
     prompt: promptForCharacter(args),
-    negativePrompt: normalizePromptText(`${args.prompt.negative_prompt_text || ""} ${(comfyConfig(args.providerConfig).negativePrompt || "")}`),
+    negativePrompt: normalizePromptText(`${args.workflowRequest?.prompt_contract?.negative_prompt_text || args.prompt.negative_prompt_text || ""} ${(comfyConfig(args.providerConfig).negativePrompt || "")}`),
     width: args.width || 1024,
     height: args.height || 1024,
     providerConfig: args.providerConfig
@@ -241,9 +279,9 @@ async function renderCharacterReference(args) {
 }
 
 async function renderSceneImage(args) {
-  await generateImage(args.outputPath, {
+  return generateImage(args.outputPath, {
     prompt: promptForScene(args),
-    negativePrompt: normalizePromptText(`${args.prompt.negative_prompt_text || ""} ${(comfyConfig(args.providerConfig).negativePrompt || "")}`),
+    negativePrompt: normalizePromptText(`${args.workflowRequest?.prompt_contract?.negative_prompt_text || args.prompt.negative_prompt_text || ""} ${(comfyConfig(args.providerConfig).negativePrompt || "")}`),
     width: args.width || 1024,
     height: args.height || 1536,
     providerConfig: args.providerConfig
@@ -251,9 +289,9 @@ async function renderSceneImage(args) {
 }
 
 async function renderShotKeyframe(args) {
-  await generateImage(args.outputPath, {
+  return generateImage(args.outputPath, {
     prompt: promptForShotKeyframe(args),
-    negativePrompt: normalizePromptText(`${args.prompt.negative_prompt_text || ""} ${(comfyConfig(args.providerConfig).negativePrompt || "")}`),
+    negativePrompt: normalizePromptText(`${args.workflowRequest?.prompt_contract?.negative_prompt_text || args.prompt.negative_prompt_text || ""} ${(comfyConfig(args.providerConfig).negativePrompt || "")}`),
     width: args.width || 1536,
     height: args.height || 1024,
     providerConfig: args.providerConfig

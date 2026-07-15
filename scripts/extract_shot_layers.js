@@ -25,6 +25,7 @@ function main() {
     const shotPlan = readJsonSafe(path.join(workspaceDir, "07_shot_plans", "shot_plan.json"), {});
     const layersRoot = path.join(workspaceDir, "07_visuals", "shot_layers");
     const cleanPlatesRoot = path.join(workspaceDir, "07_visuals", "clean_plates");
+    const approvedDir = path.join(workspaceDir, "07_visuals", "approved_keyframes");
     const manifest = loadManifest(workspaceDir);
 
     ensureDir(layersRoot);
@@ -34,12 +35,17 @@ function main() {
       for (const shot of scene.shots || []) {
         const layerDir = path.join(layersRoot, shot.shot_id);
         ensureDir(layerDir);
+        const approvedKeyframes = (path.resolve(approvedDir) && require("fs").existsSync(approvedDir))
+          ? require("fs").readdirSync(approvedDir).filter((fileName) => fileName.startsWith(`${shot.shot_id}_KF_`))
+          : [];
         const layerFiles = [
           "background_far.png",
           "background_middle.png",
-          "character_primary.png",
-          "character_secondary.png",
+          "character_foreground.png",
+          "face_region.png",
+          "arm_hand_region.png",
           "prop_main.png",
+          "fx_overlay.png",
           "foreground_frame.png",
           "lighting_overlay.png"
         ];
@@ -62,6 +68,15 @@ function main() {
 
         writeJson(path.join(layerDir, "layer_manifest.json"), {
           shot_id: shot.shot_id,
+          source_keyframes: approvedKeyframes,
+          motion_ready_regions: [
+            "character_foreground",
+            "face_region",
+            "arm_hand_region",
+            "prop_main",
+            "fx_overlay"
+          ],
+          clean_plate: relativeWorkspacePath(workspaceDir, cleanPlatePath),
           layers: layerFiles
         });
 

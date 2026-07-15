@@ -29,6 +29,10 @@ function main() {
     const productionRoutesPath = path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json");
     const consistencySummaryPath = path.join(workspaceDir, "07_visuals", "consistency_reports", "consistency_summary.md");
     const compositedShotDir = path.join(workspaceDir, "08_animation", "composited_shot_clips");
+    const workflowRequestsDir = path.join(workspaceDir, "07_visuals", "workflow_requests");
+    const generationReportsDir = path.join(workspaceDir, "07_visuals", "generation_reports");
+    const aiMotionReportPath = path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json");
+    const stabilizationReportPath = path.join(workspaceDir, "08_animation", "stabilized_ai_video", "stabilization_report.json");
 
     console.log("BRICKTOON IMPLEMENTATION AUDIT");
     console.log("");
@@ -74,12 +78,41 @@ function main() {
       fail("production routes", "missing");
       failures += 1;
     }
+    if (fs.existsSync(workflowRequestsDir)) pass("workflow requests");
+    else {
+      fail("workflow requests", "not generated yet");
+      failures += 1;
+    }
+    if (fs.existsSync(generationReportsDir)) pass("generation reports");
+    else {
+      fail("generation reports", "not generated yet");
+      failures += 1;
+    }
     if (fs.existsSync(consistencySummaryPath)) pass("consistency summary");
-    else fail("consistency summary", "not generated yet");
+    else {
+      fail("consistency summary", "not generated yet");
+      failures += 1;
+    }
+    if (fs.existsSync(aiMotionReportPath)) pass("ai motion report");
+    else {
+      fail("ai motion report", "not generated yet");
+      failures += 1;
+    }
+    if (fs.existsSync(stabilizationReportPath)) pass("stabilization report");
+    else {
+      fail("stabilization report", "not generated yet");
+      failures += 1;
+    }
     if (fs.existsSync(compositedShotDir) && fs.readdirSync(compositedShotDir).some((entry) => entry.endsWith(".mp4"))) pass("composited shot clips");
-    else fail("composited shot clips", "not generated yet");
+    else {
+      fail("composited shot clips", "not generated yet");
+      failures += 1;
+    }
     if (fs.existsSync(sceneSequenceDir) && fs.readdirSync(sceneSequenceDir).some((entry) => entry.endsWith(".mp4"))) pass("scene sequences");
-    else fail("scene sequences", "not generated yet");
+    else {
+      fail("scene sequences", "not generated yet");
+      failures += 1;
+    }
 
     if (fs.existsSync(assetManifestPath)) {
       const manifest = readJson(assetManifestPath);
@@ -105,7 +138,10 @@ function main() {
     }
 
     if (fs.existsSync(renderReportPath)) pass("render report");
-    else fail("render report", "not generated yet");
+    else {
+      fail("render report", "not generated yet");
+      failures += 1;
+    }
 
     console.log("");
     console.log(`STATUS: ${failures === 0 ? "PASS" : "INCOMPLETE"}`);
