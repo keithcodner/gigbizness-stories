@@ -1563,6 +1563,24 @@ function runSceneAssemblyStage(topicId) {
   return workspaceDir;
 }
 
+function runBricktoonAutoStage(topicId, profile = "draft") {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon-auto stage for topic '${topicId}' with profile '${profile}'`);
+
+  runBricktoonCharactersStage(topicId);
+  runAssetGenerationStage(topicId);
+  runLayerExtractionStage(topicId);
+  runCharacterRiggingStage(topicId);
+  runAiVideoMotionPassesStage(topicId);
+  runShotCompositingStage(topicId);
+  runSceneAssemblyStage(topicId);
+  runRenderContractStage(topicId, profile, profile === "draft" ? "development" : "production");
+  runRenderStage(topicId, profile);
+
+  writeLog(`Completed bricktoon-auto stage for topic '${topicId}' with profile '${profile}'`);
+  return workspaceDir;
+}
+
 function runAnimationStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting animation/edit-plan stage for topic '${topicId}'`);
@@ -1700,6 +1718,7 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage ai-video-motion-passes");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-compositing");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-assembly");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-auto --profile draft");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-clips");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage animation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render-contract --profile draft");
@@ -1799,7 +1818,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-auto", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -1854,6 +1873,8 @@ function main() {
         workspaceDir = runShotCompositingStage(args.topic);
       } else if (args.stage === "scene-assembly") {
         workspaceDir = runSceneAssemblyStage(args.topic);
+      } else if (args.stage === "bricktoon-auto") {
+        workspaceDir = runBricktoonAutoStage(args.topic, args.profile || "draft");
       } else if (args.stage === "bricktoon-clips") {
         workspaceDir = runBricktoonClipsStage(args.topic);
       } else if (args.stage === "animation") {

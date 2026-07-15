@@ -6,7 +6,11 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Added
 
+- Added `scripts/startup-script/start_comfyui.ps1` plus `npm run comfy:start` so the repo can launch the manual `C:\AI\ComfyUI-GTX1080` ComfyUI install from a single project-local command.
+- Added a first-class `bricktoon-auto` orchestrator stage plus `npm run bricktoon:auto` so the premium bricktoon visual pipeline can run as one automatic command while the individual manual stages remain available.
 - Added `docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md` so the full manual ComfyUI startup path, `.env` settings, checkpoint location, and repo test commands are documented in one place for future reuse.
+- Added `docs/technical_docs/COMFYUI_PORTABLE_SETUP.md` so the manual ComfyUI install can be recreated on another machine without retracing the full debugging trail.
+- Added `docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md` so the entire path from GitHub clone to Comfy-backed bricktoon render is documented as one repeatable setup flow.
 - Added `docs/technical_docs/BRICKTOON_COMFYUI_IMPLEMENTATION.md` as the new source-of-truth implementation document for the ComfyUI-first bricktoon rendering path.
 - Added `docs/technical_docs/VISUAL_REFERENCE_INTERPRETATION.md` so reference-driven quality targets are documented as style/quality matching rules instead of copy instructions.
 - Added a repo-local `.env` loader so provider configuration now works from `.env` without requiring the shell to pre-export variables first.
@@ -41,6 +45,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Fixed
 
+- Fixed an encoding glitch in the portable ComfyUI setup doc so it now reads cleanly in plain text editors and terminal viewers.
 - Fixed a workflow limitation where "animation" could still look like one held text card by introducing multiple timed shots inside a scene before final render assembly.
 - Fixed a contract gap where premium image-generation stages could produce files but not the request/report metadata needed to rerun, debug, or audit a managed ComfyUI workflow stack.
 - Fixed a QC/audit reliability gap where some missing premium-output artifacts could print as failures without actually affecting the final audit status.

@@ -31,6 +31,10 @@ This creates `workspaces/tow_truck_dark_side/` with the expected folder tree and
 Use the consolidated guide here:
 
 - [docs/technical_docs/BRICKTOON_PIPELINE_GUIDE.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/BRICKTOON_PIPELINE_GUIDE.md)
+- [docs/technical_docs/BRICKTOON_COMFYUI_IMPLEMENTATION.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/BRICKTOON_COMFYUI_IMPLEMENTATION.md)
+- [docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md)
+- [docs/technical_docs/COMFYUI_PORTABLE_SETUP.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/COMFYUI_PORTABLE_SETUP.md)
+- [docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md)
 
 That document replaces the older split architecture/implementation docs and explains the orchestrator stages, cast system, animation flow, clip generation, render path, and test commands in one place.
 
@@ -71,3 +75,11 @@ Use music from the local royalty-free library:
 - Do not use files sitting directly in the root of `@all`; that root is treated as unsorted
 
 Each workspace now seeds `04_assets/music/music_selection.md` and `04_assets/music/music_manifest.csv`, and QC expects the selected track to be documented there.
+
+## ComfyUI Setup
+
+For the current working local ComfyUI path and full project bootstrap:
+
+- use [docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md) for daily startup
+- use [docs/technical_docs/COMFYUI_PORTABLE_SETUP.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/COMFYUI_PORTABLE_SETUP.md) to recreate the ComfyUI install on another machine
+- use [docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md) for the full repo-to-render setup path
