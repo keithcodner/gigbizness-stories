@@ -4,6 +4,7 @@ import math
 import os
 import subprocess
 import sys
+import tempfile
 import wave
 
 
@@ -15,6 +16,48 @@ def create_silent_wav(output_path: str, duration_seconds: float, sample_rate: in
       wav_file.setsampwidth(2)
       wav_file.setframerate(sample_rate)
       wav_file.writeframes(silence)
+
+
+def synthesize_windows_tts(transcript_path: str, output_path: str) -> bool:
+    with open(transcript_path, "r", encoding="utf8") as handle:
+        transcript = handle.read().strip()
+
+    if not transcript:
+        return False
+
+    script = """Add-Type -AssemblyName System.Speech
+$transcript = Get-Content -LiteralPath $args[0] -Raw
+if ([string]::IsNullOrWhiteSpace($transcript)) { exit 2 }
+$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$synth.Rate = -1
+$synth.Volume = 100
+$synth.SetOutputToWaveFile($args[1])
+$synth.Speak($transcript)
+$synth.Dispose()
+"""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".ps1", mode="w", encoding="utf8") as handle:
+        handle.write(script)
+        script_path = handle.name
+
+    try:
+        result = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                script_path,
+                transcript_path,
+                output_path,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        return result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
+    finally:
+        if os.path.exists(script_path):
+            os.unlink(script_path)
 
 
 def total_duration_from_timing(timing_path: str) -> float:
@@ -40,7 +83,7 @@ def run_ffmpeg_normalize(input_path: str, output_path: str) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create and normalize a placeholder narration WAV.")
+    parser = argparse.ArgumentParser(description="Create and normalize draft narration WAV audio.")
     parser.add_argument("--transcript", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--normalized-output", required=True)
@@ -52,11 +95,17 @@ def main() -> int:
 
     duration_seconds = total_duration_from_timing(args.timing)
     padded_duration = duration_seconds + 1.0
-    create_silent_wav(args.output, padded_duration)
+    synthesized = synthesize_windows_tts(args.transcript, args.output)
+    if not synthesized:
+        create_silent_wav(args.output, padded_duration)
     run_ffmpeg_normalize(args.output, args.normalized_output)
 
-    print(f"Created placeholder WAV at {args.output}")
-    print(f"Normalized placeholder WAV at {args.normalized_output}")
+    if synthesized:
+        print(f"Created draft TTS WAV at {args.output}")
+        print(f"Normalized draft TTS WAV at {args.normalized_output}")
+    else:
+        print(f"Created placeholder WAV at {args.output}")
+        print(f"Normalized placeholder WAV at {args.normalized_output}")
     return 0
 
 

@@ -15,7 +15,7 @@ The pipeline has two goals:
 
 The orchestrator is the source of truth for stage order and execution. The current practical flow is:
 
-`format -> research -> angle -> script -> cast -> scene-cards -> scene-beats -> shot-planner -> bricktoon-characters -> voice -> assets -> bricktoon-scenes -> bricktoon-manifest -> animation -> bricktoon-shots -> scene-assembly -> bricktoon-clips -> render-contract -> render -> shorts -> qc -> bricktoon-audit`
+`format -> research -> angle -> script -> cast -> visual-character-bible -> scene-cards -> voice -> assets -> scene-beats -> shot-planner -> visual-production-router -> shot-art-direction -> composition-guides -> asset-generation -> asset-consistency-validation -> layer-extraction -> character-rigging -> bricktoon-characters -> bricktoon-scenes -> bricktoon-manifest -> animation -> bricktoon-shots -> ai-video-motion-passes -> shot-compositing -> scene-assembly -> bricktoon-clips -> render-contract -> render -> shorts -> qc -> bricktoon-audit`
 
 Main orchestrator file:
 
@@ -83,6 +83,16 @@ Important detail:
 - The modern cast package uses `cast_members`.
 - The pipeline now also tolerates the older flat `cast` array for compatibility.
 
+`visual-character-bible`
+
+- Builds stable visual identity packages for recurring characters before higher-quality shot work begins.
+- Creates per-character view sheets, definition files, and locked-feature references for continuity.
+
+Key files:
+
+- `03_cast/visual_character_bible.json`
+- `07_visuals/character_bibles/...`
+
 `scene-cards`
 
 - Converts the script into scene-by-scene visual instructions.
@@ -115,6 +125,71 @@ Key files:
 - `07_shot_plans/scenes/*_shots.json`
 - `07_shot_plans/layout_assignments.json`
 - `07_shot_plans/shot_plan_report.md`
+
+`visual-production-router`
+
+- Assigns a production mode and quality tier to each shot.
+- Separates what the shot contains from how it should be rendered.
+
+Key files:
+
+- `07_visuals/production_routes/production_routes.json`
+- `07_visuals/production_routes/production_route_validation.json`
+
+`shot-art-direction`
+
+- Creates one shot contract per shot for lighting, depth, surface style, and motion expectations.
+
+Key files:
+
+- `07_visuals/art_direction/*.json`
+- `07_visuals/art_direction/*.md`
+
+`composition-guides`
+
+- Converts deterministic shot planning into blueprint images and JSON placement guides that future AI or artist-created hero frames can follow.
+
+Key files:
+
+- `07_visuals/composition_guides/*.png`
+- `07_visuals/composition_guides/*_mask.png`
+- `07_visuals/composition_guides/*.json`
+
+`asset-generation`
+
+- Generates mock higher-quality shot keyframes and keeps them inside the manifest/approval system.
+- This stage is the bridge into provider-agnostic image-generation later.
+
+Key files:
+
+- `07_visuals/generated_keyframes/`
+- `07_visuals/approved_keyframes/`
+
+`asset-consistency-validation`
+
+- Validates generated keyframes against continuity expectations before they are used downstream.
+
+Key files:
+
+- `07_visuals/consistency_reports/*.json`
+- `07_visuals/consistency_reports/consistency_summary.md`
+
+`layer-extraction`
+
+- Converts approved shot artwork into animation-ready layers and clean plates.
+
+Key files:
+
+- `07_visuals/shot_layers/...`
+- `07_visuals/clean_plates/...`
+
+`character-rigging`
+
+- Defines deterministic hybrid 2D rigs that can use higher-quality character artwork with controlled motion.
+
+Key files:
+
+- `07_visuals/character_rigs/*.json`
 
 `bricktoon-characters`
 
@@ -186,6 +261,25 @@ Key outputs:
 - `08_animation/shot_clips/*.mp4`
 - `07_visuals/generated_images/shot_posters/*.png`
 
+`ai-video-motion-passes`
+
+- Creates optional AI-style motion-pass placeholders for shots that benefit from organic movement.
+- The current implementation remains provider-agnostic and can fall back to copied procedural clips when no real AI provider is attached.
+
+Key outputs:
+
+- `08_animation/raw_ai_video/*.mp4`
+- `08_animation/stabilized_ai_video/*.mp4`
+
+`shot-compositing`
+
+- Builds the preferred per-shot video layer for scene assembly by choosing stabilized AI motion when available and procedural animation when not.
+
+Key outputs:
+
+- `08_animation/composited_shot_clips/*.mp4`
+- `08_animation/compositing_reports/compositing_report.json`
+
 `scene-assembly`
 
 - Concatenates shot clips into per-scene motion sequences.
@@ -252,12 +346,14 @@ Key files:
 
 The renderer does not blindly trust one file type. It resolves approved scene assets in this priority order:
 
-1. `bricktoon_scene_sequence`
-2. `bricktoon_animated_clip`
-3. `bricktoon_shot_clip`
-4. `bricktoon_layered_scene`
-5. `bricktoon_scene`
-6. source/document/chart/text fallbacks
+1. `bricktoon_composited_shot_sequence`
+2. `bricktoon_scene_sequence`
+3. `bricktoon_animated_clip`
+4. `composited_shot_clip`
+5. `bricktoon_shot_clip`
+6. `bricktoon_layered_scene`
+7. `bricktoon_scene`
+8. source/document/chart/text fallbacks
 
 That logic lives in:
 
@@ -267,7 +363,7 @@ This means a scene can still render if only static assets exist, but the pipelin
 
 ## Current Animation Model
 
-Right now the animation system is procedural, not full character rigging. The important upgrade is that it is now shot-based, so each scene can cut between multiple compositions instead of holding on one text-heavy frame.
+Right now the animation system is still largely procedural, but the architecture now includes a higher-quality visual layer on top of it. The important change is that procedural output can now act as planning, composition, and fallback infrastructure while premium-looking keyframes, layers, rigs, and composited shots plug into the same orchestrated pipeline.
 
 What it already supports:
 
@@ -288,6 +384,18 @@ What it does not fully support yet:
 - head-turn interpolation
 - detailed prop interaction
 - frame-accurate brick-hand manipulation
+
+What the new AI-quality layer adds:
+
+- visual character bibles
+- shot-level production routing
+- art-direction contracts
+- composition-guide blueprints
+- approved keyframe workflow
+- layer extraction and clean plates
+- hybrid rig definitions
+- optional AI-style motion passes
+- composited shot outputs that can be preferred automatically
 
 That next layer should plug into the existing `bricktoon-clips` stage rather than replacing the orchestrator design.
 
@@ -315,7 +423,7 @@ That next layer should plug into the existing `bricktoon-clips` stage rather tha
 
 `asset_manifest.json`
 
-- declares approved character refs, static scenes, and animated clips
+- declares approved character refs, bibles, composition guides, keyframes, layers, motion passes, and animated clips
 
 `render_contract.json`
 
@@ -334,7 +442,17 @@ npm run test:cast
 npm run test:bricktoon
 npm run scene-beats -- --topic test_story_template
 npm run shot-planner -- --topic test_story_template
+npm run visual-character-bible -- --topic test_story_template
+npm run visual-production-router -- --topic test_story_template
+npm run shot-art-direction -- --topic test_story_template
+npm run composition-guides -- --topic test_story_template
+npm run asset-generation -- --topic test_story_template
+npm run asset-consistency -- --topic test_story_template
+npm run layer-extraction -- --topic test_story_template
+npm run character-rigging -- --topic test_story_template
 npm run bricktoon:shots -- --topic test_story_template
+npm run ai-motion -- --topic test_story_template
+npm run shot:compositing -- --topic test_story_template
 npm run scene:assembly -- --topic test_story_template
 npm run animation:sample
 npm run animation:sample:test
@@ -348,7 +466,9 @@ What they are for:
 
 - `animation:sample` proves isolated character-layer motion works at all
 - `bricktoon:shots` regenerates shot-level motion clips from the current test-story shot plan
+- `shot:compositing` prepares the preferred per-shot clips for scene assembly
 - `scene:assembly` assembles those shot clips into per-scene animated sequences
+- `test-story:quality-stack` runs the new AI-quality stack through shot compositing for quick regression checks
 - `test-story:bricktoon-preview` runs the compatibility wrapper for the full animated-sequence path
 - `test-story:render` produces a fresh draft render using current pipeline logic
 - `audit:orchestrator` checks that new architecture work is actually wired into the orchestrator
@@ -360,8 +480,17 @@ If clips are not moving:
 - inspect `08_animation/animation_plan.json`
 - inspect `08_animation/shot_performances.json`
 - inspect `08_animation/shot_clips/`
+- inspect `08_animation/composited_shot_clips/`
 - inspect `08_animation/scene_sequences/`
 - inspect `07_visuals/asset_manifest.json`
+
+If quality-routing or keyframe stages look wrong:
+
+- inspect `03_cast/visual_character_bible.json`
+- inspect `07_visuals/production_routes/production_routes.json`
+- inspect `07_visuals/art_direction/`
+- inspect `07_visuals/composition_guides/`
+- inspect `07_visuals/consistency_reports/consistency_summary.md`
 
 If render falls back to static/text visuals:
 
@@ -382,6 +511,7 @@ If guided mode blocks:
 - soundtrack choices should come from the sorted local royalty-free music library
 - all reusable architecture changes should be wired into orchestrator flow
 - incidental fixes should be documented in `docs/technical_docs/CHANGELOG.md`
+- visual references are interpreted as quality/style benchmarks, not copy instructions
 
 ## Recommended Reading Order
 
@@ -405,8 +535,10 @@ The pipeline now works like this:
 - research and scripting produce a controlled story package
 - cast and scene-card stages turn that package into reusable bricktoon scene intent
 - scene-beats and shot-planner turn each scene into a multi-shot sequence design
+- visual-production-router, art direction, and composition guides decide how expensive each shot should be and what quality target it should hit
+- asset generation, consistency validation, layer extraction, and rigging prepare higher-quality shot ingredients without discarding deterministic fallbacks
 - animation turns that sequence design into motion directives and shot performances
-- `bricktoon-shots` generates the moving shot footage
-- `scene-assembly` turns those shots into real per-scene animated assets
+- `bricktoon-shots`, optional AI motion, and shot compositing generate the moving shot footage
+- `scene-assembly` turns those shots into preferred per-scene animated assets
 - render prefers those moving assets and produces the draft video
 - QC decides whether the result is publishable

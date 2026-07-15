@@ -25,6 +25,7 @@ const WORKSPACE_LAYOUT = [
     dir: "00_brief",
     files: {
       "format_recipe.json": "{\n  \"format_id\": \"bleak_explainer_bricktoon\"\n}\n",
+      "visual_quality_profile.json": "{\n  \"profile_id\": \"cinematic_bricktoon_editorial\",\n  \"production_target\": {\n    \"detail\": \"high\",\n    \"finish\": \"premium illustrated editorial\",\n    \"depth\": \"layered cinematic depth\",\n    \"character_expression\": \"strong and exaggerated\",\n    \"material_rendering\": \"painted plastic with dimensional highlights\",\n    \"lighting\": \"dramatic directional lighting\",\n    \"composition\": \"clear focal hierarchy\",\n    \"environment\": \"rich but controlled detail\",\n    \"movement\": \"selective, purposeful, cinematic\"\n  },\n  \"avoid\": [\n    \"flat vector appearance\",\n    \"stick-figure limbs\",\n    \"empty backgrounds\",\n    \"uniform lighting\",\n    \"front-facing character lineup\",\n    \"debug overlays\",\n    \"paragraph overlays\",\n    \"blurry faces\",\n    \"inconsistent costumes\",\n    \"distorted hands\",\n    \"extra limbs\",\n    \"unreadable generated text\",\n    \"floating props\"\n  ]\n}\n",
       "format_brief.md": "# Format Brief\n\n",
       "style_guide.md": "# Style Guide\n\n"
     }
@@ -59,6 +60,7 @@ const WORKSPACE_LAYOUT = [
       "cast_continuity.json": "{\n  \"characters\": []\n}\n",
       "scene_cast_map.json": "{\n  \"scenes\": []\n}\n",
       "prop_assignments.json": "{\n  \"props\": []\n}\n",
+      "visual_character_bible.json": "{\n  \"characters\": []\n}\n",
       "reference_usage.json": "{\n  \"references\": []\n}\n",
       "cast_validation.json": "{\n  \"passed\": false,\n  \"errors\": [],\n  \"warnings\": []\n}\n",
       "cast_report.md": "# Cast Report\n\n",
@@ -139,6 +141,20 @@ const WORKSPACE_LAYOUT = [
       "asset_manifest.json": "{\n  \"style\": \"bricktoon\",\n  \"assets\": []\n}\n"
     },
     subdirs: [
+      "style_profiles",
+      "character_bibles",
+      "environment_bibles",
+      "production_routes",
+      "production_routes/scenes",
+      "art_direction",
+      "composition_guides",
+      "generated_keyframes",
+      "approved_keyframes",
+      "consistency_reports",
+      "shot_layers",
+      "clean_plates",
+      "props",
+      "character_rigs",
       "generated_images",
       "generated_images/shot_posters",
       "character_refs",
@@ -172,10 +188,19 @@ const WORKSPACE_LAYOUT = [
     dir: "08_animation",
     files: {
       "animation_plan.json": "{\n  \"style\": \"bricktoon_static_motion\",\n  \"scenes\": []\n}\n",
-      "camera_moves.json": "[]\n"
+      "camera_moves.json": "[]\n",
+      "shot_performances.json": "{\n  \"shots\": []\n}\n"
     },
     subdirs: [
       "animated_clips",
+      "performance_timelines",
+      "raw_ai_video",
+      "stabilized_ai_video",
+      "puppet_shots",
+      "hybrid_shots",
+      "raw_shot_clips",
+      "composited_shot_clips",
+      "compositing_reports",
       "shot_clips",
       "scene_sequences"
     ]
@@ -396,6 +421,7 @@ function getTopicPaths(topicId) {
     guidedStatusPath: path.join(workspaceDir, "guided_status.md"),
     qualityRulesPath: path.join(ROOT_CONFIG_DIR, "quality_rules.json"),
     formatRecipePath: path.join(workspaceDir, "00_brief", "format_recipe.json"),
+    visualQualityProfilePath: path.join(workspaceDir, "00_brief", "visual_quality_profile.json"),
     beatSheetPath: path.join(workspaceDir, "02_angle", "beat_sheet.md"),
     castPath: path.join(workspaceDir, "03_cast", "cast.json"),
     castRequestPath: path.join(workspaceDir, "03_cast", "cast_request.json"),
@@ -403,6 +429,7 @@ function getTopicPaths(topicId) {
     castContinuityPath: path.join(workspaceDir, "03_cast", "cast_continuity.json"),
     sceneCastMapPath: path.join(workspaceDir, "03_cast", "scene_cast_map.json"),
     propAssignmentsPath: path.join(workspaceDir, "03_cast", "prop_assignments.json"),
+    visualCharacterBiblePath: path.join(workspaceDir, "03_cast", "visual_character_bible.json"),
     referenceUsagePath: path.join(workspaceDir, "03_cast", "reference_usage.json"),
     castValidationPath: path.join(workspaceDir, "03_cast", "cast_validation.json"),
     castReportPath: path.join(workspaceDir, "03_cast", "cast_report.md"),
@@ -422,9 +449,24 @@ function getTopicPaths(topicId) {
     sceneBeatsPath: path.join(workspaceDir, "06_scene_beats", "scene_beats.json"),
     shotPlanPath: path.join(workspaceDir, "07_shot_plans", "shot_plan.json"),
     assetManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
+    productionRoutesPath: path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json"),
+    productionRouteValidationPath: path.join(workspaceDir, "07_visuals", "production_routes", "production_route_validation.json"),
+    productionRouteReportPath: path.join(workspaceDir, "07_visuals", "production_routes", "production_route_report.md"),
+    artDirectionDir: path.join(workspaceDir, "07_visuals", "art_direction"),
+    compositionGuidesDir: path.join(workspaceDir, "07_visuals", "composition_guides"),
+    approvedKeyframesDir: path.join(workspaceDir, "07_visuals", "approved_keyframes"),
+    consistencyReportsDir: path.join(workspaceDir, "07_visuals", "consistency_reports"),
+    consistencySummaryPath: path.join(workspaceDir, "07_visuals", "consistency_reports", "consistency_summary.md"),
+    shotLayersDir: path.join(workspaceDir, "07_visuals", "shot_layers"),
+    cleanPlatesDir: path.join(workspaceDir, "07_visuals", "clean_plates"),
+    characterRigsDir: path.join(workspaceDir, "07_visuals", "character_rigs"),
     characterRefsDir: path.join(workspaceDir, "07_visuals", "character_refs"),
     generatedImagesDir: path.join(workspaceDir, "07_visuals", "generated_images"),
     animatedClipsDir: path.join(workspaceDir, "08_animation", "animated_clips"),
+    rawAiVideoDir: path.join(workspaceDir, "08_animation", "raw_ai_video"),
+    stabilizedAiVideoDir: path.join(workspaceDir, "08_animation", "stabilized_ai_video"),
+    compositedShotClipsDir: path.join(workspaceDir, "08_animation", "composited_shot_clips"),
+    compositingReportsDir: path.join(workspaceDir, "08_animation", "compositing_reports"),
     shotClipsDir: path.join(workspaceDir, "08_animation", "shot_clips"),
     sceneSequencesDir: path.join(workspaceDir, "08_animation", "scene_sequences"),
     animationPlanPath: path.join(workspaceDir, "08_animation", "animation_plan.json"),
@@ -613,6 +655,12 @@ function isBricktoonManifestReady(topicId) {
   return manifestText.includes("\"asset_id\"") && manifestText.includes("\"assets\"");
 }
 
+function isVisualCharacterBibleReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return readText(paths.visualCharacterBiblePath).includes("\"character_id\"") &&
+    directoryHasFiles(path.join(paths.workspaceDir, "07_visuals", "character_bibles"));
+}
+
 function isSceneBeatsReady(topicId) {
   const text = readText(getTopicPaths(topicId).sceneBeatsPath);
   return text.includes("\"beats\"");
@@ -621,6 +669,48 @@ function isSceneBeatsReady(topicId) {
 function isShotPlannerReady(topicId) {
   const text = readText(getTopicPaths(topicId).shotPlanPath);
   return text.includes("\"shot_id\"");
+}
+
+function isVisualProductionRouterReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return readText(paths.productionRoutesPath).includes("\"production_mode\"") &&
+    readText(paths.productionRouteValidationPath).includes("\"passed\": true");
+}
+
+function isShotArtDirectionReady(topicId) {
+  return directoryHasFiles(getTopicPaths(topicId).artDirectionDir);
+}
+
+function isCompositionGuidesReady(topicId) {
+  return directoryHasFiles(getTopicPaths(topicId).compositionGuidesDir);
+}
+
+function isAssetGenerationReady(topicId) {
+  return directoryHasFiles(getTopicPaths(topicId).approvedKeyframesDir);
+}
+
+function isAssetConsistencyReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return fileHasContent(paths.consistencySummaryPath);
+}
+
+function isLayerExtractionReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return directoryHasFiles(paths.shotLayersDir) && directoryHasFiles(paths.cleanPlatesDir);
+}
+
+function isCharacterRiggingReady(topicId) {
+  return directoryHasFiles(getTopicPaths(topicId).characterRigsDir);
+}
+
+function isAiVideoMotionReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return directoryHasFiles(paths.rawAiVideoDir) && directoryHasFiles(paths.stabilizedAiVideoDir);
+}
+
+function isShotCompositingReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return directoryHasFiles(paths.compositedShotClipsDir) && directoryHasFiles(paths.compositingReportsDir);
 }
 
 function isBricktoonClipsReady(topicId) {
@@ -849,6 +939,10 @@ function runGuidedPipeline(topicId, mode = "guided") {
     runCastStage(topicId);
   }
 
+  if (!isVisualCharacterBibleReady(topicId)) {
+    runVisualCharacterBibleStage(topicId);
+  }
+
   if (!isSceneCardsReady(topicId)) {
     runSceneCardStage(topicId);
   }
@@ -873,6 +967,34 @@ function runGuidedPipeline(topicId, mode = "guided") {
     runShotPlannerStage(topicId);
   }
 
+  if (!isVisualProductionRouterReady(topicId)) {
+    runVisualProductionRouterStage(topicId);
+  }
+
+  if (!isShotArtDirectionReady(topicId)) {
+    runShotArtDirectionStage(topicId);
+  }
+
+  if (!isCompositionGuidesReady(topicId)) {
+    runCompositionGuidesStage(topicId);
+  }
+
+  if (!isAssetGenerationReady(topicId)) {
+    runAssetGenerationStage(topicId);
+  }
+
+  if (!isAssetConsistencyReady(topicId)) {
+    runAssetConsistencyValidationStage(topicId);
+  }
+
+  if (!isLayerExtractionReady(topicId)) {
+    runLayerExtractionStage(topicId);
+  }
+
+  if (!isCharacterRiggingReady(topicId)) {
+    runCharacterRiggingStage(topicId);
+  }
+
   if (!isBricktoonScenesReady(topicId)) {
     runBricktoonScenesStage(topicId);
   }
@@ -887,6 +1009,14 @@ function runGuidedPipeline(topicId, mode = "guided") {
 
   if (!isBricktoonShotsReady(topicId)) {
     runBricktoonShotsStage(topicId);
+  }
+
+  if (!isAiVideoMotionReady(topicId)) {
+    runAiVideoMotionPassesStage(topicId);
+  }
+
+  if (!isShotCompositingReady(topicId)) {
+    runShotCompositingStage(topicId);
   }
 
   if (!isBricktoonClipsReady(topicId)) {
@@ -1132,6 +1262,19 @@ function runCastStage(topicId) {
   return workspaceDir;
 }
 
+function runVisualCharacterBibleStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting visual-character-bible stage for topic '${topicId}'`);
+
+  if (!isCastReady(topicId)) {
+    runCastStage(topicId);
+  }
+  runNodeAgent("visual_character_bible_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed visual-character-bible stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runScriptStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting script stage for topic '${topicId}'`);
@@ -1194,6 +1337,106 @@ function runShotPlannerStage(topicId) {
   return workspaceDir;
 }
 
+function runVisualProductionRouterStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting visual-production-router stage for topic '${topicId}'`);
+
+  if (!isShotPlannerReady(topicId)) {
+    runShotPlannerStage(topicId);
+  }
+  if (!isVisualCharacterBibleReady(topicId)) {
+    runVisualCharacterBibleStage(topicId);
+  }
+  runNodeAgent("visual_production_router_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed visual-production-router stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runShotArtDirectionStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting shot-art-direction stage for topic '${topicId}'`);
+
+  if (!isVisualProductionRouterReady(topicId)) {
+    runVisualProductionRouterStage(topicId);
+  }
+  runNodeAgent("shot_art_direction_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed shot-art-direction stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runCompositionGuidesStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting composition-guides stage for topic '${topicId}'`);
+
+  if (!isShotArtDirectionReady(topicId)) {
+    runShotArtDirectionStage(topicId);
+  }
+  runNodeAgent("composition_guide_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed composition-guides stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runAssetGenerationStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting asset-generation stage for topic '${topicId}'`);
+
+  if (!isBricktoonCharactersReady(topicId)) {
+    runBricktoonCharactersStage(topicId);
+  }
+  if (!isBricktoonScenesReady(topicId)) {
+    runBricktoonScenesStage(topicId);
+  }
+  if (!isCompositionGuidesReady(topicId)) {
+    runCompositionGuidesStage(topicId);
+  }
+  runNodeScript("scripts/generate_shot_keyframes.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed asset-generation stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runAssetConsistencyValidationStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting asset-consistency-validation stage for topic '${topicId}'`);
+
+  if (!isAssetGenerationReady(topicId)) {
+    runAssetGenerationStage(topicId);
+  }
+  runNodeAgent("asset_consistency_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed asset-consistency-validation stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runLayerExtractionStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting layer-extraction stage for topic '${topicId}'`);
+
+  if (!isAssetConsistencyReady(topicId)) {
+    runAssetConsistencyValidationStage(topicId);
+  }
+  runNodeAgent("layer_extraction_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed layer-extraction stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runCharacterRiggingStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting character-rigging stage for topic '${topicId}'`);
+
+  if (!isLayerExtractionReady(topicId)) {
+    runLayerExtractionStage(topicId);
+  }
+  runNodeAgent("character_rigging_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed character-rigging stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runBricktoonCharactersStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting bricktoon character-ref stage for topic '${topicId}'`);
@@ -1250,6 +1493,9 @@ function runBricktoonShotsStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting bricktoon-shots stage for topic '${topicId}'`);
 
+  if (!isCharacterRiggingReady(topicId)) {
+    runCharacterRiggingStage(topicId);
+  }
   if (!isSceneBeatsReady(topicId)) {
     runSceneBeatsStage(topicId);
   }
@@ -1265,12 +1511,41 @@ function runBricktoonShotsStage(topicId) {
   return workspaceDir;
 }
 
+function runAiVideoMotionPassesStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting ai-video-motion-passes stage for topic '${topicId}'`);
+
+  if (!isBricktoonShotsReady(topicId)) {
+    runBricktoonShotsStage(topicId);
+  }
+  runNodeAgent("ai_video_motion_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed ai-video-motion-passes stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runShotCompositingStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting shot-compositing stage for topic '${topicId}'`);
+
+  if (!isBricktoonShotsReady(topicId)) {
+    runBricktoonShotsStage(topicId);
+  }
+  if (!isAiVideoMotionReady(topicId)) {
+    runAiVideoMotionPassesStage(topicId);
+  }
+  runNodeAgent("shot_compositing_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+
+  writeLog(`Completed shot-compositing stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runSceneAssemblyStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting scene-assembly stage for topic '${topicId}'`);
 
-  if (!isBricktoonShotsReady(topicId)) {
-    runBricktoonShotsStage(topicId);
+  if (!isShotCompositingReady(topicId)) {
+    runShotCompositingStage(topicId);
   }
   runNodeScript("scripts/assemble_bricktoon_scene_sequences.js", ["--workspace", workspaceDir]);
 
@@ -1394,16 +1669,26 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage research");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage angle");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage cast");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage visual-character-bible");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage script");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-cards");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage voice");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage assets");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-beats");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-planner");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage visual-production-router");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-art-direction");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage composition-guides");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage asset-generation");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage asset-consistency-validation");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage layer-extraction");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage character-rigging");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-characters");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-scenes");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-manifest");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-shots");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage ai-video-motion-passes");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-compositing");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-assembly");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-clips");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage animation");
@@ -1504,7 +1789,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "script", "scene-cards", "voice", "assets", "scene-beats", "shot-planner", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "scene-assembly", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -1517,6 +1802,8 @@ function main() {
         workspaceDir = runAngleStage(args.topic);
       } else if (args.stage === "cast") {
         workspaceDir = runCastStage(args.topic);
+      } else if (args.stage === "visual-character-bible") {
+        workspaceDir = runVisualCharacterBibleStage(args.topic);
       } else if (args.stage === "script") {
         workspaceDir = runScriptStage(args.topic);
       } else if (args.stage === "scene-cards") {
@@ -1529,6 +1816,20 @@ function main() {
         workspaceDir = runSceneBeatsStage(args.topic);
       } else if (args.stage === "shot-planner") {
         workspaceDir = runShotPlannerStage(args.topic);
+      } else if (args.stage === "visual-production-router") {
+        workspaceDir = runVisualProductionRouterStage(args.topic);
+      } else if (args.stage === "shot-art-direction") {
+        workspaceDir = runShotArtDirectionStage(args.topic);
+      } else if (args.stage === "composition-guides") {
+        workspaceDir = runCompositionGuidesStage(args.topic);
+      } else if (args.stage === "asset-generation") {
+        workspaceDir = runAssetGenerationStage(args.topic);
+      } else if (args.stage === "asset-consistency-validation") {
+        workspaceDir = runAssetConsistencyValidationStage(args.topic);
+      } else if (args.stage === "layer-extraction") {
+        workspaceDir = runLayerExtractionStage(args.topic);
+      } else if (args.stage === "character-rigging") {
+        workspaceDir = runCharacterRiggingStage(args.topic);
       } else if (args.stage === "bricktoon-characters") {
         workspaceDir = runBricktoonCharactersStage(args.topic);
       } else if (args.stage === "bricktoon-scenes") {
@@ -1537,6 +1838,10 @@ function main() {
         workspaceDir = runBricktoonManifestStage(args.topic);
       } else if (args.stage === "bricktoon-shots") {
         workspaceDir = runBricktoonShotsStage(args.topic);
+      } else if (args.stage === "ai-video-motion-passes") {
+        workspaceDir = runAiVideoMotionPassesStage(args.topic);
+      } else if (args.stage === "shot-compositing") {
+        workspaceDir = runShotCompositingStage(args.topic);
       } else if (args.stage === "scene-assembly") {
         workspaceDir = runSceneAssemblyStage(args.topic);
       } else if (args.stage === "bricktoon-clips") {

@@ -6,6 +6,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Added
 
+- Added `docs/technical_docs/VISUAL_REFERENCE_INTERPRETATION.md` so reference-driven quality targets are documented as style/quality matching rules instead of copy instructions.
 - Added a scene-sequence upgrade layer for bricktoon animation with new orchestrator stages: `scene-beats`, `shot-planner`, `bricktoon-shots`, and `scene-assembly`.
 - Added `scripts/generate_scene_beats.js` so scene cards and timing data can be split into structured multi-beat visual sequences.
 - Added `scripts/generate_shot_plan.js` so each scene beat becomes a concrete timed shot with framing, continuity, and camera instructions.
@@ -14,6 +15,9 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added `src/bricktoon/proceduralSequenceRenderer.js` as the shared renderer for higher-variety shot compositions, closeups, inserts, and reaction framing.
 - Added shot-level animation performance output at `08_animation/shot_performances.json`.
 - Added test-story sequence outputs and preview evidence so the upgraded animation path can be inspected quickly during regression checks.
+- Added the first Bricktoon 2 AI-quality pipeline layer with new orchestrator-backed stages for `visual-character-bible`, `visual-production-router`, `shot-art-direction`, `composition-guides`, `asset-generation`, `asset-consistency-validation`, `layer-extraction`, `character-rigging`, `ai-video-motion-passes`, and `shot-compositing`.
+- Added `00_brief/visual_quality_profile.json` and `03_cast/visual_character_bible.json` as seeded workspace contracts for quality targeting and character continuity.
+- Added provider-agnostic mock implementations for higher-quality keyframes, composition guides, layer manifests, clean plates, character rigs, AI-motion placeholders, and composited shot clips so the full architecture can run before a real external image/video provider is attached.
 
 ### Changed
 
@@ -21,11 +25,15 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Updated render asset resolution to prefer `bricktoon_scene_sequence` over older animated and static bricktoon assets.
 - Updated the bricktoon compatibility stage so `bricktoon-clips` now acts as a wrapper around the newer sequence pipeline rather than a separate legacy generator.
 - Updated the condensed bricktoon technical guide so it reflects the current multi-shot animation workflow and troubleshooting path.
+- Updated scene assembly and render planning so composited shot outputs can be preferred automatically while older procedural shot and scene assets remain valid fallbacks.
+- Updated the bricktoon audit so the new AI-quality layer is included in implementation checks instead of living outside the existing audit path.
 
 ### Fixed
 
 - Fixed a workflow limitation where "animation" could still look like one held text card by introducing multiple timed shots inside a scene before final render assembly.
 - Fixed a pipeline-readiness gap where shot generation and scene assembly could appear complete as soon as any file existed in the output folders; readiness now checks expected shot and scene coverage against planning data and approved manifest assets.
+- Fixed a voice-stage gap where draft renders could contain a formal audio stream but no audible narration because the pipeline was normalizing silent placeholder WAVs; draft voice generation now attempts Windows built-in TTS first and only falls back to silence if synthesis is unavailable.
+- Fixed an architecture gap where premium AI-quality visual work could be described in docs but had no orchestrator stages, seeded workspace outputs, or manifest-compatible fallback path in the executable pipeline.
 
 ## 2026-07-09
 

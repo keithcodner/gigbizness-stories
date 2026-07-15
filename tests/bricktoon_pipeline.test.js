@@ -66,3 +66,30 @@ test("resolveSceneAsset prefers scene sequences over animated clips", () => {
 
   assert.equal(resolved.asset.asset_type, "bricktoon_scene_sequence");
 });
+
+test("resolveSceneAsset prefers composited scene sequences over standard scene sequences", () => {
+  const resolved = resolveSceneAsset({
+    scene_id: "S04",
+    visual_type: "bricktoon_scene",
+    allowed_fallback_types: ["bricktoon_scene", "text_card"]
+  }, {
+    assets: [
+      {
+        asset_id: "SEQ_S04_MAIN",
+        asset_type: "bricktoon_scene_sequence",
+        scene_ids: ["S04"],
+        status: "approved",
+        file: "08_animation/scene_sequences/S04_sequence.mp4"
+      },
+      {
+        asset_id: "SEQCOMP_S04_MAIN",
+        asset_type: "bricktoon_composited_shot_sequence",
+        scene_ids: ["S04"],
+        status: "approved",
+        file: "08_animation/scene_sequences/S04_sequence.mp4"
+      }
+    ]
+  });
+
+  assert.equal(resolved.asset.asset_type, "bricktoon_composited_shot_sequence");
+});

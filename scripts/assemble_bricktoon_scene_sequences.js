@@ -26,19 +26,51 @@ function main() {
     const manifestPath = path.join(workspaceDir, "07_visuals", "asset_manifest.json");
     let manifest = loadManifest(manifestPath, workspaceId);
     const sequenceDir = path.join(workspaceDir, "08_animation", "scene_sequences");
+    const compositedShotDir = path.join(workspaceDir, "08_animation", "composited_shot_clips");
+    const proceduralShotDir = path.join(workspaceDir, "08_animation", "shot_clips");
     ensureDir(sequenceDir);
     const reports = [];
 
     for (const scene of shotPlan) {
-      const files = scene.shots.map((shot) => path.join(workspaceDir, "08_animation", "shot_clips", `${shot.shot_id}.mp4`)).filter((file) => fs.existsSync(file));
+      const files = scene.shots.map((shot) => {
+        const compositedPath = path.join(compositedShotDir, `${shot.shot_id}.mp4`);
+        if (fs.existsSync(compositedPath)) {
+          return compositedPath;
+        }
+        return path.join(proceduralShotDir, `${shot.shot_id}.mp4`);
+      }).filter((file) => fs.existsSync(file));
       if (files.length === 0) {
         continue;
       }
       const outputPath = path.join(sequenceDir, `${scene.scene_id}_sequence.mp4`);
       concatClips(files, outputPath);
 
+      const workflow = files.some((file) => file.includes("composited_shot_clips"))
+        ? "bricktoon_composited_scene_sequence_v1"
+        : "bricktoon_scene_sequence_v1";
+      const primaryAssetType = workflow === "bricktoon_composited_scene_sequence_v1"
+        ? "bricktoon_composited_shot_sequence"
+        : "bricktoon_scene_sequence";
+
       manifest = upsertAsset(manifest, {
         asset_id: `SEQ_${scene.scene_id}_MAIN`,
+        asset_type: primaryAssetType,
+        scene_ids: [scene.scene_id],
+        shot_ids: scene.shots.map((shot) => shot.shot_id),
+        file: `08_animation/scene_sequences/${scene.scene_id}_sequence.mp4`,
+        width: 768,
+        height: 1344,
+        fps: 30,
+        status: "approved",
+        generator: {
+          provider: "procedural",
+          workflow
+        },
+        created_at: new Date().toISOString()
+      });
+
+      manifest = upsertAsset(manifest, {
+        asset_id: `SEQCOMPAT_${scene.scene_id}_MAIN`,
         asset_type: "bricktoon_scene_sequence",
         scene_ids: [scene.scene_id],
         shot_ids: scene.shots.map((shot) => shot.shot_id),
@@ -49,7 +81,7 @@ function main() {
         status: "approved",
         generator: {
           provider: "procedural",
-          workflow: "bricktoon_scene_sequence_v1"
+          workflow
         },
         created_at: new Date().toISOString()
       });

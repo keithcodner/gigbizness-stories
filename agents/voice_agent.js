@@ -117,8 +117,8 @@ function buildVoicePrep(topic, scenes, narratorNotesText) {
     `- Topic: ${topic.id}`,
     `- Scene count: ${scenes.length}`,
     `- Estimated narration length: ${totalSeconds} seconds`,
-    "- Current audio is a timing placeholder, not final narration.",
-    "- Replace `voiceover.wav` with recorded or generated narration later, then rerun normalization and subtitles if timing changes.",
+    "- Current audio should use draft synthesized narration when no recorded voiceover is available.",
+    "- Replace `voiceover.wav` with recorded or higher-quality generated narration later, then rerun normalization and subtitles if timing changes.",
     "",
     "## Scene timing estimate",
     ""

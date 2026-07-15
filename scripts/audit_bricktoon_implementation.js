@@ -25,6 +25,10 @@ function main() {
     const assetManifestPath = path.join(workspaceDir, "07_visuals", "asset_manifest.json");
     const renderContractPath = path.join(workspaceDir, "09_edit_plan", "render_contract.json");
     const renderReportPath = path.join(workspaceDir, "10_renders", "render_report.json");
+    const visualCharacterBiblePath = path.join(workspaceDir, "03_cast", "visual_character_bible.json");
+    const productionRoutesPath = path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json");
+    const consistencySummaryPath = path.join(workspaceDir, "07_visuals", "consistency_reports", "consistency_summary.md");
+    const compositedShotDir = path.join(workspaceDir, "08_animation", "composited_shot_clips");
 
     console.log("BRICKTOON IMPLEMENTATION AUDIT");
     console.log("");
@@ -48,9 +52,16 @@ function main() {
     const refsDir = path.join(workspaceDir, "07_visuals", "character_refs");
     const generatedImagesDir = path.join(workspaceDir, "07_visuals", "generated_images");
     const sceneSequenceDir = path.join(workspaceDir, "08_animation", "scene_sequences");
+    const characterBiblesDir = path.join(workspaceDir, "07_visuals", "character_bibles");
     if (fs.existsSync(refsDir) && fs.readdirSync(refsDir).length > 0) pass("character references");
     else {
       fail("character references", "missing");
+      failures += 1;
+    }
+    if (fs.existsSync(visualCharacterBiblePath) && readJson(visualCharacterBiblePath).characters?.length > 0 && fs.existsSync(characterBiblesDir) && fs.readdirSync(characterBiblesDir).length > 0) {
+      pass("visual character bible");
+    } else {
+      fail("visual character bible", "missing");
       failures += 1;
     }
     if (fs.existsSync(generatedImagesDir) && fs.readdirSync(generatedImagesDir).length > 0) pass("scene images");
@@ -58,6 +69,15 @@ function main() {
       fail("scene images", "missing");
       failures += 1;
     }
+    if (fs.existsSync(productionRoutesPath) && readJson(productionRoutesPath).routes?.length > 0) pass("production routes");
+    else {
+      fail("production routes", "missing");
+      failures += 1;
+    }
+    if (fs.existsSync(consistencySummaryPath)) pass("consistency summary");
+    else fail("consistency summary", "not generated yet");
+    if (fs.existsSync(compositedShotDir) && fs.readdirSync(compositedShotDir).some((entry) => entry.endsWith(".mp4"))) pass("composited shot clips");
+    else fail("composited shot clips", "not generated yet");
     if (fs.existsSync(sceneSequenceDir) && fs.readdirSync(sceneSequenceDir).some((entry) => entry.endsWith(".mp4"))) pass("scene sequences");
     else fail("scene sequences", "not generated yet");
 
@@ -65,7 +85,7 @@ function main() {
       const manifest = readJson(assetManifestPath);
       const approvedSceneAssets = (manifest.assets || []).filter((asset) =>
         asset.status === "approved" &&
-        ["bricktoon_scene_sequence", "bricktoon_animated_clip", "bricktoon_scene"].includes(asset.asset_type)
+        ["bricktoon_composited_shot_sequence", "bricktoon_scene_sequence", "bricktoon_animated_clip", "bricktoon_scene"].includes(asset.asset_type)
       );
       if (approvedSceneAssets.length >= sceneCards.filter((scene) => (scene.visual_type || "bricktoon_scene") === "bricktoon_scene").length) {
         pass("asset_manifest coverage");
