@@ -1,9 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { loadEnv } = require("../loadEnv");
 const { ensureDir, readJsonSafe, writeJson, relativeWorkspacePath } = require("./aiQualityPipeline");
 
 const ROOT = path.resolve(__dirname, "..", "..");
+loadEnv(ROOT);
 
 function loadVisualGenerationConfig() {
   return readJsonSafe(path.join(ROOT, "config", "visual_generation.json"), {});
@@ -41,6 +43,8 @@ function resolveWorkflowTemplate(config, kind, options = {}) {
   const samplerProfiles = config.comfyui?.sampler_profiles || {};
   const samplerProfile = samplerProfiles[profileId] || {};
   const qualityDefaults = config.quality_tier_defaults?.[options.qualityTier || "standard"] || {};
+  const configuredCheckpoint = process.env.COMFYUI_CHECKPOINT || config.comfyui?.checkpoint || null;
+  const templateCheckpoint = template.checkpoint_bundle?.checkpoint || null;
   return {
     workflow_id: workflowId,
     kind,
@@ -50,9 +54,10 @@ function resolveWorkflowTemplate(config, kind, options = {}) {
       aspect_ratio: template.output?.aspect_ratio || qualityDefaults.aspect_ratio || "16:9",
       filename_pattern: template.output?.filename_pattern || "{id}.png"
     },
-    checkpoint_bundle: template.checkpoint_bundle || {
-      checkpoint: config.comfyui?.checkpoint || "v1-5-pruned-emaonly.safetensors",
-      loras: []
+    checkpoint_bundle: {
+      ...(template.checkpoint_bundle || {}),
+      checkpoint: configuredCheckpoint || templateCheckpoint || "v1-5-pruned-emaonly.safetensors",
+      loras: template.checkpoint_bundle?.loras || []
     },
     sampler_profile: {
       id: profileId,

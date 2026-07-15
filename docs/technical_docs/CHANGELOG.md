@@ -6,6 +6,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Added
 
+- Added `docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md` so the full manual ComfyUI startup path, `.env` settings, checkpoint location, and repo test commands are documented in one place for future reuse.
 - Added `docs/technical_docs/BRICKTOON_COMFYUI_IMPLEMENTATION.md` as the new source-of-truth implementation document for the ComfyUI-first bricktoon rendering path.
 - Added `docs/technical_docs/VISUAL_REFERENCE_INTERPRETATION.md` so reference-driven quality targets are documented as style/quality matching rules instead of copy instructions.
 - Added a repo-local `.env` loader so provider configuration now works from `.env` without requiring the shell to pre-export variables first.
@@ -43,7 +44,15 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Fixed a workflow limitation where "animation" could still look like one held text card by introducing multiple timed shots inside a scene before final render assembly.
 - Fixed a contract gap where premium image-generation stages could produce files but not the request/report metadata needed to rerun, debug, or audit a managed ComfyUI workflow stack.
 - Fixed a QC/audit reliability gap where some missing premium-output artifacts could print as failures without actually affecting the final audit status.
+- Fixed a ComfyUI workflow-template bug where baked-in template checkpoints could override the user-configured checkpoint from `.env`, causing valid local models to be rejected during prompt validation.
 - Fixed a configuration gap where users could define image-provider settings in `.env` but the pipeline would ignore them unless the current shell session had already loaded those variables.
+- Identified a local ComfyUI connectivity gap where the repo was targeting `127.0.0.1:8188` while the desktop app was configured to listen on `127.0.0.1:8000`.
+- Identified an environment-layout gap where `C:\Users\admin\Documents\ComfyUI` contained models and a virtualenv but not the actual ComfyUI application entrypoint, while the installed desktop app lived under `C:\Users\admin\AppData\Local\Programs\ComfyUI`.
+- Identified a local runtime compatibility gap on the GTX 1080 machine where ComfyUI could accept API requests and validate prompts but failed during execution with `CUDA error: no kernel image is available for execution on the device`, pointing to a bundled CUDA/PyTorch mismatch rather than a repo workflow bug.
+
+### Notes
+
+- Current recommended local ComfyUI integration path for the GTX 1080 workstation is a manual ComfyUI source install with Python 3.10 64-bit and a Pascal-friendly Torch/CUDA stack, instead of relying on the desktop bundle alone for production repo integration.
 - Fixed a pipeline-readiness gap where shot generation and scene assembly could appear complete as soon as any file existed in the output folders; readiness now checks expected shot and scene coverage against planning data and approved manifest assets.
 - Fixed a voice-stage gap where draft renders could contain a formal audio stream but no audible narration because the pipeline was normalizing silent placeholder WAVs; draft voice generation now attempts Windows built-in TTS first and only falls back to silence if synthesis is unavailable.
 - Fixed an architecture gap where premium AI-quality visual work could be described in docs but had no orchestrator stages, seeded workspace outputs, or manifest-compatible fallback path in the executable pipeline.
