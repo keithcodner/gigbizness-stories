@@ -8,6 +8,7 @@ const { validateGeneratedAsset } = require("../src/bricktoon/validateGeneratedAs
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
 const { getCastMembers, getCharacterBlueprint, getCharacterId } = require("../src/bricktoon/normalizeCast");
 const { withImageProvider } = require("../src/bricktoon/providers");
+const { collectReferenceImages, referencePromptAddendum } = require("../src/bricktoon/referenceImages");
 const {
   buildExecutionResult,
   buildWorkflowRequest,
@@ -76,12 +77,19 @@ async function main() {
         characterRulesPath: paths.characterRulesPath,
         negativePromptsPath: paths.negativePromptsPath
       });
+      const referenceImages = collectReferenceImages(args.workspace, {
+        characterId: character.character_id
+      });
+      const promptText = [
+        prompt.prompt_text,
+        referencePromptAddendum(referenceImages)
+      ].filter(Boolean).join(" ");
 
       const characterDir = path.join(paths.refsDir, character.character_id);
       const expressionsDir = path.join(characterDir, "expressions");
       ensureDir(characterDir);
       ensureDir(expressionsDir);
-      writeText(path.join(paths.promptsDir, `${character.character_id}.txt`), prompt.prompt_text);
+      writeText(path.join(paths.promptsDir, `${character.character_id}.txt`), promptText);
 
       const variants = {
         master: path.join(characterDir, "master.png"),
@@ -104,16 +112,22 @@ async function main() {
           qualityTier: variant === "master" ? "hero" : "standard",
           variant,
           characterId: character.character_id,
-          promptText: prompt.prompt_text,
+          promptText,
           negativePromptText: prompt.negative_prompt_text,
           promptComponents: ["character_blueprint", "style_bible", "character_rules", "negative_prompts"],
           continuitySourceRefs: [`03_cast/visual_character_bible.json#${character.character_id}`],
           references: [{
             type: "visual_character_bible",
             file: "03_cast/visual_character_bible.json"
-          }],
+          }, ...referenceImages.map((ref) => ({
+            type: ref.type,
+            file: ref.relativeFile,
+            label: ref.label,
+            reference_id: ref.reference_id
+          }))],
           context: {
-            visualQualityProfile: visualBible.style_lock_package ? { production_target: visualBible.style_lock_package, avoid: visualBible.style_lock_package.never_generate } : {}
+            visualQualityProfile: visualBible.style_lock_package ? { production_target: visualBible.style_lock_package, avoid: visualBible.style_lock_package.never_generate } : {},
+            referenceImageFiles: referenceImages.map((ref) => ref.relativeFile)
           },
           config: visualConfig,
           selectionReason: variant === "master"
@@ -130,6 +144,7 @@ async function main() {
             width: workflowRequest.output_contract.width,
             height: workflowRequest.output_contract.height,
             variant,
+            referenceImagePaths: referenceImages.map((ref) => ref.filePath),
             workflowRequest,
             providerConfig: {
               ...providerConfig,
@@ -149,6 +164,13 @@ async function main() {
           metrics: run.providerResult?.metrics,
           warnings: [providerUsed === "mock" ? "Generated via fallback provider." : null].filter(Boolean)
         });
+        const variantValidation = validateGeneratedAsset(outputPath, {
+          width: workflowRequest.output_contract.width,
+          height: workflowRequest.output_contract.height
+        });
+        if (!variantValidation.valid) {
+          throw new Error(`Character reference validation failed for ${character.character_id}/${variant}: ${variantValidation.reason}`);
+        }
         const reportFile = writeExecutionReport(args.workspace, workflowRequest, executionResult);
         executionReports.push({
           variant,

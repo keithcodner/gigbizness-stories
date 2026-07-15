@@ -25,7 +25,7 @@ function normalizePromptText(prompt) {
 }
 
 function resizeImage(inputPath, outputPath, width, height) {
-  const filter = `scale=${width}:${height}:force_original_aspect_ratio=cover,crop=${width}:${height}`;
+  const filter = `scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height}`;
   const result = spawnSync("ffmpeg", [
     "-y",
     "-i",
@@ -106,7 +106,25 @@ function promptForShotKeyframe(args) {
   ].join(" "));
 }
 
-function buildWorkflow({ prompt, negativePrompt, width, height, config }) {
+async function uploadInputImage(baseUrl, filePath) {
+  const form = new FormData();
+  form.append("image", new Blob([fs.readFileSync(filePath)]), path.basename(filePath));
+  form.append("type", "input");
+  form.append("overwrite", "true");
+
+  const response = await fetch(`${baseUrl}/upload/image`, {
+    method: "POST",
+    body: form
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to upload ComfyUI input image (${response.status}): ${text}`);
+  }
+  const json = await response.json();
+  return json.name || path.basename(filePath);
+}
+
+function buildTxt2ImgWorkflow({ prompt, negativePrompt, width, height, config }) {
   return {
     "1": {
       inputs: {
@@ -162,6 +180,74 @@ function buildWorkflow({ prompt, negativePrompt, width, height, config }) {
       inputs: {
         filename_prefix: "gigbizness_stories",
         images: ["6", 0]
+      },
+      class_type: "SaveImage"
+    }
+  };
+}
+
+function buildImg2ImgWorkflow({ prompt, negativePrompt, config, uploadedReferenceName }) {
+  return {
+    "1": {
+      inputs: {
+        ckpt_name: config.checkpoint
+      },
+      class_type: "CheckpointLoaderSimple"
+    },
+    "2": {
+      inputs: {
+        text: prompt,
+        clip: ["1", 1]
+      },
+      class_type: "CLIPTextEncode"
+    },
+    "3": {
+      inputs: {
+        text: negativePrompt,
+        clip: ["1", 1]
+      },
+      class_type: "CLIPTextEncode"
+    },
+    "4": {
+      inputs: {
+        image: uploadedReferenceName,
+        upload: "image"
+      },
+      class_type: "LoadImage"
+    },
+    "5": {
+      inputs: {
+        pixels: ["4", 0],
+        vae: ["1", 2]
+      },
+      class_type: "VAEEncode"
+    },
+    "6": {
+      inputs: {
+        seed: Math.floor(Math.random() * 1_000_000_000),
+        steps: config.steps,
+        cfg: config.cfg,
+        sampler_name: config.sampler,
+        scheduler: config.scheduler,
+        denoise: config.denoise,
+        model: ["1", 0],
+        positive: ["2", 0],
+        negative: ["3", 0],
+        latent_image: ["5", 0]
+      },
+      class_type: "KSampler"
+    },
+    "7": {
+      inputs: {
+        samples: ["6", 0],
+        vae: ["1", 2]
+      },
+      class_type: "VAEDecode"
+    },
+    "8": {
+      inputs: {
+        filename_prefix: "gigbizness_stories",
+        images: ["7", 0]
       },
       class_type: "SaveImage"
     }
@@ -226,13 +312,26 @@ async function downloadImage(baseUrl, imageInfo) {
 
 async function generateImage(outputPath, { prompt, negativePrompt, width, height, providerConfig }) {
   const config = applyWorkflowTemplate(comfyConfig(providerConfig), providerConfig.workflowTemplate);
-  const workflow = buildWorkflow({
-    prompt,
-    negativePrompt,
-    width,
-    height,
-    config
-  });
+  const referenceImagePaths = Array.isArray(providerConfig.referenceImagePaths)
+    ? providerConfig.referenceImagePaths.filter((filePath) => filePath && fs.existsSync(filePath))
+    : [];
+  const uploadedReferenceName = referenceImagePaths.length > 0
+    ? await uploadInputImage(config.baseUrl, referenceImagePaths[0])
+    : null;
+  const workflow = uploadedReferenceName
+    ? buildImg2ImgWorkflow({
+      prompt,
+      negativePrompt,
+      config,
+      uploadedReferenceName
+    })
+    : buildTxt2ImgWorkflow({
+      prompt,
+      negativePrompt,
+      width,
+      height,
+      config
+    });
   const { promptId } = await queuePrompt(config.baseUrl, workflow);
   const imageInfo = await waitForImage(config.baseUrl, promptId, config);
   const buffer = await downloadImage(config.baseUrl, imageInfo);
@@ -256,6 +355,7 @@ async function generateImage(outputPath, { prompt, negativePrompt, width, height
     metrics: {
       width,
       height,
+      reference_image_used: Boolean(uploadedReferenceName),
       sampler: config.sampler,
       scheduler: config.scheduler,
       steps: config.steps,

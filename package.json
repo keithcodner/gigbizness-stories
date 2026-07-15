@@ -30,6 +30,8 @@
     "bricktoon:scenes": "node agents/orchestrator.js --stage bricktoon-scenes",
     "bricktoon:manifest": "node agents/orchestrator.js --stage bricktoon-manifest",
     "bricktoon:shots": "node agents/orchestrator.js --stage bricktoon-shots",
+    "bricktoon:preview": "node agents/orchestrator.js --stage bricktoon-preview",
+    "bricktoon:finish": "node agents/orchestrator.js --stage bricktoon-finish --profile draft",
     "bricktoon:auto": "node agents/orchestrator.js --stage bricktoon-auto --profile draft",
     "ai-motion": "node agents/orchestrator.js --stage ai-video-motion-passes",
     "shot:compositing": "node agents/orchestrator.js --stage shot-compositing",

@@ -15,6 +15,8 @@ const {
 } = require("../src/bricktoon/aiQualityPipeline");
 const { parseArgs } = require("../agents/common");
 const { withImageProvider } = require("../src/bricktoon/providers");
+const { collectReferenceImages, referencePromptAddendum } = require("../src/bricktoon/referenceImages");
+const { validateGeneratedAsset } = require("../src/bricktoon/validateGeneratedAsset");
 const {
   buildExecutionResult,
   buildWorkflowRequest,
@@ -60,6 +62,10 @@ async function main() {
         const count = keyframeCountForTier(tier);
         const route = (productionRoutes.routes || []).find((item) => item.shot_id === shot.shot_id) || {};
         const sceneCard = (sceneCards.scene_cards || []).find((item) => item.scene_id === scene.scene_id) || {};
+        const referenceImages = collectReferenceImages(workspaceDir, {
+          sceneId: scene.scene_id,
+          shotId: shot.shot_id
+        });
         const approvalRecord = {
           shot_id: shot.shot_id,
           scene_id: scene.scene_id,
@@ -79,7 +85,8 @@ async function main() {
               `Purpose: ${shot.purpose}.`,
               `Camera movement: ${shot.camera?.movement || "steady_push"}.`,
               "Premium editorial bricktoon quality, cinematic lighting, strong depth, stable character identity.",
-              "No embedded text or logos."
+              "No embedded text or logos.",
+              referencePromptAddendum(referenceImages)
             ].join(" "),
             negative_prompt_text: "unreadable text, extra limbs, malformed hands, off-model face"
           };
@@ -100,13 +107,22 @@ async function main() {
               `07_visuals/production_routes/production_routes.json#${shot.shot_id}`,
               `07_visuals/art_direction/${shot.shot_id}.json`
             ],
-            references: (shot.cast_member_ids || []).map((characterId) => ({
-              type: "character_reference",
-              asset_id: `CHAR_${characterId}_MASTER`
-            })),
+            references: [
+              ...(shot.cast_member_ids || []).map((characterId) => ({
+                type: "character_reference",
+                asset_id: `CHAR_${characterId}_MASTER`
+              })),
+              ...referenceImages.map((ref) => ({
+                type: ref.type,
+                file: ref.relativeFile,
+                label: ref.label,
+                reference_id: ref.reference_id
+              }))
+            ],
             productionMode: route.production_mode,
             context: {
-              visualQualityProfile: visualBible.style_lock_package ? { production_target: visualBible.style_lock_package, avoid: visualBible.style_lock_package.never_generate } : {}
+              visualQualityProfile: visualBible.style_lock_package ? { production_target: visualBible.style_lock_package, avoid: visualBible.style_lock_package.never_generate } : {},
+              referenceImageFiles: referenceImages.map((ref) => ref.relativeFile)
             },
             config: visualConfig,
             selectionReason: tier === "hero"
@@ -123,6 +139,7 @@ async function main() {
               height: workflowRequest.output_contract.height,
               qualityTier: tier,
               shotId: shot.shot_id,
+              referenceImagePaths: referenceImages.map((ref) => ref.filePath),
               workflowRequest,
               providerConfig: {
                 ...providerConfig,
@@ -134,6 +151,13 @@ async function main() {
               providerResult
             };
           });
+          const validation = validateGeneratedAsset(generatedPath, {
+            width: workflowRequest.output_contract.width,
+            height: workflowRequest.output_contract.height
+          });
+          if (!validation.valid) {
+            throw new Error(`Shot keyframe validation failed for ${baseName}: ${validation.reason}`);
+          }
           const providerUsed = run.providerName;
           const reportFile = writeExecutionReport(workspaceDir, workflowRequest, buildExecutionResult(workflowRequest, {
             status: "completed",

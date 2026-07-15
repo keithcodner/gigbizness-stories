@@ -55,6 +55,13 @@ function validateGeneratedAsset(filePath, expected = {}) {
   if (size <= 1024) {
     return { valid: false, reason: "file_too_small", ...dimensions };
   }
+  const pixelCount = (dimensions.width || 0) * (dimensions.height || 0);
+  if (pixelCount >= 500000 && size < 20000) {
+    return { valid: false, reason: "placeholder_like_image", ...dimensions };
+  }
+  if (pixelCount >= 1000000 && size < 35000) {
+    return { valid: false, reason: "placeholder_like_image", ...dimensions };
+  }
   if (expected.width && dimensions.width && expected.width !== dimensions.width) {
     return { valid: false, reason: "unexpected_width", ...dimensions };
   }

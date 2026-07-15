@@ -8,6 +8,8 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 - Added `scripts/startup-script/start_comfyui.ps1` plus `npm run comfy:start` so the repo can launch the manual `C:\AI\ComfyUI-GTX1080` ComfyUI install from a single project-local command.
 - Added a first-class `bricktoon-auto` orchestrator stage plus `npm run bricktoon:auto` so the premium bricktoon visual pipeline can run as one automatic command while the individual manual stages remain available.
+- Added a preview-first bricktoon flow with `visual-preview`, `bricktoon-preview`, and `bricktoon-finish` stages plus npm shortcuts so we can inspect a slideshow of approved stills before paying for motion and final render.
+- Added `scripts/generate_visual_preview.js` so approved keyframes can be turned into a quick slideshow MP4 at `06_renders/previews/visual_preview.mp4`.
 - Added `docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md` so the full manual ComfyUI startup path, `.env` settings, checkpoint location, and repo test commands are documented in one place for future reuse.
 - Added `docs/technical_docs/COMFYUI_PORTABLE_SETUP.md` so the manual ComfyUI install can be recreated on another machine without retracing the full debugging trail.
 - Added `docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md` so the entire path from GitHub clone to Comfy-backed bricktoon render is documented as one repeatable setup flow.
@@ -33,6 +35,9 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 ### Changed
 
 - Updated the orchestrator contract and npm scripts so the new shot-based stages are first-class workflow steps instead of side experiments.
+- Updated `bricktoon:auto` to stop at the preview checkpoint instead of automatically spending more time on downstream motion/render work.
+- Updated premium character-ref and shot-keyframe generation so workspace reference images can be included in the request contract and prompt shaping for future reference-driven bricktoon rendering.
+- Updated the local ComfyUI provider to support a built-in img2img-style path when reference images are available, using ComfyUI input uploads rather than prompt-only generation.
 - Updated the architecture so ComfyUI is now the default premium image provider, with repo-managed workflow ids deciding how character refs, scene stills, keyframes, and motion sources are requested.
 - Updated visual-bible, layer-extraction, rigging, motion-pass, compositing, render-contract, and audit outputs so they carry richer continuity, selection-reason, and quality metadata instead of only output existence.
 - Updated visual-provider configuration so ComfyUI is now the default premium image provider, OpenAI remains a supported compatibility option, and provider selection can now be controlled from `.env` as well as shell env.
@@ -46,6 +51,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 ### Fixed
 
 - Fixed an encoding glitch in the portable ComfyUI setup doc so it now reads cleanly in plain text editors and terminal viewers.
+- Fixed a wasteful pipeline gap where placeholder-like PNGs could be treated as valid premium outputs and still continue into expensive downstream stages; generated image validation now blocks obviously placeholder-sized image outputs.
 - Fixed a workflow limitation where "animation" could still look like one held text card by introducing multiple timed shots inside a scene before final render assembly.
 - Fixed a contract gap where premium image-generation stages could produce files but not the request/report metadata needed to rerun, debug, or audit a managed ComfyUI workflow stack.
 - Fixed a QC/audit reliability gap where some missing premium-output artifacts could print as failures without actually affecting the final audit status.

@@ -60,11 +60,19 @@ npm run test-story:restart
 npm run test-story:guided
 npm run test-story:full
 npm run test-story:render
+npm run bricktoon:preview -- --topic test_story_template
+npm run bricktoon:finish -- --topic test_story_template
 ```
 
 The goal is not to publish this story. It is a stable test case for the end-to-end pipeline.
 
 `npm run test-story:render` restores a static pre-render snapshot and exports a fresh draft immediately, so visual/render changes can be checked without rerunning research, script, or asset generation first.
+
+For the premium bricktoon path, use a cheaper preview-first flow:
+
+- `npm run bricktoon:preview -- --topic test_story_template`
+- inspect `workspaces/test_story_template/06_renders/previews/visual_preview.mp4`
+- if the stills look right, run `npm run bricktoon:finish -- --topic test_story_template`
 
 ## Music Standard
 
