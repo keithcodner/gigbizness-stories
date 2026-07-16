@@ -100,7 +100,8 @@ const WORKSPACE_LAYOUT = [
   {
     dir: "04_assets",
     files: {
-      "licenses.csv": "asset_name,asset_type,source_url,license,status,notes\n"
+      "licenses.csv": "asset_name,asset_type,source_url,license,status,notes\n",
+      "reference_manifest.json": "{\n  \"mode\": \"selected\",\n  \"selected_references\": [],\n  \"selected_asset_categories\": []\n}\n"
     },
     subdirs: [
       "images",
@@ -460,6 +461,7 @@ function getTopicPaths(topicId) {
     visualPlanPath: path.join(workspaceDir, "04_assets", "visual_plan.md"),
     visualReadinessPath: path.join(workspaceDir, "04_assets", "visual_readiness.json"),
     assetGapsPath: path.join(workspaceDir, "04_assets", "asset_gaps.md"),
+    referenceManifestPath: path.join(workspaceDir, "04_assets", "reference_manifest.json"),
     sceneBeatsPath: path.join(workspaceDir, "06_scene_beats", "scene_beats.json"),
     shotPlanPath: path.join(workspaceDir, "07_shot_plans", "shot_plan.json"),
     assetManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
@@ -1332,6 +1334,16 @@ function runAssetsStage(topicId) {
   return workspaceDir;
 }
 
+function runReferenceSyncStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting reference-sync stage for topic '${topicId}'`);
+
+  runNodeScript("scripts/sync_reference_library.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed reference-sync stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runSceneBeatsStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting scene-beats stage for topic '${topicId}'`);
@@ -1585,6 +1597,7 @@ function runBricktoonPreviewStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting bricktoon-preview stage for topic '${topicId}'`);
 
+  runReferenceSyncStage(topicId);
   runBricktoonCharactersStage(topicId);
   runAssetGenerationStage(topicId);
   runVisualPreviewStage(topicId);
@@ -1746,6 +1759,7 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-cards");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage voice");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage assets");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage reference-sync");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-beats");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-planner");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage visual-production-router");
@@ -1865,7 +1879,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "reference-sync", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -1888,6 +1902,8 @@ function main() {
         workspaceDir = runVoiceStage(args.topic);
       } else if (args.stage === "assets") {
         workspaceDir = runAssetsStage(args.topic);
+      } else if (args.stage === "reference-sync") {
+        workspaceDir = runReferenceSyncStage(args.topic);
       } else if (args.stage === "scene-beats") {
         workspaceDir = runSceneBeatsStage(args.topic);
       } else if (args.stage === "shot-planner") {

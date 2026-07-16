@@ -10,6 +10,9 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added a first-class `bricktoon-auto` orchestrator stage plus `npm run bricktoon:auto` so the premium bricktoon visual pipeline can run as one automatic command while the individual manual stages remain available.
 - Added a preview-first bricktoon flow with `visual-preview`, `bricktoon-preview`, and `bricktoon-finish` stages plus npm shortcuts so we can inspect a slideshow of approved stills before paying for motion and final render.
 - Added `scripts/generate_visual_preview.js` so approved keyframes can be turned into a quick slideshow MP4 at `06_renders/previews/visual_preview.mp4`.
+- Added `config/asset_library.json`, `library/reference_images/`, and `library/general_assets/` so the project now has a shared reusable reference-and-asset library outside any single topic workspace.
+- Added `04_assets/reference_manifest.json`, a `reference-sync` orchestrator stage, and `npm run reference-sync` so a topic can pull selected reusable references/categories into its workspace before generation.
+- Added `docs/technical_docs/BRICKTOON_REFERENCE_LIBRARY_AND_PREVIEW_WORKFLOW.md` as the architecture note for the shared-library and preview-gate workflow.
 - Added `docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md` so the full manual ComfyUI startup path, `.env` settings, checkpoint location, and repo test commands are documented in one place for future reuse.
 - Added `docs/technical_docs/COMFYUI_PORTABLE_SETUP.md` so the manual ComfyUI install can be recreated on another machine without retracing the full debugging trail.
 - Added `docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md` so the entire path from GitHub clone to Comfy-backed bricktoon render is documented as one repeatable setup flow.
@@ -38,6 +41,8 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Updated `bricktoon:auto` to stop at the preview checkpoint instead of automatically spending more time on downstream motion/render work.
 - Updated premium character-ref and shot-keyframe generation so workspace reference images can be included in the request contract and prompt shaping for future reference-driven bricktoon rendering.
 - Updated the local ComfyUI provider to support a built-in img2img-style path when reference images are available, using ComfyUI input uploads rather than prompt-only generation.
+- Updated visual preview generation so it now writes scene-divided preview clips and can attach available voiceover/music to the combined preview output.
+- Updated the documented bricktoon default path so it now runs shared-library selection -> preview review -> finish render, instead of jumping straight into the most expensive stages.
 - Updated the architecture so ComfyUI is now the default premium image provider, with repo-managed workflow ids deciding how character refs, scene stills, keyframes, and motion sources are requested.
 - Updated visual-bible, layer-extraction, rigging, motion-pass, compositing, render-contract, and audit outputs so they carry richer continuity, selection-reason, and quality metadata instead of only output existence.
 - Updated visual-provider configuration so ComfyUI is now the default premium image provider, OpenAI remains a supported compatibility option, and provider selection can now be controlled from `.env` as well as shell env.

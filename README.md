@@ -60,6 +60,7 @@ npm run test-story:restart
 npm run test-story:guided
 npm run test-story:full
 npm run test-story:render
+npm run reference-sync -- --topic test_story_template
 npm run bricktoon:preview -- --topic test_story_template
 npm run bricktoon:finish -- --topic test_story_template
 ```
@@ -70,9 +71,17 @@ The goal is not to publish this story. It is a stable test case for the end-to-e
 
 For the premium bricktoon path, use a cheaper preview-first flow:
 
+- keep shared source material in `library/reference_images/` and `library/general_assets/`
+- choose topic-specific picks in `workspaces/<topic>/04_assets/reference_manifest.json`
+- run `npm run reference-sync -- --topic <topic>`
 - `npm run bricktoon:preview -- --topic test_story_template`
 - inspect `workspaces/test_story_template/06_renders/previews/visual_preview.mp4`
+- inspect `workspaces/test_story_template/06_renders/previews/scenes/`
 - if the stills look right, run `npm run bricktoon:finish -- --topic test_story_template`
+
+Reference-library workflow guide:
+
+- [docs/technical_docs/BRICKTOON_REFERENCE_LIBRARY_AND_PREVIEW_WORKFLOW.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/BRICKTOON_REFERENCE_LIBRARY_AND_PREVIEW_WORKFLOW.md)
 
 ## Music Standard
 

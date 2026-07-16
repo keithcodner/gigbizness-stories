@@ -21,11 +21,18 @@ function listImageFiles(dirPath) {
   if (!fs.existsSync(dirPath)) {
     return [];
   }
-  return fs.readdirSync(dirPath)
-    .map((name) => path.join(dirPath, name))
-    .filter((filePath) => fs.statSync(filePath).isFile())
-    .filter((filePath) => IMAGE_EXTENSIONS.has(path.extname(filePath).toLowerCase()))
-    .sort((a, b) => a.localeCompare(b));
+  const results = [];
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listImageFiles(fullPath));
+      continue;
+    }
+    if (IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+      results.push(fullPath);
+    }
+  }
+  return results.sort((a, b) => a.localeCompare(b));
 }
 
 function loadReferenceUsage(workspaceDir) {

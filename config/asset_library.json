@@ -1,0 +1,26 @@
+{
+  "reference_library_root": "library/reference_images",
+  "general_asset_library_root": "library/general_assets",
+  "workspace_reference_target": "04_assets/reference_images",
+  "categories": [
+    "people",
+    "workers",
+    "office_workers",
+    "villains_men",
+    "villains_women",
+    "facial_expressions",
+    "pets",
+    "cars",
+    "trucks",
+    "police",
+    "police_rooms",
+    "prisons",
+    "hospitals",
+    "hospital_rooms",
+    "buildings",
+    "houses",
+    "offices",
+    "rooms",
+    "interiors"
+  ]
+}

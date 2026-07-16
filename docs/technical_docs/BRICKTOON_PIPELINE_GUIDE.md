@@ -15,7 +15,7 @@ The pipeline has two goals:
 
 The orchestrator is the source of truth for stage order and execution. The current practical flow is:
 
-`format -> research -> angle -> script -> cast -> visual-character-bible -> scene-cards -> voice -> assets -> scene-beats -> shot-planner -> visual-production-router -> shot-art-direction -> composition-guides -> asset-generation -> asset-consistency-validation -> layer-extraction -> character-rigging -> bricktoon-characters -> bricktoon-scenes -> bricktoon-manifest -> animation -> bricktoon-shots -> ai-video-motion-passes -> shot-compositing -> scene-assembly -> bricktoon-clips -> render-contract -> render -> shorts -> qc -> bricktoon-audit`
+`format -> research -> angle -> script -> cast -> visual-character-bible -> scene-cards -> voice -> assets -> reference-sync -> scene-beats -> shot-planner -> visual-production-router -> shot-art-direction -> composition-guides -> bricktoon-characters -> asset-generation -> visual-preview -> asset-consistency-validation -> layer-extraction -> character-rigging -> bricktoon-scenes -> bricktoon-manifest -> animation -> bricktoon-shots -> ai-video-motion-passes -> shot-compositing -> scene-assembly -> bricktoon-clips -> render-contract -> render -> shorts -> qc -> bricktoon-audit`
 
 Main orchestrator file:
 
