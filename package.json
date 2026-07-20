@@ -18,6 +18,7 @@
     "voice": "node agents/orchestrator.js --stage voice",
     "assets": "node agents/orchestrator.js --stage assets",
     "reference-sync": "node agents/orchestrator.js --stage reference-sync",
+    "library:catalog": "node scripts/build_library_catalog.js",
     "scene-beats": "node agents/orchestrator.js --stage scene-beats",
     "shot-planner": "node agents/orchestrator.js --stage shot-planner",
     "visual-production-router": "node agents/orchestrator.js --stage visual-production-router",

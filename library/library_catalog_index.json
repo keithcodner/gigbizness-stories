@@ -1,0 +1,239 @@
+{
+  "generated_at": "2026-07-20T05:52:17.891Z",
+  "reference_image_count": 3,
+  "general_asset_category_count": 19,
+  "general_asset_image_count": 0,
+  "reference_catalog": "library/reference_images/reference_catalog.json",
+  "category_catalog": "library/general_assets/catalog_templates.json",
+  "categories": [
+    {
+      "id": "people",
+      "title": "General People",
+      "purpose": "baseline civilians and neutral public crowd references",
+      "prompt_targets": [
+        "neutral citizen",
+        "public sidewalk",
+        "generic customer"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "workers",
+      "title": "Workers",
+      "purpose": "field labor, service crews, warehouse, and uniformed work scenes",
+      "prompt_targets": [
+        "service worker",
+        "warehouse worker",
+        "crew loading boxes"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "office_workers",
+      "title": "Office Workers",
+      "purpose": "desk staff, admin, HR, manager, sales, and support scenes",
+      "prompt_targets": [
+        "office desk worker",
+        "manager at conference table",
+        "call center employee"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "villains_men",
+      "title": "Villains Men",
+      "purpose": "male antagonists, schemers, executives, scammers, and pressure figures",
+      "prompt_targets": [
+        "smug executive villain",
+        "scheming salesman",
+        "threatening scam operator"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "villains_women",
+      "title": "Villains Women",
+      "purpose": "female antagonists, schemers, executives, scammers, and pressure figures",
+      "prompt_targets": [
+        "smug executive villain",
+        "scheming manager",
+        "threatening fraud operator"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "facial_expressions",
+      "title": "Facial Expressions",
+      "purpose": "reusable emotion and reaction references for character consistency",
+      "prompt_targets": [
+        "worried face",
+        "angry face",
+        "smug grin",
+        "shocked reaction"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "pets",
+      "title": "Pets",
+      "purpose": "cat, dog, and companion-animal supporting visuals",
+      "prompt_targets": [
+        "bricktoon dog",
+        "bricktoon cat",
+        "pet reaction"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "cars",
+      "title": "Cars",
+      "purpose": "civilian vehicles, sedans, compacts, and parking-lot scenes",
+      "prompt_targets": [
+        "sedan in parking lot",
+        "car exterior",
+        "car dealership row"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "trucks",
+      "title": "Trucks",
+      "purpose": "moving trucks, box trucks, cargo trucks, and fleet scenes",
+      "prompt_targets": [
+        "moving truck",
+        "box truck loading",
+        "fleet truck lineup"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "police",
+      "title": "Police",
+      "purpose": "officers, patrol presence, and law-enforcement exterior scenes",
+      "prompt_targets": [
+        "police officer",
+        "patrol car scene",
+        "evidence presence"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "police_rooms",
+      "title": "Police Rooms",
+      "purpose": "interrogation rooms, front desk, dispatch, and evidence rooms",
+      "prompt_targets": [
+        "interrogation room",
+        "evidence room",
+        "police office interior"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "prisons",
+      "title": "Prisons",
+      "purpose": "holding cells, jail corridors, intake rooms, and correctional environments",
+      "prompt_targets": [
+        "holding cell",
+        "prison hallway",
+        "jail intake desk"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "hospitals",
+      "title": "Hospitals",
+      "purpose": "hospital buildings, entrances, ambulance zones, and public medical scenes",
+      "prompt_targets": [
+        "hospital exterior",
+        "ambulance bay",
+        "medical campus"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "hospital_rooms",
+      "title": "Hospital Rooms",
+      "purpose": "patient rooms, nurse stations, exam spaces, and treatment interiors",
+      "prompt_targets": [
+        "patient room",
+        "exam room",
+        "nurse station"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "buildings",
+      "title": "Buildings",
+      "purpose": "generic commercial storefronts, city blocks, and landmark exteriors",
+      "prompt_targets": [
+        "storefront exterior",
+        "small office building",
+        "commercial strip"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "houses",
+      "title": "Houses",
+      "purpose": "homes, front yards, driveways, and neighborhood exteriors",
+      "prompt_targets": [
+        "suburban house",
+        "front porch",
+        "residential street"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "offices",
+      "title": "Offices",
+      "purpose": "conference rooms, reception, executive rooms, and workspace exteriors/interiors",
+      "prompt_targets": [
+        "executive office",
+        "conference room",
+        "reception desk"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "rooms",
+      "title": "Rooms",
+      "purpose": "generic indoor spaces for flexible scene blocking",
+      "prompt_targets": [
+        "generic room interior",
+        "waiting room",
+        "empty briefing room"
+      ],
+      "image_count": 0,
+      "image_files": []
+    },
+    {
+      "id": "interiors",
+      "title": "Interiors",
+      "purpose": "general indoor location references across business, home, and institutional settings",
+      "prompt_targets": [
+        "office interior",
+        "house interior",
+        "store interior"
+      ],
+      "image_count": 0,
+      "image_files": []
+    }
+  ]
+}

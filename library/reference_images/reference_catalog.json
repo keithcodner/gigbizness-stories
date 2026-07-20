@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-07-20T05:52:17.885Z",
+  "count": 3,
+  "references": [
+    {
+      "reference_id": "REFCAT_001",
+      "file": "library/reference_images/4khiPx0sJKqg7FnNI6kU.png",
+      "label": "4khiPx0sJKqg7FnNI6kU.png"
+    },
+    {
+      "reference_id": "REFCAT_002",
+      "file": "library/reference_images/Screenshot_29.png",
+      "label": "Screenshot_29.png"
+    },
+    {
+      "reference_id": "REFCAT_003",
+      "file": "library/reference_images/Screenshot_30.png",
+      "label": "Screenshot_30.png"
+    }
+  ]
+}

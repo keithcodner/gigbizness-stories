@@ -20,7 +20,9 @@ function main() {
     const compositedDir = path.join(workspaceDir, "08_animation", "composited_shot_clips");
     const reportsDir = path.join(workspaceDir, "08_animation", "compositing_reports");
     const manifest = loadManifest(workspaceDir);
+    const motionReport = readJsonSafe(path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json"), {});
     const report = { shots: [] };
+    const motionLookup = new Map((motionReport.shots || []).map((shot) => [shot.shot_id, shot]));
 
     for (const scene of shotPlan.scenes || []) {
       for (const shot of scene.shots || []) {
@@ -28,18 +30,22 @@ function main() {
         const fallbackPath = path.join(baseShotDir, `${shot.shot_id}.mp4`);
         const source = fs.existsSync(stabilizedPath) ? stabilizedPath : fallbackPath;
         const sourceAssetType = fs.existsSync(stabilizedPath) ? "stabilized_motion_pass" : "bricktoon_shot_clip";
+        const motionInfo = motionLookup.get(shot.shot_id) || {};
         if (!fs.existsSync(source)) {
           continue;
         }
         const target = path.join(compositedDir, `${shot.shot_id}.mp4`);
         fs.copyFileSync(source, target);
+        const selectionReason = fs.existsSync(stabilizedPath)
+          ? (motionInfo.execution_mode === "keyframe_motion_render"
+            ? "stabilized keyframe-derived motion chosen"
+            : "stabilized AI motion chosen")
+          : "procedural fallback chosen";
         report.shots.push({
           shot_id: shot.shot_id,
           scene_id: scene.scene_id,
           winning_source_type: sourceAssetType,
-          selection_reason: fs.existsSync(stabilizedPath)
-            ? "stabilized AI motion chosen"
-            : "procedural fallback chosen",
+          selection_reason: selectionReason,
           quality_classification: qualityClassificationForAsset(sourceAssetType),
           source: relativeWorkspacePath(workspaceDir, source),
           composited_file: relativeWorkspacePath(workspaceDir, target)
@@ -51,9 +57,7 @@ function main() {
           scene_ids: [scene.scene_id],
           file: relativeWorkspacePath(workspaceDir, target),
           status: "approved",
-          selection_reason: fs.existsSync(stabilizedPath)
-            ? "stabilized AI motion chosen"
-            : "procedural fallback chosen",
+          selection_reason: selectionReason,
           quality_classification: qualityClassificationForAsset(sourceAssetType),
           created_at: assetTimestamp()
         });

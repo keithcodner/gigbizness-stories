@@ -2,6 +2,24 @@
 
 This log tracks implementation changes, bug fixes, and incidental fixes discovered while working on the pipeline.
 
+## 2026-07-20
+
+### Added
+
+- Added `scripts/build_library_catalog.js`, `library/general_assets/catalog_templates.json`, and `npm run library:catalog` so the shared reference library now has a reusable indexed catalog contract instead of only loose folders.
+
+### Changed
+
+- Updated the AI motion-pass stage so approved/generated keyframes can now be turned into real motion clips with recipe-based zoom, drift, and crossfade behavior before compositing.
+- Updated stabilization so motion clips are normalized through FFmpeg before compositing instead of being passed through as raw copies when the render succeeds.
+- Updated compositing reports so selected motion clips now record when the winning source came from keyframe-derived motion instead of only labeling everything as generic AI motion.
+- Updated the pipeline visual state board so the shared catalog and premium-motion statuses reflect the current implementation more honestly.
+
+### Fixed
+
+- Fixed a core motion-stage gap where `ai-video-motion-passes` claimed success while only copying the existing procedural shot clip instead of generating a motion pass from approved stills.
+- Fixed a reusable-library gap where the shared catalog had folder scaffolding but no generated index to show what references and category slots were actually available for future topics.
+
 ## 2026-07-14
 
 ### Added
@@ -13,6 +31,7 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Added `config/asset_library.json`, `library/reference_images/`, and `library/general_assets/` so the project now has a shared reusable reference-and-asset library outside any single topic workspace.
 - Added `04_assets/reference_manifest.json`, a `reference-sync` orchestrator stage, and `npm run reference-sync` so a topic can pull selected reusable references/categories into its workspace before generation.
 - Added `docs/technical_docs/BRICKTOON_REFERENCE_LIBRARY_AND_PREVIEW_WORKFLOW.md` as the architecture note for the shared-library and preview-gate workflow.
+- Added `docs/technical_docs/PIPELINE_STATE_VISUAL.md` as a visual status board showing what parts of the pipeline are working, partial, unstable, or still not production-ready.
 - Added `docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md` so the full manual ComfyUI startup path, `.env` settings, checkpoint location, and repo test commands are documented in one place for future reuse.
 - Added `docs/technical_docs/COMFYUI_PORTABLE_SETUP.md` so the manual ComfyUI install can be recreated on another machine without retracing the full debugging trail.
 - Added `docs/technical_docs/PROJECT_FULL_SETUP_GITHUB_TO_COMFY_RENDER.md` so the entire path from GitHub clone to Comfy-backed bricktoon render is documented as one repeatable setup flow.

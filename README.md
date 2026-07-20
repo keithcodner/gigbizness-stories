@@ -31,6 +31,7 @@ This creates `workspaces/tow_truck_dark_side/` with the expected folder tree and
 Use the consolidated guide here:
 
 - [docs/technical_docs/BRICKTOON_PIPELINE_GUIDE.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/BRICKTOON_PIPELINE_GUIDE.md)
+- [docs/technical_docs/PIPELINE_STATE_VISUAL.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/PIPELINE_STATE_VISUAL.md)
 - [docs/technical_docs/BRICKTOON_COMFYUI_IMPLEMENTATION.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/BRICKTOON_COMFYUI_IMPLEMENTATION.md)
 - [docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/COMFYUI_GTX1080_QUICK_START.md)
 - [docs/technical_docs/COMFYUI_PORTABLE_SETUP.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/COMFYUI_PORTABLE_SETUP.md)
@@ -82,6 +83,7 @@ For the premium bricktoon path, use a cheaper preview-first flow:
 Reference-library workflow guide:
 
 - [docs/technical_docs/BRICKTOON_REFERENCE_LIBRARY_AND_PREVIEW_WORKFLOW.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/BRICKTOON_REFERENCE_LIBRARY_AND_PREVIEW_WORKFLOW.md)
+- visual pipeline state board: [docs/technical_docs/PIPELINE_STATE_VISUAL.md](C:/xampp/htdocs/apps/gigbizness-stories/docs/technical_docs/PIPELINE_STATE_VISUAL.md)
 
 ## Music Standard
 

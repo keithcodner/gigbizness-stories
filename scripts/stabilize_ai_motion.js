@@ -2,8 +2,30 @@
 
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
 const { parseArgs } = require("../agents/common");
-const { loadManifest, saveManifest, upsertAsset, relativeWorkspacePath, assetTimestamp, writeJson } = require("../src/bricktoon/aiQualityPipeline");
+const {
+  ensureDir,
+  loadManifest,
+  saveManifest,
+  upsertAsset,
+  relativeWorkspacePath,
+  assetTimestamp,
+  writeJson
+} = require("../src/bricktoon/aiQualityPipeline");
+
+function runFfmpeg(args, label) {
+  const result = spawnSync("ffmpeg", args, { encoding: "utf8" });
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+  if (result.stderr) {
+    process.stderr.write(result.stderr);
+  }
+  if (result.status !== 0) {
+    throw new Error(`${label} failed: ${result.stderr || "unknown ffmpeg error"}`);
+  }
+}
 
 function main() {
   try {
@@ -15,6 +37,7 @@ function main() {
     const workspaceDir = path.resolve(args.workspace);
     const rawDir = path.join(workspaceDir, "08_animation", "raw_ai_video");
     const stabilizedDir = path.join(workspaceDir, "08_animation", "stabilized_ai_video");
+    ensureDir(stabilizedDir);
     const manifest = loadManifest(workspaceDir);
     const stabilizationReport = {
       generated_at: assetTimestamp(),
@@ -28,7 +51,24 @@ function main() {
       }
       const source = path.join(rawDir, fileName);
       const target = path.join(stabilizedDir, fileName.replace("_ai_motion", "_stabilized"));
-      fs.copyFileSync(source, target);
+      let qualityGate = "stabilized_render";
+      try {
+        runFfmpeg([
+          "-y",
+          "-i",
+          source,
+          "-vf",
+          "fps=24,scale=768:1344:force_original_aspect_ratio=decrease,pad=768:1344:(ow-iw)/2:(oh-ih)/2,unsharp=5:5:0.5:5:5:0.0",
+          "-c:v",
+          "libx264",
+          "-pix_fmt",
+          "yuv420p",
+          target
+        ], `stabilize motion ${fileName}`);
+      } catch (error) {
+        fs.copyFileSync(source, target);
+        qualityGate = "accepted_copy_after_stabilization_failure";
+      }
       const shotId = fileName.replace("_ai_motion.mp4", "");
       upsertAsset(manifest, {
         asset_id: `STABILIZED_${shotId}`,
@@ -46,7 +86,7 @@ function main() {
         shot_id: shotId,
         source_file: relativeWorkspacePath(workspaceDir, source),
         stabilized_file: relativeWorkspacePath(workspaceDir, target),
-        quality_gate: "stabilized_or_accepted_copy"
+        quality_gate: qualityGate
       });
     }
 
