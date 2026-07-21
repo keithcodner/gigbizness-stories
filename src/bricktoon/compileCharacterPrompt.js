@@ -16,7 +16,10 @@ function compileCharacterPrompt(character, options = {}) {
     `Personality: ${character.personality}.`,
     "Style: original blocky toy cartoon character, miniature plastic world, rounded edges, simple expressive face.",
     "Views required: front, three-quarter, side.",
-    "Keep outfit, colors, and silhouette stable for future scene continuity."
+    "Keep outfit, colors, and silhouette stable for future scene continuity.",
+    "These references must be animation-ready for later cut-out puppet motion, not only attractive stills.",
+    "Preserve clean mouth readability, eye spacing, eyebrow readability, and at least one readable gesture arm when applicable.",
+    "Keep active prop contact believable and separable from the background."
   ];
 
   if (styleBible) {

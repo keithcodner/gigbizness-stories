@@ -3,10 +3,76 @@
   "fallback_image_provider": "mock",
   "default_motion_provider": "procedural",
   "provider_mode": "remote_api",
+  "benchmark_profiles": {
+    "option1_phase1_animation_ready_art_lock": {
+      "description": "Pinned benchmark profile for Option 1 Phase 1 still-generation and character identity locking on the GTX 1080 path.",
+      "hardware_target": "gtx1080_8gb",
+      "image_provider": "comfyui",
+      "strict_fallback_for_benchmark": false,
+      "character_sampler_profile": "editorial_standard",
+      "shot_sampler_profile": {
+        "hero": "editorial_hero",
+        "standard": "editorial_standard"
+      },
+      "approval_focus": [
+        "single_character_lock",
+        "identity_consistency",
+        "mouth_visibility",
+        "gesture_arm_readability",
+        "prop_readability_when_required"
+      ]
+    },
+    "option2_phase1_repo_side_still_identity_lock": {
+      "description": "Pinned benchmark profile for Option 2 Phase 1 repo-side still quality and identity lock before hybrid motion handoff.",
+      "hardware_target": "gtx1080_8gb",
+      "image_provider": "comfyui",
+      "strict_fallback_for_benchmark": false,
+      "checkpoint_strategy": "env_override_expected",
+      "character_sampler_profile": "editorial_character_lock",
+      "shot_sampler_profile": {
+        "hero": "editorial_hero",
+        "standard": "editorial_character_lock",
+        "utility": "editorial_standard"
+      },
+      "shot_class_workflows": {
+        "closeup_face": "hybrid_character_closeup_v1",
+        "medium_single": "hybrid_character_closeup_v1",
+        "medium_two_shot": "hybrid_character_dialogue_v1",
+        "establishing_wide": "hybrid_establishing_v1",
+        "top_down_document": "hybrid_document_insert_v1",
+        "document_insert": "hybrid_document_insert_v1",
+        "push_in_document": "hybrid_document_insert_v1"
+      },
+      "approval_focus": [
+        "identity_lock",
+        "thumbnail_style_match",
+        "expression_variant_coverage",
+        "prop_continuity",
+        "hybrid_handoff_readiness"
+      ],
+      "benchmark_pack_requirements": [
+        "locked character master refs",
+        "talking and reaction variants",
+        "shot-class exemplars",
+        "pass_fail criteria per shot class",
+        "workflow and checkpoint evidence",
+        "gtx1080-safe runtime notes"
+      ]
+    }
+  },
   "workflow_selection": {
     "character_reference": "character_ref_v1",
     "character_variant": "character_variant_v1",
     "scene_still": "scene_still_v1",
+    "shot_keyframe_by_class": {
+      "closeup_face": "hybrid_character_closeup_v1",
+      "medium_single": "hybrid_character_closeup_v1",
+      "medium_two_shot": "hybrid_character_dialogue_v1",
+      "establishing_wide": "hybrid_establishing_v1",
+      "top_down_document": "hybrid_document_insert_v1",
+      "document_insert": "hybrid_document_insert_v1",
+      "push_in_document": "hybrid_document_insert_v1"
+    },
     "shot_keyframe": {
       "hero": "hero_refine_v1",
       "standard": "shot_keyframe_v1",
@@ -60,6 +126,14 @@
         "scheduler": "normal",
         "denoise": 1,
         "detailer_strength": 0.35
+      },
+      "editorial_character_lock": {
+        "steps": 34,
+        "cfg": 6.8,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 0.62,
+        "detailer_strength": 0.4
       },
       "editorial_hero": {
         "steps": 36,
@@ -156,6 +230,98 @@
         ],
         "negative_prompt_additions": [
           "duplicate characters, extra people, flat lighting, wrong costume, wrong hat, identity drift, empty background"
+        ]
+      },
+      "hybrid_character_closeup_v1": {
+        "required_inputs": ["prompt_text", "shot_plan", "art_direction", "character_reference_images"],
+        "optional_inputs": ["composition_guides", "scene_still"],
+        "sampler_profile": "editorial_character_lock",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "aspect_ratio": "16:9",
+          "filename_pattern": "{shot_id}.png"
+        },
+        "pass_plan": ["composition", "identity_lock", "detail", "upscale"],
+        "prompt_additions": [
+          "Hybrid-finishing-ready bricktoon character closeup.",
+          "Exact identity lock, readable mouth zone, readable eye shape, strong expression, clean silhouette separation for later puppet animation."
+        ],
+        "negative_prompt_additions": [
+          "identity drift, duplicate face, soft mouth zone, obscured eyes, unreadable hands, flat lighting"
+        ]
+      },
+      "hybrid_character_dialogue_v1": {
+        "required_inputs": ["prompt_text", "shot_plan", "art_direction", "character_reference_images"],
+        "optional_inputs": ["composition_guides", "scene_still"],
+        "sampler_profile": "editorial_character_lock",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "aspect_ratio": "16:9",
+          "filename_pattern": "{shot_id}.png"
+        },
+        "pass_plan": ["composition", "identity_lock", "detail", "upscale"],
+        "prompt_additions": [
+          "Hybrid-finishing-ready bricktoon dialogue still.",
+          "Keep both characters on-model, preserve screen-direction clarity, and leave clean separable face and arm zones for later puppet staging."
+        ],
+        "negative_prompt_additions": [
+          "identity drift, merged faces, subject overlap, tangled arms, extra people, empty background"
+        ]
+      },
+      "hybrid_establishing_v1": {
+        "required_inputs": ["prompt_text", "shot_plan", "art_direction"],
+        "optional_inputs": ["character_reference_images", "composition_guides", "scene_still"],
+        "sampler_profile": "editorial_standard",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "aspect_ratio": "16:9",
+          "filename_pattern": "{shot_id}.png"
+        },
+        "pass_plan": ["composition", "detail", "upscale"],
+        "prompt_additions": [
+          "Hybrid-finishing-ready bricktoon establishing still.",
+          "Strong environmental storytelling, dense but controlled detail, and clean subject separation for future motion handoff."
+        ],
+        "negative_prompt_additions": [
+          "empty set, muddy silhouette, weak focal hierarchy, flat lighting, identity drift"
+        ]
+      },
+      "hybrid_document_insert_v1": {
+        "required_inputs": ["prompt_text", "shot_plan", "art_direction"],
+        "optional_inputs": ["composition_guides", "scene_still", "character_reference_images"],
+        "sampler_profile": "editorial_standard",
+        "checkpoint_bundle": {
+          "checkpoint": "v1-5-pruned-emaonly.safetensors",
+          "loras": []
+        },
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "aspect_ratio": "16:9",
+          "filename_pattern": "{shot_id}.png"
+        },
+        "pass_plan": ["composition", "detail", "upscale"],
+        "prompt_additions": [
+          "Hybrid-finishing-ready bricktoon evidence insert.",
+          "Readable prop and document staging, clean hand-to-prop separation, and strong focal hierarchy for later compositing."
+        ],
+        "negative_prompt_additions": [
+          "buried document, unreadable prop, merged fingers, clutter over proof area, flat lighting"
         ]
       },
       "hero_refine_v1": {

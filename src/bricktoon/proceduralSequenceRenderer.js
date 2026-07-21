@@ -187,29 +187,252 @@ function rolePalette(role) {
   return map[role] || { torso: [70, 90, 115], accent: [220, 220, 220], face: "neutral", hat: false, moustache: false, prop: null };
 }
 
-function inferPoseForShot(member, shot, motionDirectives, progress) {
+function findCharacterPerformance(shotPerformance = {}, member = {}) {
+  return (shotPerformance.performances || []).find((entry) => (
+    (entry.character_id && entry.character_id === member.character_id)
+    || (entry.actor_id && entry.actor_id === member.cast_member_id)
+    || (entry.role && entry.role === member.role)
+  )) || null;
+}
+
+function findActiveAction(characterPerformance = {}, timeSeconds = 0) {
+  const actions = characterPerformance?.actions || [];
+  return actions.find((action) => timeSeconds >= Number(action.start || 0) && timeSeconds <= Number(action.end || 0)) || actions[0] || null;
+}
+
+function applyEaseByName(name, value) {
+  const t = clamp(value, 0, 1);
+  switch (String(name || "").toLowerCase()) {
+    case "linear":
+      return t;
+    case "ease_in":
+      return t * t;
+    case "ease_out":
+      return 1 - ((1 - t) * (1 - t));
+    default:
+      return easeInOut(t);
+  }
+}
+
+function windowEnvelope(timeSeconds, startSeconds, endSeconds, fadeSeconds = 0.12) {
+  const fade = Math.max(0.04, Number(fadeSeconds || 0));
+  if (timeSeconds < startSeconds || timeSeconds > endSeconds) {
+    return 0;
+  }
+  const inAmount = smoothstep(startSeconds, startSeconds + fade, timeSeconds);
+  const outAmount = 1 - smoothstep(endSeconds - fade, endSeconds, timeSeconds);
+  return clamp(Math.min(inAmount, outAmount), 0, 1);
+}
+
+function propTypeForTrack(propTrack = {}, member = {}) {
+  const propId = String(propTrack.prop_id || "");
+  if (propId.includes("PHONE")) {
+    return "phone";
+  }
+  if (propId.includes("CONTRACT")) {
+    return "contract";
+  }
+  if (propId.includes("FOLDER")) {
+    return "folder";
+  }
+  if (propId.includes("BOX")) {
+    return "moving_box";
+  }
+  return rolePalette(member.role).prop || null;
+}
+
+function cameraStateForFrame(progress, shotPerformance = {}, motionDirectives = []) {
   const motions = new Set((motionDirectives || []).map((item) => item.type || item));
-  const role = member.role || "";
+  const recipe = shotPerformance.camera_recipe || {};
+  const startScale = Number(recipe.start_scale || 1);
+  const endScale = Number(recipe.end_scale || 1.06);
+  const eased = applyEaseByName(recipe.easing || "ease_in_out", progress);
+  const movement = String(recipe.movement || "").toLowerCase();
+  const angleProfile = String(recipe.angle_profile || "documentary_eye_level").toLowerCase();
+  const overshoot = Number(recipe.overshoot || 0);
+  const parallaxStrength = Number(recipe.parallax_strength || 0.32);
+  const pushScale = lerp(startScale, endScale + overshoot, eased);
+  const drift = motions.has("idle_drift") ? Math.sin(progress * Math.PI * 2) : 0;
+
+  let offsetX = 0;
+  let offsetY = 0;
+  if (movement.includes("pan_left")) {
+    offsetX = lerp(18, -22, eased);
+  } else if (movement.includes("pan_right")) {
+    offsetX = lerp(-18, 22, eased);
+  } else if (movement.includes("push")) {
+    offsetY = lerp(10, -10, eased);
+  } else {
+    offsetX = drift * 8;
+    offsetY = Math.cos(progress * Math.PI * 2) * 5;
+  }
+
+  offsetX += drift * parallaxStrength * 18;
+  offsetY += Math.cos(progress * Math.PI * 2) * parallaxStrength * 10;
+
+  if (angleProfile === "closeup_eye_level") {
+    offsetY -= 18;
+  } else if (angleProfile === "medium_explainer") {
+    offsetY -= 10;
+  } else if (angleProfile === "dialogue_two_shot") {
+    offsetX += Math.sin(progress * Math.PI * 1.5) * 5;
+  } else if (angleProfile === "top_down_insert") {
+    offsetY -= 44;
+    offsetX += Math.sin(progress * Math.PI * 2) * 2;
+  } else if (angleProfile === "document_push_in") {
+    offsetY -= 36;
+  } else if (angleProfile === "villain_low_angle") {
+    offsetY += 18;
+  } else if (angleProfile === "reaction_punch_in") {
+    offsetX += Math.sin(progress * Math.PI * 3) * 4;
+    offsetY -= 12;
+  } else if (angleProfile === "wide_establish") {
+    offsetY -= 4;
+  }
+
   return {
-    blink: motions.has("blink_pass") && (progress > 0.18 && progress < 0.22 || progress > 0.74 && progress < 0.78),
-    talk: /closeup|medium/.test(shot.shot_type || "") && member.character_id === shot.primary_character_id ? Math.sin(progress * Math.PI * 8) * 3 : 0,
-    recoil: role === "worried_customer" ? smoothstep(0.55, 0.8, progress) : 0,
-    villainRaise: role === "schemer_villain" ? easeInOut(smoothstep(0.28, 0.62, progress)) : 0,
-    revealFolder: role === "investigator" ? easeInOut(smoothstep(0.3, 0.65, progress)) : 0,
-    phoneGlow: role === "worried_customer" ? 0.3 + Math.sin(progress * Math.PI * 5) * 0.2 : 0
+    scale: clamp(pushScale + (angleProfile.includes("document") ? 0.04 : angleProfile.includes("closeup") ? 0.03 : 0), 1, 1.22),
+    offsetX,
+    offsetY,
+    angleProfile
   };
 }
 
-function drawBackground(buffer, width, height, shotType, progress, impact) {
-  const sky = /top_down/.test(shotType) ? [215, 227, 237] : [124, 196, 238];
+function blinkAmount(progress, profile, characterIndex, actionName) {
+  const cycle = profile === "cinematic_readable" ? 0.48 : 0.34;
+  const width = profile === "cinematic_readable" ? 0.03 : 0.02;
+  const shifted = (progress + characterIndex * 0.11) % cycle;
+  const scheduled = shifted > (cycle - width) ? smoothstep(cycle - width, cycle, shifted) : 0;
+  const forced = /blink|double_take/.test(actionName || "") ? smoothstep(0.12, 0.24, progress) * (1 - smoothstep(0.28, 0.4, progress)) : 0;
+  return clamp(Math.max(scheduled, forced), 0, 1);
+}
+
+function talkState(progress, mode, mouthTrack, actionName) {
+  if (!mouthTrack && !/talk/.test(actionName || "")) {
+    return { openness: 0, width: 0, round: 0 };
+  }
+  const multiplier = mode === "viseme_emphasis" ? 11 : mode === "talk_cycles" ? 8 : 5;
+  const waveA = (Math.sin(progress * Math.PI * multiplier) + 1) * 0.5;
+  const waveB = (Math.sin(progress * Math.PI * (multiplier * 0.5) + 0.75) + 1) * 0.5;
+  const openness = clamp((waveA * 0.8) + (waveB * 0.25), 0, 1);
+  return {
+    openness,
+    width: clamp((1 - waveA) * 0.7 + 0.2, 0.2, 1),
+    round: clamp(waveB * (mode === "viseme_emphasis" ? 0.75 : 0.45), 0, 1)
+  };
+}
+
+function gestureEnvelope(progress, actionName, gestureProfile) {
+  const action = String(actionName || "").toLowerCase();
+  const profile = String(gestureProfile || "").toLowerCase();
+  const emphasis = easeInOut(smoothstep(0.18, 0.7, progress));
+  return {
+    point: /point|explainer|host_explainer/.test(profile) ? emphasis : 0,
+    reveal: /hand_over_document/.test(action) || /prop_reveal/.test(profile) ? emphasis : 0,
+    showmanship: /villain/.test(action) || /showmanship/.test(profile) ? emphasis : 0,
+    reaction: /double_take/.test(action) ? smoothstep(0.12, 0.42, progress) : 0,
+    idleLift: /idle_support|idle_basic/.test(profile) ? smoothstep(0.4, 0.7, progress) * 0.18 : 0
+  };
+}
+
+function buildPerformanceFrameState({
+  member,
+  shot,
+  shotPerformance = {},
+  motionDirectives = [],
+  progress = 0,
+  memberIndex = 0
+}) {
+  const motions = new Set((motionDirectives || []).map((item) => item.type || item));
+  const role = member.role || "";
+  const durationSeconds = Math.max(0.1, Number(shotPerformance.duration_seconds || 0) || Math.max(0.1, Number(shot.end || 0) - Number(shot.start || 0)));
+  const timeSeconds = progress * durationSeconds;
+  const characterPerformance = findCharacterPerformance(shotPerformance, member);
+  const action = findActiveAction(characterPerformance, timeSeconds);
+  const actionName = String(action?.action || "");
+  const talk = talkState(progress, shotPerformance.mouth_sync_mode, Boolean(characterPerformance?.mouth_track), actionName);
+  const gestures = gestureEnvelope(progress, actionName, characterPerformance?.gesture_profile);
+  const reaction = /double_take/.test(actionName) ? 1 : 0;
+  const headMotionProfile = String(shotPerformance.head_motion_profile || "");
+  const timing = shotPerformance.timing_windows || {};
+  const emphasisPulse = windowEnvelope(
+    timeSeconds,
+    Number(timing.emphasis_start || durationSeconds * 0.34),
+    Number(timing.emphasis_end || durationSeconds * 0.74),
+    durationSeconds * 0.08
+  );
+  const revealPulse = windowEnvelope(
+    timeSeconds,
+    Number(timing.setup_end || durationSeconds * 0.22),
+    Number(timing.release_start || durationSeconds * 0.86),
+    durationSeconds * 0.1
+  );
+  const propTrack = characterPerformance?.prop_track || {};
+  const propInteraction = String(propTrack.interaction || "none");
+  const propType = propTypeForTrack(propTrack, member);
+  const headTurn = /readable_turns/.test(headMotionProfile)
+    ? Math.sin(progress * Math.PI * 1.6 + memberIndex * 0.4) * 0.55
+    : Math.sin(progress * Math.PI * 1.1 + memberIndex * 0.4) * 0.18;
+  const headBob = talk.openness * (/closeup|medium/.test(shot.shot_type || "") ? 5 : 2.5);
+  const eyebrowLift = role === "worried_customer" ? 0.55 + reaction * 0.35 : role === "schemer_villain" ? 0.2 : 0.35;
+  const eyebrowTilt = role === "schemer_villain" ? 0.55 : role === "worried_customer" ? -0.45 : 0;
+
+  return {
+    blinkAmount: motions.has("blink_pass") ? blinkAmount(progress, shotPerformance.blink_profile, memberIndex, actionName) : 0,
+    talkOffsetY: headBob,
+    mouthOpen: talk.openness,
+    mouthWidth: talk.width,
+    mouthRound: talk.round,
+    recoil: role === "worried_customer" ? Math.max(reaction * 0.85, smoothstep(0.55, 0.8, progress) * 0.25) : 0,
+    villainRaise: role === "schemer_villain" ? Math.max(gestures.showmanship, easeInOut(smoothstep(0.28, 0.62, progress)) * 0.3) : 0,
+    revealFolder: role === "investigator" ? Math.max(gestures.reveal, easeInOut(smoothstep(0.3, 0.65, progress)) * 0.4) : 0,
+    phoneGlow: role === "worried_customer" ? 0.35 + Math.sin(progress * Math.PI * 5) * 0.2 : 0,
+    headTurn,
+    headBob,
+    eyebrowLift,
+    eyebrowTilt,
+    eyeScale: role === "worried_customer" ? 1 + reaction * 0.35 : 1,
+    bodyLean: role === "schemer_villain" ? gestures.showmanship * 0.18 : role === "worried_customer" ? -reaction * 0.1 : 0,
+    point: gestures.point,
+    gestureLift: Math.max(gestures.showmanship, gestures.reveal, gestures.point, gestures.idleLift),
+    propType,
+    propInteraction,
+    propReveal: /reveal|present/.test(propInteraction) ? Math.max(emphasisPulse, revealPulse * 0.55) : revealPulse * 0.35,
+    propCarry: /hold|phone|supporting|present/.test(propInteraction) ? Math.max(0.35, revealPulse) : 0,
+    propCarrySide: propTrack.carry_side || "right",
+    phoneRaise: propInteraction === "phone_check" ? Math.max(0.45, revealPulse) : 0,
+    contractPresent: propInteraction === "villain_contract_present" ? Math.max(emphasisPulse, gestures.showmanship) : 0,
+    boxCarry: propType === "moving_box" ? Math.max(0.4, revealPulse) : 0,
+    timingEmphasis: emphasisPulse,
+    reaction,
+    actionName,
+    gestureProfile: characterPerformance?.gesture_profile || null,
+    screenPosition: characterPerformance?.screen_position || null,
+    secondaryAction: shotPerformance.secondary_action || null
+  };
+}
+
+function drawBackground(buffer, width, height, shotType, progress, impact, cameraState = { offsetX: 0, offsetY: 0, scale: 1 }) {
+  const topDown = /top_down/.test(shotType) || cameraState.angleProfile === "top_down_insert";
+  const sky = topDown ? [215, 227, 237] : [124, 196, 238];
   createCanvas(width, height, sky).copy(buffer);
-  fillRect(buffer, width, height, 0, height * 0.62 + impact, width, height * 0.38, [103, 111, 81]);
-  fillRect(buffer, width, height, width * 0.11, height * 0.16, width * 0.78, height * 0.38, [234, 224, 197]);
-  fillRect(buffer, width, height, width * 0.2, height * 0.22, width * 0.56, height * 0.07, [68, 109, 151]);
-  fillRect(buffer, width, height, width * 0.18, height * 0.34, width * 0.18, height * 0.14, [108, 173, 220]);
-  fillRect(buffer, width, height, width * 0.59, height * 0.34, width * 0.18, height * 0.14, [108, 173, 220]);
-  fillRect(buffer, width, height, width * 0.43, height * 0.36, width * 0.14, height * 0.26, [110, 84, 59]);
-  fillRect(buffer, width, height, width * 0.1, height * 0.16, width * 0.8, height * 0.38, [255, 255, 255], 0.04 + progress * 0.04);
+  const dx = cameraState.offsetX || 0;
+  const dy = cameraState.offsetY || 0;
+  if (topDown) {
+    fillRect(buffer, width, height, width * 0.08 + dx * 0.2, height * 0.14 + dy * 0.15, width * 0.84, height * 0.7, [227, 216, 190]);
+    fillRect(buffer, width, height, width * 0.14 + dx * 0.25, height * 0.22 + dy * 0.18, width * 0.72, height * 0.48, [243, 238, 224]);
+    fillRect(buffer, width, height, width * 0.2 + dx * 0.25, height * 0.28 + dy * 0.18, width * 0.18, height * 0.1, [219, 199, 110]);
+    fillRect(buffer, width, height, width * 0.42 + dx * 0.25, height * 0.52 + dy * 0.18, width * 0.26, height * 0.11, [239, 239, 239], 0.95);
+    fillRect(buffer, width, height, width * 0.08 + dx * 0.15, height * 0.14 + dy * 0.12, width * 0.84, height * 0.7, [255, 255, 255], 0.03 + progress * 0.03);
+    return;
+  }
+  fillRect(buffer, width, height, 0, height * 0.62 + impact + dy * 0.4, width, height * 0.38, [103, 111, 81]);
+  fillRect(buffer, width, height, width * 0.11 + dx * 0.45, height * 0.16 + dy * 0.25, width * 0.78, height * 0.38, [234, 224, 197]);
+  fillRect(buffer, width, height, width * 0.2 + dx * 0.6, height * 0.22 + dy * 0.3, width * 0.56, height * 0.07, [68, 109, 151]);
+  fillRect(buffer, width, height, width * 0.18 + dx * 0.75, height * 0.34 + dy * 0.2, width * 0.18, height * 0.14, [108, 173, 220]);
+  fillRect(buffer, width, height, width * 0.59 + dx * 0.75, height * 0.34 + dy * 0.2, width * 0.18, height * 0.14, [108, 173, 220]);
+  fillRect(buffer, width, height, width * 0.43 + dx * 0.7, height * 0.36 + dy * 0.25, width * 0.14, height * 0.26, [110, 84, 59]);
+  fillRect(buffer, width, height, width * 0.1 + dx * 0.25, height * 0.16 + dy * 0.25, width * 0.8, height * 0.38, [255, 255, 255], 0.04 + progress * 0.04);
 }
 
 function drawCharacter(buffer, width, height, member, pose, x, y, scale, shotType) {
@@ -226,80 +449,112 @@ function drawCharacter(buffer, width, height, member, pose, x, y, scale, shotTyp
   const legLenLower = 56 * scale;
   const limbThickness = 18 * scale;
   const headR = 42 * scale;
-  const torsoX = x - torsoW / 2;
+  const bodyLeanOffset = pose.bodyLean * 34 * scale;
+  const torsoCenterX = x + bodyLeanOffset;
+  const torsoX = torsoCenterX - torsoW / 2;
   const torsoY = y;
-  const headY = y - 58 * scale - pose.recoil * 14 * scale + pose.talk;
+  const headX = torsoCenterX + pose.headTurn * 10 * scale;
+  const headY = y - 58 * scale - pose.recoil * 14 * scale + pose.talkOffsetY;
   const shoulderY = torsoY + 18 * scale;
-  const leftShoulderX = x - 28 * scale;
-  const rightShoulderX = x + 28 * scale;
+  const leftShoulderX = torsoCenterX - 28 * scale;
+  const rightShoulderX = torsoCenterX + 28 * scale;
   const hipY = torsoY + torsoH;
   const villainRaise = pose.villainRaise * 46 * scale;
+  const pointLift = pose.point * 40 * scale;
+  const revealLift = Math.max(pose.revealFolder, pose.propReveal) * 32 * scale;
+  const reactionPull = pose.reaction * 24 * scale;
+  const phoneRaiseLift = pose.phoneRaise * 18 * scale;
+  const contractLift = pose.contractPresent * 14 * scale;
 
-  fillCircle(buffer, width, height, x, torsoY + torsoH + 16 * scale, 30 * scale, [0, 0, 0], 0.12);
+  fillCircle(buffer, width, height, torsoCenterX, torsoY + torsoH + 16 * scale, 30 * scale, [0, 0, 0], 0.12);
   fillRect(buffer, width, height, torsoX, torsoY, torsoW, torsoH, palette.torso);
-  fillRect(buffer, width, height, x - 18 * scale, torsoY, 36 * scale, torsoH, palette.accent);
+  fillRect(buffer, width, height, torsoCenterX - 18 * scale, torsoY, 36 * scale, torsoH, palette.accent);
 
-  const leftElbowX = leftShoulderX - armLenUpper;
-  const leftElbowY = shoulderY + 18 * scale;
-  const leftHandX = leftElbowX - armLenLower;
-  const leftHandY = leftElbowY + 10 * scale;
+  const leftElbowX = leftShoulderX - armLenUpper + reactionPull * 0.2;
+  const leftElbowY = shoulderY + 18 * scale - pointLift * 0.4 - revealLift * 0.15;
+  const leftHandX = leftElbowX - armLenLower + pose.point * 18 * scale;
+  const leftHandY = leftElbowY + 10 * scale - pointLift;
   drawLine(buffer, width, height, leftShoulderX, shoulderY, leftElbowX, leftElbowY, limbThickness, skin);
   drawLine(buffer, width, height, leftElbowX, leftElbowY, leftHandX, leftHandY, limbThickness * 0.9, skin);
   fillRect(buffer, width, height, leftHandX - 10 * scale, leftHandY - 6 * scale, 16 * scale, 12 * scale, skin);
 
-  const rightElbowX = rightShoulderX + armLenUpper;
-  const rightElbowY = shoulderY + 6 * scale - villainRaise;
-  const rightHandX = rightElbowX + armLenLower;
-  const rightHandY = rightElbowY - 6 * scale;
+  const rightElbowX = rightShoulderX + armLenUpper + pose.gestureLift * 4 * scale;
+  const rightElbowY = shoulderY + 6 * scale - villainRaise - revealLift * 0.5 - reactionPull * 0.25 - phoneRaiseLift * 0.5 - contractLift * 0.35;
+  const rightHandX = rightElbowX + armLenLower + pose.gestureLift * 14 * scale;
+  const rightHandY = rightElbowY - 6 * scale - revealLift * 0.35 - phoneRaiseLift * 0.55;
   drawLine(buffer, width, height, rightShoulderX, shoulderY, rightElbowX, rightElbowY, limbThickness, skin);
   drawLine(buffer, width, height, rightElbowX, rightElbowY, rightHandX, rightHandY, limbThickness * 0.9, skin);
   fillRect(buffer, width, height, rightHandX - 2 * scale, rightHandY - 6 * scale, 16 * scale, 12 * scale, skin);
 
-  drawLine(buffer, width, height, x - 20 * scale, hipY, x - 20 * scale, hipY + legLenUpper, limbThickness, [42, 51, 68]);
-  drawLine(buffer, width, height, x - 20 * scale, hipY + legLenUpper, x - 24 * scale, hipY + legLenUpper + legLenLower, limbThickness * 0.95, [42, 51, 68]);
-  fillRect(buffer, width, height, x - 38 * scale, hipY + legLenUpper + legLenLower - 8 * scale, 28 * scale, 16 * scale, [29, 35, 49]);
-  drawLine(buffer, width, height, x + 20 * scale, hipY, x + 20 * scale, hipY + legLenUpper, limbThickness, [42, 51, 68]);
-  drawLine(buffer, width, height, x + 20 * scale, hipY + legLenUpper, x + 24 * scale, hipY + legLenUpper + legLenLower, limbThickness * 0.95, [42, 51, 68]);
-  fillRect(buffer, width, height, x + 8 * scale, hipY + legLenUpper + legLenLower - 8 * scale, 28 * scale, 16 * scale, [29, 35, 49]);
+  drawLine(buffer, width, height, torsoCenterX - 20 * scale, hipY, torsoCenterX - 20 * scale, hipY + legLenUpper, limbThickness, [42, 51, 68]);
+  drawLine(buffer, width, height, torsoCenterX - 20 * scale, hipY + legLenUpper, torsoCenterX - 24 * scale, hipY + legLenUpper + legLenLower, limbThickness * 0.95, [42, 51, 68]);
+  fillRect(buffer, width, height, torsoCenterX - 38 * scale, hipY + legLenUpper + legLenLower - 8 * scale, 28 * scale, 16 * scale, [29, 35, 49]);
+  drawLine(buffer, width, height, torsoCenterX + 20 * scale, hipY, torsoCenterX + 20 * scale, hipY + legLenUpper, limbThickness, [42, 51, 68]);
+  drawLine(buffer, width, height, torsoCenterX + 20 * scale, hipY + legLenUpper, torsoCenterX + 24 * scale, hipY + legLenUpper + legLenLower, limbThickness * 0.95, [42, 51, 68]);
+  fillRect(buffer, width, height, torsoCenterX + 8 * scale, hipY + legLenUpper + legLenLower - 8 * scale, 28 * scale, 16 * scale, [29, 35, 49]);
 
-  fillCircle(buffer, width, height, x, headY, headR, skin);
+  fillCircle(buffer, width, height, headX, headY, headR, skin);
   if (member.role === "worried_customer") {
-    fillCircle(buffer, width, height, x - 24 * scale, headY - 16 * scale, 12 * scale, hair);
-    fillCircle(buffer, width, height, x, headY - 22 * scale, 10 * scale, hair);
-    fillCircle(buffer, width, height, x + 24 * scale, headY - 16 * scale, 12 * scale, hair);
+    fillCircle(buffer, width, height, headX - 24 * scale, headY - 16 * scale, 12 * scale, hair);
+    fillCircle(buffer, width, height, headX, headY - 22 * scale, 10 * scale, hair);
+    fillCircle(buffer, width, height, headX + 24 * scale, headY - 16 * scale, 12 * scale, hair);
   }
   if (palette.hat) {
-    fillRect(buffer, width, height, x - 34 * scale, headY - 68 * scale, 68 * scale, 24 * scale, [12, 16, 26]);
-    fillRect(buffer, width, height, x - 50 * scale, headY - 44 * scale, 100 * scale, 10 * scale, [12, 16, 26]);
+    fillRect(buffer, width, height, headX - 34 * scale, headY - 68 * scale, 68 * scale, 24 * scale, [12, 16, 26]);
+    fillRect(buffer, width, height, headX - 50 * scale, headY - 44 * scale, 100 * scale, 10 * scale, [12, 16, 26]);
   }
-  if (pose.blink) {
-    drawLine(buffer, width, height, x - 14 * scale, headY - 2 * scale, x - 6 * scale, headY - 2 * scale, 2 * scale, eye);
-    drawLine(buffer, width, height, x + 6 * scale, headY - 2 * scale, x + 14 * scale, headY - 2 * scale, 2 * scale, eye);
+  const eyebrowY = headY - (18 + pose.eyebrowLift * 8) * scale;
+  drawLine(buffer, width, height, headX - 18 * scale, eyebrowY + pose.eyebrowTilt * 4 * scale, headX - 3 * scale, eyebrowY - pose.eyebrowTilt * 5 * scale, 2 * scale, eye);
+  drawLine(buffer, width, height, headX + 3 * scale, eyebrowY - pose.eyebrowTilt * 5 * scale, headX + 18 * scale, eyebrowY + pose.eyebrowTilt * 4 * scale, 2 * scale, eye);
+
+  if (pose.blinkAmount > 0.65) {
+    drawLine(buffer, width, height, headX - 14 * scale, headY - 2 * scale, headX - 6 * scale, headY - 2 * scale, 2 * scale, eye);
+    drawLine(buffer, width, height, headX + 6 * scale, headY - 2 * scale, headX + 14 * scale, headY - 2 * scale, 2 * scale, eye);
   } else {
-    fillCircle(buffer, width, height, x - 12 * scale, headY, 6 * scale, [255, 255, 255]);
-    fillCircle(buffer, width, height, x + 12 * scale, headY, 6 * scale, [255, 255, 255]);
-    fillCircle(buffer, width, height, x - 10 * scale, headY + 1, 3 * scale, eye);
-    fillCircle(buffer, width, height, x + 10 * scale, headY + 1, 3 * scale, eye);
+    fillCircle(buffer, width, height, headX - 12 * scale, headY, 6 * scale * pose.eyeScale, [255, 255, 255]);
+    fillCircle(buffer, width, height, headX + 12 * scale, headY, 6 * scale * pose.eyeScale, [255, 255, 255]);
+    fillCircle(buffer, width, height, headX - 10 * scale + pose.headTurn * 1.5 * scale, headY + 1, 3 * scale, eye);
+    fillCircle(buffer, width, height, headX + 10 * scale + pose.headTurn * 1.5 * scale, headY + 1, 3 * scale, eye);
   }
-  if (member.role === "schemer_villain") {
-    drawLine(buffer, width, height, x - 18 * scale, headY - 18 * scale, x - 3 * scale, headY - 24 * scale, 2 * scale, eye);
-    drawLine(buffer, width, height, x + 3 * scale, headY - 24 * scale, x + 18 * scale, headY - 18 * scale, 2 * scale, eye);
-    drawLine(buffer, width, height, x - 22 * scale, headY + 12 * scale, x + 22 * scale, headY + 12 * scale, 6 * scale, mouth);
-    drawLine(buffer, width, height, x - 22 * scale, headY + 12 * scale, x - 30 * scale, headY + 8 * scale - villainRaise * 0.15, 4 * scale, mouth);
-    drawLine(buffer, width, height, x + 22 * scale, headY + 12 * scale, x + 30 * scale, headY + 8 * scale - villainRaise * 0.15, 4 * scale, mouth);
-  }
-  if (member.role === "worried_customer") {
-    drawLine(buffer, width, height, x - 18 * scale, headY - 20 * scale, x - 5 * scale, headY - 10 * scale, 2 * scale, eye);
-    drawLine(buffer, width, height, x + 5 * scale, headY - 10 * scale, x + 18 * scale, headY - 20 * scale, 2 * scale, eye);
-    drawLine(buffer, width, height, x - 12 * scale, headY + 32 * scale, x, headY + 20 * scale, 3 * scale, mouth);
-    drawLine(buffer, width, height, x, headY + 20 * scale, x + 12 * scale, headY + 32 * scale, 3 * scale, mouth);
+  const mouthY = headY + 24 * scale;
+  const mouthHalfWidth = lerp(12 * scale, 18 * scale, pose.mouthWidth);
+  const mouthHeight = pose.mouthOpen * 16 * scale;
+  if (pose.mouthOpen > 0.18) {
+    fillRect(buffer, width, height, headX - mouthHalfWidth, mouthY - mouthHeight * 0.3, mouthHalfWidth * 2, Math.max(3, mouthHeight), mouth, 0.95);
+    if (pose.mouthRound > 0.3) {
+      fillCircle(buffer, width, height, headX, mouthY + mouthHeight * 0.15, Math.max(4, mouthHeight * 0.42), [140, 68, 54], 0.85);
+    }
+  } else if (member.role === "schemer_villain") {
+    drawLine(buffer, width, height, headX - 22 * scale, headY + 12 * scale, headX + 22 * scale, headY + 12 * scale, 6 * scale, mouth);
+    drawLine(buffer, width, height, headX - 22 * scale, headY + 12 * scale, headX - 30 * scale, headY + 8 * scale - villainRaise * 0.15, 4 * scale, mouth);
+    drawLine(buffer, width, height, headX + 22 * scale, headY + 12 * scale, headX + 30 * scale, headY + 8 * scale - villainRaise * 0.15, 4 * scale, mouth);
+  } else if (member.role === "worried_customer") {
+    drawLine(buffer, width, height, headX - 12 * scale, headY + 32 * scale, headX, headY + 20 * scale, 3 * scale, mouth);
+    drawLine(buffer, width, height, headX, headY + 20 * scale, headX + 12 * scale, headY + 32 * scale, 3 * scale, mouth);
   } else {
-    drawLine(buffer, width, height, x - 14 * scale, headY + 24 * scale, x, headY + 34 * scale, 3 * scale, mouth);
-    drawLine(buffer, width, height, x, headY + 34 * scale, x + 14 * scale, headY + 24 * scale, 3 * scale, mouth);
+    drawLine(buffer, width, height, headX - 14 * scale, headY + 24 * scale, headX, headY + 34 * scale, 3 * scale, mouth);
+    drawLine(buffer, width, height, headX, headY + 34 * scale, headX + 14 * scale, headY + 24 * scale, 3 * scale, mouth);
   }
-  if (palette.prop === "phone" && /closeup|medium|over_shoulder/.test(shotType || "")) {
+  if (palette.moustache) {
+    drawLine(buffer, width, height, headX - 20 * scale, headY + 10 * scale, headX - 4 * scale, headY + 13 * scale, 3 * scale, [30, 24, 24]);
+    drawLine(buffer, width, height, headX + 4 * scale, headY + 13 * scale, headX + 20 * scale, headY + 10 * scale, 3 * scale, [30, 24, 24]);
+  }
+  if (pose.propType === "phone" && /closeup|medium|over_shoulder/.test(shotType || "")) {
     fillRect(buffer, width, height, rightHandX + 2 * scale, rightHandY - 18 * scale, 18 * scale, 30 * scale, [31, 42, 61]);
     fillRect(buffer, width, height, rightHandX + 5 * scale, rightHandY - 14 * scale, 12 * scale, 18 * scale, [106, 225, 255], pose.phoneGlow);
+  }
+  if (pose.propType === "folder" && (pose.revealFolder > 0.08 || pose.propCarry > 0.18)) {
+    fillRect(buffer, width, height, rightHandX + 6 * scale, rightHandY - 12 * scale, 34 * scale, 26 * scale, [230, 206, 109], 0.92);
+    fillRect(buffer, width, height, rightHandX + 10 * scale, rightHandY - 8 * scale, 26 * scale, 18 * scale, [247, 236, 178], 0.9);
+    fillRect(buffer, width, height, rightHandX + 14 * scale, rightHandY - 3 * scale, 18 * scale, 3 * scale, [182, 168, 104], 0.8);
+  }
+  if (pose.propType === "contract" && (pose.villainRaise > 0.12 || pose.contractPresent > 0.18)) {
+    fillRect(buffer, width, height, rightHandX + 4 * scale, rightHandY - 10 * scale, 30 * scale, 22 * scale, [244, 238, 228], 0.95);
+    fillRect(buffer, width, height, rightHandX + 8 * scale, rightHandY - 5 * scale, 18 * scale, 3 * scale, [123, 123, 123], 0.8);
+  }
+  if (pose.propType === "moving_box" && pose.boxCarry > 0.18) {
+    fillRect(buffer, width, height, torsoCenterX - 34 * scale, torsoY + 58 * scale, 68 * scale, 44 * scale, [173, 126, 72], 0.95);
+    fillRect(buffer, width, height, torsoCenterX - 28 * scale, torsoY + 64 * scale, 56 * scale, 6 * scale, [204, 168, 110], 0.85);
   }
 }
 
@@ -327,12 +582,31 @@ function drawWarning(buffer, width, height, pulse) {
   fillCircle(buffer, width, height, x, y + 150, 11, [42, 52, 78], alpha);
 }
 
-function slotLayout(shotType, castMembers) {
+function slotLayout(shot, castMembers, shotPerformance = {}) {
+  const shotType = shot.shot_type;
+  const visibleLimit = Number(shotPerformance.visible_character_limit || castMembers.length || 1);
+  const primaryCharacterId = shot.primary_character_id || castMembers[0]?.character_id || null;
+  const visibleMembers = castMembers
+    .slice()
+    .sort((a, b) => {
+      if (a.character_id === primaryCharacterId) {
+        return -1;
+      }
+      if (b.character_id === primaryCharacterId) {
+        return 1;
+      }
+      return 0;
+    })
+    .slice(0, visibleLimit);
+  const positionMap = new Map(
+    (shotPerformance.performances || []).map((entry) => [entry.character_id || entry.actor_id || entry.role, entry.screen_position || null])
+  );
+
   if (/document_insert|push_in_document/.test(shotType)) {
     return [];
   }
   if (shotType === "closeup_face") {
-    return castMembers.map((member, index) => ({
+    return visibleMembers.map((member, index) => ({
       character_id: member.character_id,
       x: index === 0 ? 0.5 : 0.77,
       y: index === 0 ? 0.47 : 0.57,
@@ -340,7 +614,7 @@ function slotLayout(shotType, castMembers) {
     }));
   }
   if (shotType === "low_angle_villain") {
-    return castMembers.map((member, index) => ({
+    return visibleMembers.map((member, index) => ({
       character_id: member.character_id,
       x: member.role === "schemer_villain" ? 0.62 : index === 0 ? 0.26 : 0.78,
       y: member.role === "schemer_villain" ? 0.55 : 0.63,
@@ -348,7 +622,7 @@ function slotLayout(shotType, castMembers) {
     }));
   }
   if (shotType === "reaction_cutaway") {
-    return castMembers.map((member, index) => ({
+    return visibleMembers.map((member, index) => ({
       character_id: member.character_id,
       x: index === 0 ? 0.5 : 0.78,
       y: 0.58,
@@ -356,60 +630,95 @@ function slotLayout(shotType, castMembers) {
     }));
   }
   if (shotType === "over_shoulder") {
-    return castMembers.map((member, index) => ({
+    return visibleMembers.map((member, index) => ({
       character_id: member.character_id,
       x: index === 0 ? 0.32 : 0.72,
       y: index === 0 ? 0.66 : 0.59,
       scale: index === 0 ? 1.22 : 1.18
     }));
   }
-  if (shotType === "establishing_wide" || shotType === "wide_three_character" || shotType === "medium_three_character") {
-    return castMembers.map((member, index) => ({
-      character_id: member.character_id,
-      x: [0.25, 0.5, 0.74][index] || 0.74,
-      y: 0.62,
-      scale: 1.05
-    }));
+  if (shotType === "medium_two_shot") {
+    return visibleMembers.map((member, index) => {
+      const screenPos = positionMap.get(member.character_id) || positionMap.get(member.cast_member_id) || (index === 0 ? "left" : "right");
+      return {
+        character_id: member.character_id,
+        x: screenPos === "left" ? 0.33 : screenPos === "center" ? 0.5 : 0.68,
+        y: 0.6,
+        scale: 1.1
+      };
+    });
   }
-  return castMembers.map((member, index) => ({
-    character_id: member.character_id,
-    x: [0.3, 0.56, 0.78][index] || 0.78,
-    y: 0.61,
-    scale: index === 0 ? 1.18 : 1.04
-  }));
+  if (shotType === "establishing_wide" || shotType === "wide_three_character" || shotType === "medium_three_character") {
+    return visibleMembers.map((member, index) => {
+      const screenPos = positionMap.get(member.character_id) || positionMap.get(member.cast_member_id) || ["left", "center", "right"][index] || "right";
+      return {
+        character_id: member.character_id,
+        x: screenPos === "left" ? 0.25 : screenPos === "center" ? 0.5 : 0.74,
+        y: 0.62,
+        scale: 1.05
+      };
+    });
+  }
+  return visibleMembers.map((member, index) => {
+    const screenPos = positionMap.get(member.character_id) || positionMap.get(member.cast_member_id) || ["left", "center", "right"][index] || "right";
+    return {
+      character_id: member.character_id,
+      x: screenPos === "left" ? 0.3 : screenPos === "center" ? 0.56 : 0.78,
+      y: 0.61,
+      scale: index === 0 ? 1.18 : 1.04
+    };
+  });
 }
 
-function renderShotFrame({ width, height, shot, sceneCard, castMembers, motionDirectives, frameIndex, totalFrames }) {
+function renderShotFrame({ width, height, shot, sceneCard, castMembers, motionDirectives, shotPerformance = {}, frameIndex, totalFrames }) {
   const progress = totalFrames <= 1 ? 0 : frameIndex / (totalFrames - 1);
   const motions = new Set((motionDirectives || []).map((item) => item.type || item));
   const buffer = createCanvas(width, height, [124, 196, 238]);
   const impact = motions.has("impact_shake") ? Math.sin(progress * Math.PI * 24) * smoothstep(0.45, 0.7, progress) * 10 : 0;
-  drawBackground(buffer, width, height, shot.shot_type, progress, impact);
-  const slots = slotLayout(shot.shot_type, castMembers);
+  const cameraState = cameraStateForFrame(progress, shotPerformance, motionDirectives);
+  drawBackground(buffer, width, height, shot.shot_type, progress, impact, cameraState);
+  const slots = slotLayout(shot, castMembers, shotPerformance);
   const lookup = new Map(slots.map((slot) => [slot.character_id, slot]));
-  for (const member of castMembers) {
+  const durationSeconds = Math.max(0.1, Number(shotPerformance.duration_seconds || 0) || Math.max(0.1, Number(shot.end || 0) - Number(shot.start || 0)));
+  const timeSeconds = progress * durationSeconds;
+  const timing = shotPerformance.timing_windows || {};
+  const documentEmphasis = windowEnvelope(
+    timeSeconds,
+    Number(timing.emphasis_start || durationSeconds * 0.34),
+    Number(timing.emphasis_end || durationSeconds * 0.74),
+    durationSeconds * 0.08
+  );
+  for (const [memberIndex, member] of castMembers.entries()) {
     const slot = lookup.get(member.character_id);
     if (!slot) {
       continue;
     }
+    const pose = buildPerformanceFrameState({
+      member,
+      shot,
+      shotPerformance,
+      motionDirectives,
+      progress,
+      memberIndex
+    });
     drawCharacter(
       buffer,
       width,
       height,
       member,
-      inferPoseForShot(member, shot, motionDirectives, progress),
-      width * slot.x,
-      height * slot.y,
-      slot.scale,
+      pose,
+      (width * slot.x) + cameraState.offsetX,
+      (height * slot.y) + cameraState.offsetY,
+      slot.scale * cameraState.scale,
       shot.shot_type
     );
   }
 
   const invoiceScene = /bill|price|fee|quote|invoice|leverage/.test(sceneCard.narration || "") || motions.has("invoice_counter");
   if (invoiceScene || /document_insert|push_in_document/.test(shot.shot_type || "")) {
-    drawInvoice(buffer, width, height, smoothstep(0.5, 0.8, progress) >= 1 ? "$3,800" : "$1,200", smoothstep(0.5, 0.8, progress), shot.shot_type);
+    drawInvoice(buffer, width, height, documentEmphasis >= 0.9 ? "$3,800" : "$1,200", Math.max(documentEmphasis, smoothstep(0.5, 0.8, progress)), shot.shot_type);
   }
-  if (motions.has("proof_reveal")) {
+  if (motions.has("proof_reveal") || shotPerformance.secondary_action === "document_reveal") {
     fillRect(buffer, width, height, width * 0.12, height * 0.72, width * 0.15, height * 0.07, [240, 212, 122], 0.92);
   }
   if (motions.has("typing_overlay")) {
@@ -438,14 +747,24 @@ function run(command, args, label) {
   }
 }
 
-function renderShotClip({ shot, sceneCard, castMembers, motionDirectives, outputPath, posterPath, tempDir, width = 768, height = 1344, fps = 30 }) {
+function renderShotClip({ shot, sceneCard, castMembers, motionDirectives, shotPerformance = {}, outputPath, posterPath, tempDir, width = 768, height = 1344, fps = 30 }) {
   if (fs.existsSync(tempDir)) {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
   ensureDir(tempDir);
-  const totalFrames = Math.max(24, Math.round((shot.end - shot.start) * fps));
+  const totalFrames = Math.max(24, Math.round((Number(shotPerformance.duration_seconds || 0) || (shot.end - shot.start)) * fps));
   for (let frameIndex = 0; frameIndex < totalFrames; frameIndex += 1) {
-    const frame = renderShotFrame({ width, height, shot, sceneCard, castMembers, motionDirectives, frameIndex, totalFrames });
+    const frame = renderShotFrame({
+      width,
+      height,
+      shot,
+      sceneCard,
+      castMembers,
+      motionDirectives,
+      shotPerformance,
+      frameIndex,
+      totalFrames
+    });
     writePng(path.join(tempDir, `frame_${String(frameIndex).padStart(3, "0")}.png`), width, height, frame);
     if (frameIndex === Math.floor(totalFrames * 0.55)) {
       writePng(posterPath, width, height, frame);
@@ -474,6 +793,8 @@ function concatClips(fileList, outputPath) {
 }
 
 module.exports = {
+  buildPerformanceFrameState,
+  cameraStateForFrame,
   concatClips,
   ensureDir,
   renderShotClip

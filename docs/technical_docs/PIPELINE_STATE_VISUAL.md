@@ -13,7 +13,14 @@ PIPELINE STATUS
 |   |-- implementation options ............. [LOCKED]
 |   |-- phased option tracks ............... [LOCKED]
 |   |-- known gap capture .................. [LOCKED]
-|   |-- path decision ...................... [OPEN]
+|   |-- path decision ...................... [OPTION 2 ACTIVE]
+|   |-- option 1 / phase 1 status ......... [BUILD DONE, VISUAL SIGNOFF PENDING]
+|   |-- option 1 / phase 2 status ......... [BUILD DONE, PREMIUM SIGNOFF PENDING]
+|   |-- option 1 / phase 3 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
+|   |-- option 1 / phase 4 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
+|   |-- option 1 / phase 5 status ......... [BUILD DONE, SEQUENCE SIGNOFF PENDING]
+|   |-- option 1 / phase 6 status ......... [PARTIAL]
+|   |-- option 2 / phase 1 status ......... [IN PROGRESS]
 |   `-- proceed-past-gate approval ......... [BLOCKED]
 |
 |-- FOUNDATION / ORCHESTRATOR ............... [WORKING]
@@ -59,6 +66,14 @@ PIPELINE STATUS
 |   |-- thumbnail-style match ............... [PARTIAL]
 |   `-- identity consistency ................ [PARTIAL]
 |
+|-- HYBRID STILL LOCK ....................... [PARTIAL]
+|   |-- option2 benchmark profile ........... [WORKING]
+|   |-- shot-class workflow routing ......... [WORKING]
+|   |-- hybrid identity packages ............ [WORKING]
+|   |-- still benchmark pack stage .......... [WORKING]
+|   |-- pass/fail review cues ............... [WORKING]
+|   `-- fresh still rerun signoff ........... [PENDING]
+|
 |-- PREVIEW GATE ............................ [WORKING]
 |   |-- reference-sync stage ................ [WORKING]
 |   |-- bricktoon-preview stage ............. [WORKING]
@@ -66,6 +81,14 @@ PIPELINE STATUS
 |   |-- scene-divided preview clips ......... [WORKING]
 |   |-- voice/music aware preview ........... [WORKING]
 |   `-- approval checkpoint before finish ... [WORKING]
+|
+|-- RELIABILITY / OVERNIGHT ................. [PARTIAL]
+|   |-- runtime profiles .................... [WORKING]
+|   |-- reliability gate .................... [WORKING]
+|   |-- reliability report .................. [WORKING]
+|   |-- resumable overnight runner .......... [WORKING]
+|   |-- premium finish hard gate ............ [WORKING]
+|   `-- benchmark overnight trust ........... [BLOCKED]
 |
 |-- ANIMATION / MOTION ...................... [PARTIAL]
 |   |-- layer extraction .................... [WORKING]
@@ -88,7 +111,8 @@ PIPELINE STATUS
     |-- premium final visual quality ........ [NOT LOCKED]
     |-- milestone 2 planning ................ [LOCKED]
     |-- known-gap documentation ............. [LOCKED]
-    `-- unattended overnight production ..... [CLOSE, NOT TRUSTED]
+    |-- reliability gate .................... [REAL]
+    `-- unattended overnight production ..... [BLOCKED BY REPORT]
 ```
 
 ## Flow View
@@ -152,7 +176,30 @@ PREVIEW CHECKPOINT
         |     -> rerun preview
         |
         `--> GOOD PREVIEW
-              -> continue to finish
+              -> continue to reliability gate
+
+                    |
+                    v
+
+RELIABILITY GATE
+|
+|-- bricktoon-reliability
+|     -> preview exists?
+|     -> sequence reports ready?
+|     -> render contract ready?
+|     -> fallback pressure acceptable?
+|     -> fragile-scene pressure acceptable?
+|     -> hold / review scenes cleared?
+|
+        |
+        +--> BLOCKED
+        |     -> polish scenes
+        |     -> reduce fallback usage
+        |     -> clear hold/review states
+        |     -> rerun preview/reliability
+        |
+        `--> PASS
+              -> continue to finish / overnight
 
                     |
                     v
@@ -175,6 +222,8 @@ FINISH PATH
 [PARTIAL]         implemented, but important quality or reliability gaps remain
 [UNSTABLE]        can work, but times out or breaks often enough to block trust
 [WEAK]            output exists, but quality is not yet strong enough
+[PENDING]         planned validation or signoff step still needs to happen
+[BLOCKED]         intentionally stopped by a quality or reliability gate
 [NOT READY]       should not be treated as production-safe
 ```
 
@@ -191,6 +240,8 @@ bricktoon-preview
     ->
 human review
     ->
+bricktoon-reliability
+    ->
 bricktoon-finish only if approved
 ```
 
@@ -203,14 +254,21 @@ MAIN BLOCKERS:
    for unattended long-run preview approval.
 
 2. Character-lock and thumbnail-match contracts are now stronger,
-   but they still need visual re-validation through a fresh preview run
-   before we can treat premium still quality as locked.
+   and the new Option 2 still benchmark pack now exists, but they still
+   need visual re-validation through a fresh rerun under the new shot-class
+   workflows before we can treat premium still quality as locked.
 
-3. The motion stage now converts approved stills into moving clips,
-   but believable premium motion still depends on stronger still quality
-   and a much larger reusable asset catalog.
+3. The sequence stage now produces usable continuity, subtitle-safe,
+   pacing, and promotion metadata, but several benchmark scenes still
+   fall back too often to procedural shots to call the sequence
+   premium-ready.
 
-4. Milestone 2 is now the active gate, so the project should not
+4. The new reliability report is working, and it is currently blocking
+   `test_story_template` for concrete reasons: 5 hold-for-polish scenes,
+   fallback ratio `0.577`, fragile-scene ratio `0.714`, and 2 scenes
+   still marked for review before finish.
+
+5. Milestone 2 is now the active gate, so the project should not
    treat scale, automation, or production readiness as the next win
    until the minimum animation floor is actually met.
 ```
@@ -272,4 +330,9 @@ Recommended path:
 
 Known gap capture:
 - complete for currently known issues as of July 21, 2026
+
+Current active build:
+- Option 2
+- Phase 1: Repo-Side Still And Identity Lock
+- completion status: in progress
 ```

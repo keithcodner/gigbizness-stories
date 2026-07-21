@@ -5,6 +5,7 @@ const path = require("path");
 const { parseArgs } = require("../agents/common");
 const { assetTimestamp, loadManifest, readJsonSafe, relativeWorkspacePath, saveManifest, upsertAsset, writeJson } = require("../src/bricktoon/aiQualityPipeline");
 const { qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
+const { classifyShotRole, subtitleSafeModeForShotType } = require("../src/bricktoon/sequencePolish");
 
 function main() {
   try {
@@ -21,32 +22,43 @@ function main() {
     const reportsDir = path.join(workspaceDir, "08_animation", "compositing_reports");
     const manifest = loadManifest(workspaceDir);
     const motionReport = readJsonSafe(path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json"), {});
+    const shotClipReport = readJsonSafe(path.join(workspaceDir, "08_animation", "shot_clips", "shot_clip_report.json"), {});
     const report = { shots: [] };
     const motionLookup = new Map((motionReport.shots || []).map((shot) => [shot.shot_id, shot]));
+    const clipLookup = new Map((shotClipReport.shots || []).map((entry) => [entry.shot_id, entry]));
 
     for (const scene of shotPlan.scenes || []) {
-      for (const shot of scene.shots || []) {
+      for (const [shotIndex, shot] of (scene.shots || []).entries()) {
         const stabilizedPath = path.join(stabilizedDir, `${shot.shot_id}_stabilized.mp4`);
         const fallbackPath = path.join(baseShotDir, `${shot.shot_id}.mp4`);
         const source = fs.existsSync(stabilizedPath) ? stabilizedPath : fallbackPath;
         const sourceAssetType = fs.existsSync(stabilizedPath) ? "stabilized_motion_pass" : "bricktoon_shot_clip";
         const motionInfo = motionLookup.get(shot.shot_id) || {};
+        const clipInfo = clipLookup.get(shot.shot_id) || {};
         if (!fs.existsSync(source)) {
           continue;
         }
         const target = path.join(compositedDir, `${shot.shot_id}.mp4`);
         fs.copyFileSync(source, target);
+        const qualityClassification = qualityClassificationForAsset(sourceAssetType);
         const selectionReason = fs.existsSync(stabilizedPath)
           ? (motionInfo.execution_mode === "keyframe_motion_render"
             ? "stabilized keyframe-derived motion chosen"
             : "stabilized AI motion chosen")
           : "procedural fallback chosen";
+        const sequenceRole = classifyShotRole(shot, shotIndex, (scene.shots || []).length);
         report.shots.push({
           shot_id: shot.shot_id,
           scene_id: scene.scene_id,
+          shot_type: shot.shot_type,
+          sequence_role: sequenceRole,
           winning_source_type: sourceAssetType,
           selection_reason: selectionReason,
-          quality_classification: qualityClassificationForAsset(sourceAssetType),
+          quality_classification: qualityClassification,
+          camera_angle_profile: clipInfo.camera_angle_profile || null,
+          focus_target: clipInfo.focus_target || null,
+          performance_class: clipInfo.performance_class || null,
+          subtitle_safe_mode: subtitleSafeModeForShotType(shot.shot_type),
           source: relativeWorkspacePath(workspaceDir, source),
           composited_file: relativeWorkspacePath(workspaceDir, target)
         });
@@ -58,7 +70,7 @@ function main() {
           file: relativeWorkspacePath(workspaceDir, target),
           status: "approved",
           selection_reason: selectionReason,
-          quality_classification: qualityClassificationForAsset(sourceAssetType),
+          quality_classification: qualityClassification,
           created_at: assetTimestamp()
         });
       }

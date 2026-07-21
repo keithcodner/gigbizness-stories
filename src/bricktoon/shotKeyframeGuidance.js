@@ -155,6 +155,36 @@ function buildShotCompositionLines({ shot, sceneCard, compositionGuide, artDirec
   return lines;
 }
 
+function buildAnimationSafetyLines({ shot, shotCharacters, sceneCard, primaryCharacter }) {
+  const lines = [];
+  const shotType = String(shot.shot_type || "").toLowerCase();
+  const storyText = `${shot.purpose || ""} ${sceneCard?.narration || ""}`.toLowerCase();
+  const primaryName = primaryCharacter?.name || "the visible speaker";
+  const hasPropStoryBeat = /invoice|bill|quote|fee|contract|folder|phone|proof|document|evidence|truck/.test(storyText);
+
+  if (shotType.includes("closeup")) {
+    lines.push(`Animation-safe framing: keep ${primaryName}'s full head fully visible, keep the mouth unobstructed, and preserve clean eye and eyebrow readability for later blink and speech animation.`);
+  }
+  if (shotType.includes("medium")) {
+    lines.push("Animation-safe framing: keep at least one full readable gesture arm visible and avoid cropping the active hands at the wrist or elbow.");
+  }
+  if (shotType.includes("document") || shotType.includes("top_down")) {
+    lines.push("Animation-safe framing: keep the proof area clean, preserve edge separation for hands and documents, and avoid burying the action under visual clutter.");
+  }
+  if (shotType.includes("reaction")) {
+    lines.push(`Animation-safe framing: favor readable facial reaction shapes for ${primaryName} and leave room for a pose or expression swap.`);
+  }
+  if (hasPropStoryBeat) {
+    lines.push("Animation-safe prop rule: keep the active prop fully readable, attached to a believable hand zone when visible, and separated from the background for later motion extraction.");
+  }
+  if ((shotCharacters || []).length > 1 && !shotType.includes("wide")) {
+    lines.push("Animation-safe cast rule: keep subject overlap low so faces, arms, and props can be separated cleanly during later puppet prep.");
+  }
+
+  lines.push("Do not crop away the exact face, hand, or prop areas needed for later puppet-style motion.");
+  return lines;
+}
+
 function existingCharacterRef(filePath) {
   return filePath && fs.existsSync(filePath) ? filePath : null;
 }
@@ -248,6 +278,7 @@ function buildShotNegativePrompt(shotCharacters, shot) {
 }
 
 module.exports = {
+  buildAnimationSafetyLines,
   buildCharacterLockLines,
   buildShotCompositionLines,
   buildShotNegativePrompt,

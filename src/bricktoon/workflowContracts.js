@@ -26,6 +26,10 @@ function workflowSelectionForKind(config, kind, options = {}) {
     return selection.scene_still;
   }
   if (kind === "shot_keyframe") {
+    const byClass = selection.shot_keyframe_by_class || {};
+    if (options.shotClass && byClass[options.shotClass]) {
+      return byClass[options.shotClass];
+    }
     const map = selection.shot_keyframe || {};
     return map[options.qualityTier] || map.default || selection.hero_refine || "shot_keyframe_v1";
   }
@@ -130,7 +134,8 @@ function buildWorkflowRequest(options) {
     providerName: options.providerName,
     strict: options.strict,
     samplerProfile: options.samplerProfile,
-    variant: options.variant
+    variant: options.variant,
+    shotClass: options.shotClass
   });
 
   const requestId = options.requestId || crypto.randomUUID();
@@ -167,9 +172,11 @@ function buildWorkflowRequest(options) {
       topic_id: path.basename(options.workspaceDir),
       scene_id: options.sceneId || null,
       shot_id: options.shotId || null,
+      shot_class: options.shotClass || null,
       character_id: options.characterId || null,
       variant: options.variant || null,
-      production_mode: options.productionMode || null
+      production_mode: options.productionMode || null,
+      benchmark_profile_id: options.benchmarkProfileId || null
     }
   };
 }

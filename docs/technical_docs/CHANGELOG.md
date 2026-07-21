@@ -6,6 +6,50 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Changed
 
+- Started executable build work for `Milestone 2 -> Option 2 -> Phase 1: Repo-Side Still And Identity Lock`.
+- Added `option2_phase1_repo_side_still_identity_lock` to `config/visual_generation.json` so the hybrid still-lock path now has a pinned GTX 1080 benchmark profile, explicit approval focus, shot-class workflow expectations, and benchmark-pack requirements.
+- Added managed shot-class workflow routing plus new hybrid still templates for closeups, dialogue/two-shots, establishing frames, and document inserts so repo-side still generation can prepare cleaner hybrid-motion handoff stills instead of only using generic quality-tier routing.
+- Updated `scripts/generate_character_bibles.js` so `visual_character_bible.json` now emits hybrid handoff rules, dual benchmark-profile coverage, and per-character still-acceptance contracts alongside the earlier cutout-animation contracts.
+- Updated `scripts/generate_bricktoon_character_refs.js` so character refs now write `hybrid_identity_package.json` beside the variant manifest, turning still identity lock into a reusable handoff package instead of only loose image files.
+- Updated `scripts/generate_shot_keyframes.js` so shot approvals now preserve shot class, hybrid handoff contract data, and Option 2 benchmark-profile linkage for future motion-tool handoff and review.
+- Added `scripts/build_hybrid_still_benchmark_pack.js` plus the `hybrid-still-benchmark` orchestrator/package stage so the repo can now build a review pack with shot-class pass/fail guidance and linked example stills.
+- Updated the milestone and pipeline-state docs so Option 2 Phase 1 is now tracked as the active build phase while Option 1 Phase 6 remains started but not closed.
+- Started executable build work for `Milestone 2 -> Option 1 -> Phase 6: Overnight Reliability`.
+- Added `config/bricktoon_runtime_profiles.json` so preview, premium-preview, and overnight-finish behavior is now pinned to explicit GTX 1080-safe runtime tiers with defined gate expectations.
+- Added `src/bricktoon/reliabilityGate.js` so preview existence, sequence health, render-contract readiness, QC approval state, fallback pressure, fragile-scene pressure, and unresolved-high-priority assets are now judged through one reusable reliability contract.
+- Added `scripts/build_bricktoon_reliability_report.js` so each topic can emit durable reliability JSON/markdown before expensive finish runs.
+- Added `agents/bricktoon_overnight_agent.js` so the bricktoon pipeline now has a resumable overnight runner with state tracking and a reliability stop before finish.
+- Updated `agents/orchestrator.js` so `bricktoon-reliability` and `bricktoon-overnight` are first-class stages, runtime profiles can be enforced during `bricktoon-finish`, and `bricktoon-auto` can route through the new reliability checkpoint.
+- Updated `package.json` with `bricktoon:reliability` and `bricktoon:overnight` scripts so the new Phase 6 runtime path is callable without manual command assembly.
+- Updated the milestone and pipeline-state docs so Option 1 Phase 6 is now tracked as the active implementation phase and the reliability gate is visible in the shared system view.
+- Added a formal Phase 6 closeout-report requirement and reserved `docs/technical_docs/OPTION1_PHASE6_IMPLEMENTATION_REPORT.md` as the report path that must be completed before Phase 6 is treated as fully closed.
+- Started executable build work for `Milestone 2 -> Option 1 -> Phase 5: Compositing And Sequence Polish`.
+- Added `src/bricktoon/sequencePolish.js` so sequence-level caption chunking, subtitle-safe region planning, continuity summaries, pacing labels, and promotion-state decisions are now emitted from one reusable contract layer.
+- Updated `scripts/composite_bricktoon_shots.js` so compositing reports now include shot type, sequence role, camera-angle profile, focus target, performance class, and subtitle-safe mode instead of only file-copy results.
+- Updated `scripts/assemble_bricktoon_scene_sequences.js` so scene sequence reports now describe continuity strength, premium-motion coverage, fallback pressure, editorial pacing, subtitle-safe layout, audio-mix strategy, and promotion status per scene.
+- Updated `src/render/compileRenderContract.js` and `scripts/compile_render_contract.js` so render contracts now consume shot-plan plus scene-sequence context, split longer narration into timed caption chunks, and preserve continuity/promotion metadata for downstream finishing.
+- Updated the milestone and pipeline-state docs so Option 1 Phase 5 is now tracked as the active implementation phase and marked in progress instead of leaving Phase 4 as the current execution focus.
+- Started executable build work for `Milestone 2 -> Option 1 -> Phase 4: Prop And Camera Performance`.
+- Added `src/bricktoon/shotPerformanceContracts.js` so the pipeline now has reusable contracts for performance-class inference, visible-character limits, mouth modes, gesture profiles, prop tracks, timing windows, and camera recipes instead of scattering those decisions across renderer logic.
+- Updated `agents/animation_agent.js` so `shot_performances.json` now emits richer directing metadata including `camera_recipe`, `timing_windows`, `screen_position`, `prop_ids`, and `prop_track` for each rendered shot performance.
+- Updated `src/bricktoon/proceduralSequenceRenderer.js` so procedural clips now use explicit camera-angle profiles, easing, overshoot, top-down inserts, dialogue two-shots, document push-ins, and prop-attached beat timing instead of mostly generic framing and drift.
+- Updated `scripts/generate_bricktoon_shot_clips.js` so shot-clip manifests and reports now record the chosen camera recipe and focus target for audit, debugging, and rerun review.
+- Updated the milestone and pipeline-state docs so Option 1 Phase 4 is now tracked as the active build phase with benchmark signoff still pending.
+- Started executable build work for `Milestone 2 -> Option 1 -> Phase 3: Speaking And Reaction Motion`.
+- Updated `src/bricktoon/proceduralSequenceRenderer.js` so procedural shot clips now consume shot-performance contracts for mouth cycles, blink timing, head turns, body lean, reaction states, prop reveals, and camera push/drift behavior instead of mostly generic drift-only motion.
+- Updated `scripts/generate_bricktoon_shot_clips.js` so clip rendering now uses `shot.cast_member_ids` as the character source of truth, records richer shot-performance metadata, and writes the newer `bricktoon_shot_clip_v2` workflow label.
+- Updated `agents/orchestrator.js` so empty animation placeholder files no longer count as ready; downstream shot-motion stages now require a real animation plan plus populated shot-performance data.
+- Updated the milestone and pipeline-state docs so Option 1 Phase 3 is now tracked as the active build phase with benchmark signoff still pending.
+- Started executable build work for `Milestone 2 -> Option 1 -> Phase 2: Layer And Rig Foundation` on top of the earlier Phase 1 still-lock work.
+- Updated `scripts/extract_shot_layers.js` so layer extraction now derives real shot-layer assets from approved keyframes using composition-guide regions instead of writing placeholder-only layer PNGs.
+- Added `src/bricktoon/layerRegions.js` so motion-ready layer regions are calculated deterministically from shot/composition-guide data and can be regression-tested.
+- Updated `scripts/build_character_rigs.js` so rig outputs now live in per-character rig folders, reference real character-ref state assets, expose sockets, and declare extraction expectations for the new layer package.
+- Updated the milestone status docs so Option 1 Phase 2 is now the active build phase, while Phase 1 build work is tracked as done with visual signoff still pending.
+- Started executable build work for `Milestone 2 -> Option 1 -> Phase 1: Animation-Ready Art Lock` instead of only extending planning docs.
+- Updated shot-keyframe generation so benchmark still requests now include animation-safe framing guidance for mouth visibility, readable gesture arms, prop readability, and puppet-prep-safe cropping.
+- Updated character-bible generation so it now emits animation-ready expression states, gesture states, prop states, rig targets, and benchmark review checklist data instead of only high-level continuity locks.
+- Updated character-reference generation so it now produces a richer animation-ready variant contract including `emphatic`, `blink_closed`, `gesture_point`, and `hold_prop` reference variants plus a per-character variant manifest.
+- Updated the milestone and pipeline state docs so Option 1 is now the active build path and Phase 1 is explicitly marked in progress rather than only planned.
 - Updated the Milestone 2 planning set to explicitly record that all currently known quality, operational, and production blockers discussed so far are now captured in the implementation planning documents, while keeping the milestone itself unfinished.
 - Updated `docs/technical_docs/BRICKTOON_PREMIUM_QUALITY_MILESTONE_2_PLAN.md` so the audit-identified gaps are now explicit milestone requirements, including real layer extraction, real puppet rigs, true speech mouth animation, believable gesture/reaction acting, dependable prop attachment, stronger animation QC, and overnight premium reliability.
 - Updated the phase tracks inside the Milestone 2 plan so those missing capabilities are now attached to concrete option phases and shared milestone gates instead of only living in audit notes.
@@ -14,6 +58,35 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 - Updated the pipeline state board so those broader milestone blockers are now visible alongside the animation-core blockers instead of remaining only in conversation notes.
 - Updated the Milestone 2 plan again so the remaining secondary operational gaps are explicitly phased too, including workflow/model pinning, benchmark-fixture governance, fallback discipline, manual-review burden, versioned evidence, portability proof, asset-library governance, throughput expectations, and GTX 1080 feasibility for the accepted path.
 - Updated the milestone governance rules so each option phase is now expected to complete with visible evidence and acceptable GTX 1080 behavior, even if the run is slow.
+
+### Fixed
+
+- Fixed a still-handoff gap where the hybrid path had no repo-owned benchmark pack, leaving approval dependent on ad hoc screenshot review instead of a generated pass/fail evidence set.
+- Fixed a contract gap where character refs could exist as image files without an explicit hybrid identity package for later motion-tool handoff.
+- Fixed a workflow-selection gap where repo-side shot-keyframe generation could not pick different managed workflows by shot class, even though the hybrid path depends on different still expectations for closeups, dialogue, establishing shots, and document inserts.
+- Fixed a visual-bible slot-path bug where talking, blink, gesture-point, and hold-prop reference slots were written without the `expressions/` folder segment, which could break later hybrid handoff consumers.
+- Fixed a runtime-readiness gap where premium finish decisions could be made from scattered files and intuition instead of a single repeatable report.
+- Fixed a stale orchestrator contract bug where render-contract readiness still looked for an older field shape and could misjudge current render-contract outputs.
+- Fixed a stage-routing bug where `--resume` could be swallowed by the older generic overnight path even when the caller explicitly requested the new bricktoon overnight stage.
+- Fixed a sequence-planning gap where composited shots could be assembled and rendered without preserving enough metadata to judge continuity, subtitle safety, or whether a scene should advance to a premium finish.
+- Fixed a contract gap where render contracts only carried scene-level captions as a single block and did not expose per-scene continuity, pacing, or promotion state for downstream use.
+- Fixed a reporting gap where scene-sequence quality could not be summarized generically across shots, making it harder to compare benchmark scenes or decide which ones still need animation polish.
+- Fixed a Phase 4 directing gap where camera language and prop behavior were implied loosely by shot type instead of emitted as explicit reusable contracts that downstream renderers can follow consistently.
+- Fixed a shot-performance gap where top-down inserts, closeup focus, dialogue exchanges, and document-emphasis timing could collapse back toward generic motion because the render stage lacked durable camera/timing metadata.
+- Fixed a reporting gap where clip outputs could look different after a renderer change without the per-shot report preserving which camera recipe and focus target actually won.
+
+### Notes
+
+- Verified Option 2 Phase 1 code-level behavior on July 21, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 22 tests, including the new hybrid still-lock profile and shot-class workflow routing coverage.
+- Verified lightweight Option 2 Phase 1 artifact generation on `workspaces/test_story_template` by re-running `visual-character-bible` and generating `07_visuals/benchmark_pack/hybrid_still_benchmark_pack.{json,md}`.
+- Current Option 2 Phase 1 evidence shows 4 character identity packages, 7 shot classes, and 26 approved-shot references in the generated benchmark pack, but most existing approved stills still predate the new shot-class templates and need a fresh rerun for final visual signoff.
+- Verified Phase 6 code-level behavior on July 21, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 20 tests, including the new reliability-gate coverage.
+- Verified the new reliability gate against `workspaces/test_story_template`; it correctly produced a blocked result because the benchmark still has 5 hold-for-polish scenes, fallback ratio `0.577`, fragile-scene ratio `0.714`, and 2 scenes requiring review before finish.
+- Phase 6 is started and behaving correctly, but overnight trust is not earned yet because the benchmark topic still fails the premium-preview reliability profile.
+- Rebuilt `workspaces/test_story_template` compositing reports, scene-sequence reports, and render contracts after the first Phase 5 sequence-polish pass so benchmark evidence now includes continuity, pacing, subtitle-safe, and promotion-state metadata.
+- Phase 5 is started and test-covered, but it is not complete; the benchmark still shows too many fallback-heavy scenes to call the final sequence premium-ready.
+- Re-generated representative benchmark samples for `S02_SHOT_003`, `S04_SHOT_004`, and `S06_SHOT_002`, then re-ran the full `workspaces/test_story_template` shot-clip batch after the Phase 4 renderer upgrade.
+- Phase 4 is now build-complete enough to move to the next implementation phase, but benchmark signoff is still pending because the result is stronger directed cutout motion, not yet the full premium acting target.
 
 ## 2026-07-20
 
@@ -112,6 +185,14 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Notes
 
+- Verified a refreshed `workspaces/test_story_template` speaking closeup poster after the Phase 3 renderer upgrade; the sample now shows visible bricktoon character performance instead of a background-only frame.
+
+### Fixed
+
+- Fixed a clip-render binding bug where `scene_cards.json` character labels like `narrator_001` could cause the shot-clip stage to render only the background because the actual renderable cast lived under `CAST_*` / `BT_CHAR_*` identifiers.
+- Fixed a performance-compatibility bug where motion records keyed by `actor_id` / `cast_member_id` instead of `character_id` could silently fail to bind to a rendered character.
+- Fixed a renderer robustness bug where null character-performance lookups could throw during shot rendering instead of degrading gracefully.
+
 - Current recommended local ComfyUI integration path for the GTX 1080 workstation is a manual ComfyUI source install with Python 3.10 64-bit and a Pascal-friendly Torch/CUDA stack, instead of relying on the desktop bundle alone for production repo integration.
 - Fixed a pipeline-readiness gap where shot generation and scene assembly could appear complete as soon as any file existed in the output folders; readiness now checks expected shot and scene coverage against planning data and approved manifest assets.
 - Fixed a voice-stage gap where draft renders could contain a formal audio stream but no audible narration because the pipeline was normalizing silent placeholder WAVs; draft voice generation now attempts Windows built-in TTS first and only falls back to silence if synthesis is unavailable.
@@ -208,3 +289,4 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 ### Process
 
 - Any fix discovered while working, even if incidental to the main request, must be documented in this change log.
+- When an implementation phase is completed, the phase is not fully closed until its implementation report is written and linked from the milestone docs and reflected in this change log.

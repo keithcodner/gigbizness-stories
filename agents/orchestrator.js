@@ -471,6 +471,9 @@ function getTopicPaths(topicId) {
     artDirectionDir: path.join(workspaceDir, "07_visuals", "art_direction"),
     compositionGuidesDir: path.join(workspaceDir, "07_visuals", "composition_guides"),
     approvedKeyframesDir: path.join(workspaceDir, "07_visuals", "approved_keyframes"),
+    benchmarkPackDir: path.join(workspaceDir, "07_visuals", "benchmark_pack"),
+    hybridStillBenchmarkPackPath: path.join(workspaceDir, "07_visuals", "benchmark_pack", "hybrid_still_benchmark_pack.json"),
+    hybridStillBenchmarkPackMdPath: path.join(workspaceDir, "07_visuals", "benchmark_pack", "hybrid_still_benchmark_pack.md"),
     consistencyReportsDir: path.join(workspaceDir, "07_visuals", "consistency_reports"),
     consistencySummaryPath: path.join(workspaceDir, "07_visuals", "consistency_reports", "consistency_summary.md"),
     shotLayersDir: path.join(workspaceDir, "07_visuals", "shot_layers"),
@@ -496,6 +499,9 @@ function getTopicPaths(topicId) {
     qualityReportPath: path.join(workspaceDir, "10_qc", "quality_report.md"),
     requiredFixesPath: path.join(workspaceDir, "10_qc", "required_fixes.md"),
     finalApprovalPath: path.join(workspaceDir, "10_qc", "final_approval.md"),
+    bricktoonReliabilityReportPath: path.join(workspaceDir, "10_qc", "bricktoon_reliability_report.json"),
+    bricktoonReliabilityReportMdPath: path.join(workspaceDir, "10_qc", "bricktoon_reliability_report.md"),
+    bricktoonOvernightStatePath: path.join(workspaceDir, "10_qc", "bricktoon_overnight_state.json"),
     finalRenderPath: path.join(workspaceDir, "06_renders", "final_1080p.mp4")
   };
 }
@@ -764,12 +770,21 @@ function isDraftReady(topicId) {
 
 function isAnimationReady(topicId) {
   const paths = getTopicPaths(topicId);
-  return fileHasContent(paths.animationPlanPath) && fileHasContent(paths.editPlanPath);
+  const animationPlan = readJson(paths.animationPlanPath, {});
+  const shotPerformances = readJson(path.join(paths.workspaceDir, "08_animation", "shot_performances.json"), {});
+  const hasPlanScenes = Array.isArray(animationPlan.scenes) && animationPlan.scenes.length > 0;
+  const hasShotPerformanceData = Array.isArray(shotPerformances.shots) && shotPerformances.shots.length > 0;
+  return hasPlanScenes && hasShotPerformanceData && fileHasContent(paths.editPlanPath);
 }
 
 function isRenderContractReady(topicId) {
   const contractText = readText(getTopicPaths(topicId).renderContractPath);
-  return contractText.includes("\"render_mode\"") && contractText.includes("\"scene_assets\"");
+  return contractText.includes("\"render_mode\"") && contractText.includes("\"scenes\"");
+}
+
+function isBricktoonReliabilityReady(topicId) {
+  const report = readJson(getTopicPaths(topicId).bricktoonReliabilityReportPath, {});
+  return Boolean(report.gate && report.gate.decision);
 }
 
 function isShortsPackageReady(topicId) {
@@ -1425,6 +1440,25 @@ function runAssetGenerationStage(topicId) {
   return workspaceDir;
 }
 
+function runHybridStillBenchmarkStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting hybrid-still-benchmark stage for topic '${topicId}'`);
+
+  if (!isVisualCharacterBibleReady(topicId)) {
+    runVisualCharacterBibleStage(topicId);
+  }
+  if (!isBricktoonCharactersReady(topicId)) {
+    runBricktoonCharactersStage(topicId);
+  }
+  if (!isAssetGenerationReady(topicId)) {
+    runAssetGenerationStage(topicId);
+  }
+  runNodeScript("scripts/build_hybrid_still_benchmark_pack.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed hybrid-still-benchmark stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
 function runAssetConsistencyValidationStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting asset-consistency-validation stage for topic '${topicId}'`);
@@ -1580,6 +1614,33 @@ function runSceneAssemblyStage(topicId) {
   return workspaceDir;
 }
 
+function runBricktoonReliabilityStage(topicId, runtimeProfile = null) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon-reliability stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
+
+  if (!fileHasContent(getTopicPaths(topicId).visualPreviewPath)) {
+    runVisualPreviewStage(topicId);
+  }
+  if (!isShotCompositingReady(topicId)) {
+    runShotCompositingStage(topicId);
+  }
+  if (!isBricktoonClipsReady(topicId)) {
+    runSceneAssemblyStage(topicId);
+  }
+  if (!isRenderContractReady(topicId)) {
+    runRenderContractStage(topicId, "draft", "development");
+  }
+
+  const scriptArgs = ["--workspace", workspaceDir];
+  if (runtimeProfile) {
+    scriptArgs.push("--runtime-profile", runtimeProfile);
+  }
+  runNodeScript("scripts/build_bricktoon_reliability_report.js", scriptArgs);
+
+  writeLog(`Completed bricktoon-reliability stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
+  return workspaceDir;
+}
+
 function runVisualPreviewStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting visual-preview stage for topic '${topicId}'`);
@@ -1606,9 +1667,9 @@ function runBricktoonPreviewStage(topicId) {
   return workspaceDir;
 }
 
-function runBricktoonFinishStage(topicId, profile = "draft") {
+function runBricktoonFinishStage(topicId, profile = "draft", runtimeProfile = null) {
   const workspaceDir = ensureWorkspace(topicId);
-  writeLog(`Starting bricktoon-finish stage for topic '${topicId}' with profile '${profile}'`);
+  writeLog(`Starting bricktoon-finish stage for topic '${topicId}' with profile '${profile}'${runtimeProfile ? ` and runtime profile '${runtimeProfile}'` : ""}`);
 
   if (!isAssetGenerationReady(topicId)) {
     runAssetGenerationStage(topicId);
@@ -1622,19 +1683,42 @@ function runBricktoonFinishStage(topicId, profile = "draft") {
   runShotCompositingStage(topicId);
   runSceneAssemblyStage(topicId);
   runRenderContractStage(topicId, profile, profile === "draft" ? "development" : "production");
+  runBricktoonReliabilityStage(topicId, runtimeProfile);
+
+  const reliabilityReport = readJson(getTopicPaths(topicId).bricktoonReliabilityReportPath, {});
+  const reliabilityDecision = reliabilityReport.gate?.decision || null;
+  const hardGate = profile !== "draft" || Boolean(runtimeProfile);
+  if (hardGate && !["ready_for_overnight_finish", "ready_for_final_export"].includes(reliabilityDecision)) {
+    throw new Error(`Bricktoon finish blocked by reliability gate. Review ${getTopicPaths(topicId).bricktoonReliabilityReportMdPath}`);
+  }
   runRenderStage(topicId, profile);
 
-  writeLog(`Completed bricktoon-finish stage for topic '${topicId}' with profile '${profile}'`);
+  writeLog(`Completed bricktoon-finish stage for topic '${topicId}' with profile '${profile}'${runtimeProfile ? ` and runtime profile '${runtimeProfile}'` : ""}`);
   return workspaceDir;
 }
 
-function runBricktoonAutoStage(topicId, profile = "draft") {
+function runBricktoonAutoStage(topicId, profile = "draft", runtimeProfile = null) {
   const workspaceDir = ensureWorkspace(topicId);
-  writeLog(`Starting bricktoon-auto stage for topic '${topicId}' with profile '${profile}'`);
+  writeLog(`Starting bricktoon-auto stage for topic '${topicId}' with profile '${profile}'${runtimeProfile ? ` and runtime profile '${runtimeProfile}'` : ""}`);
 
   runBricktoonPreviewStage(topicId);
+  runBricktoonReliabilityStage(topicId, runtimeProfile);
 
-  writeLog(`Completed bricktoon-auto stage for topic '${topicId}' with profile '${profile}'`);
+  writeLog(`Completed bricktoon-auto stage for topic '${topicId}' with profile '${profile}'${runtimeProfile ? ` and runtime profile '${runtimeProfile}'` : ""}`);
+  return workspaceDir;
+}
+
+function runBricktoonOvernightStage(topicId, runtimeProfile = "gtx1080_overnight_finish_draft", resume = false) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon-overnight stage for topic '${topicId}' with runtime profile '${runtimeProfile}'${resume ? " (resume)" : ""}`);
+
+  const args = ["--topic", topicId, "--workspace", workspaceDir, "--runtime-profile", runtimeProfile];
+  if (resume) {
+    args.push("--resume");
+  }
+  runNodeAgent("bricktoon_overnight_agent.js", args);
+
+  writeLog(`Completed bricktoon-overnight stage for topic '${topicId}' with runtime profile '${runtimeProfile}'${resume ? " (resume)" : ""}`);
   return workspaceDir;
 }
 
@@ -1766,6 +1850,7 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-art-direction");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage composition-guides");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage asset-generation");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-still-benchmark");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage asset-consistency-validation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage layer-extraction");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage character-rigging");
@@ -1776,10 +1861,12 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage ai-video-motion-passes");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-compositing");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-assembly");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-reliability --runtime-profile gtx1080_premium_preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage visual-preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-finish --profile draft");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-auto --profile draft");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-overnight --runtime-profile gtx1080_overnight_finish_draft");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-clips");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage animation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage render-contract --profile draft");
@@ -1817,13 +1904,13 @@ function main() {
       return;
     }
 
-    if (args.overnight) {
+    if (args.overnight && !args.stage && !args.topic) {
       runOvernightMode(false);
       console.log("Overnight mode completed.");
       return;
     }
 
-    if (args.resume) {
+    if (args.resume && !args.stage && !args.topic) {
       runOvernightMode(true);
       console.log("Overnight resume completed.");
       return;
@@ -1879,7 +1966,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "reference-sync", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "reference-sync", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "hybrid-still-benchmark", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-reliability", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-overnight", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -1916,6 +2003,8 @@ function main() {
         workspaceDir = runCompositionGuidesStage(args.topic);
       } else if (args.stage === "asset-generation") {
         workspaceDir = runAssetGenerationStage(args.topic);
+      } else if (args.stage === "hybrid-still-benchmark") {
+        workspaceDir = runHybridStillBenchmarkStage(args.topic);
       } else if (args.stage === "asset-consistency-validation") {
         workspaceDir = runAssetConsistencyValidationStage(args.topic);
       } else if (args.stage === "layer-extraction") {
@@ -1936,14 +2025,18 @@ function main() {
         workspaceDir = runShotCompositingStage(args.topic);
       } else if (args.stage === "scene-assembly") {
         workspaceDir = runSceneAssemblyStage(args.topic);
+      } else if (args.stage === "bricktoon-reliability") {
+        workspaceDir = runBricktoonReliabilityStage(args.topic, args["runtime-profile"] || null);
       } else if (args.stage === "visual-preview") {
         workspaceDir = runVisualPreviewStage(args.topic);
       } else if (args.stage === "bricktoon-preview") {
         workspaceDir = runBricktoonPreviewStage(args.topic);
       } else if (args.stage === "bricktoon-finish") {
-        workspaceDir = runBricktoonFinishStage(args.topic, args.profile || "draft");
+        workspaceDir = runBricktoonFinishStage(args.topic, args.profile || "draft", args["runtime-profile"] || null);
       } else if (args.stage === "bricktoon-auto") {
-        workspaceDir = runBricktoonAutoStage(args.topic, args.profile || "draft");
+        workspaceDir = runBricktoonAutoStage(args.topic, args.profile || "draft", args["runtime-profile"] || null);
+      } else if (args.stage === "bricktoon-overnight") {
+        workspaceDir = runBricktoonOvernightStage(args.topic, args["runtime-profile"] || "gtx1080_overnight_finish_draft", Boolean(args.resume));
       } else if (args.stage === "bricktoon-clips") {
         workspaceDir = runBricktoonClipsStage(args.topic);
       } else if (args.stage === "animation") {

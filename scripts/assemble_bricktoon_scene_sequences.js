@@ -5,6 +5,7 @@ const path = require("path");
 const { parseArgs, readJson, writeText } = require("../agents/common");
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
 const { concatClips, ensureDir } = require("../src/bricktoon/proceduralSequenceRenderer");
+const { summarizeSceneSequence } = require("../src/bricktoon/sequencePolish");
 
 function loadManifest(filePath, workspaceId) {
   if (!fs.existsSync(filePath)) {
@@ -28,10 +29,20 @@ function main() {
     const sequenceDir = path.join(workspaceDir, "08_animation", "scene_sequences");
     const compositedShotDir = path.join(workspaceDir, "08_animation", "composited_shot_clips");
     const proceduralShotDir = path.join(workspaceDir, "08_animation", "shot_clips");
+    const compositingReport = readJson(path.join(workspaceDir, "08_animation", "compositing_reports", "compositing_report.json"));
+    const sceneManifest = readJson(path.join(workspaceDir, "05_render_plan", "scene_manifest.json"));
+    const shotSelections = new Map((compositingReport.shots || []).map((shot) => [shot.shot_id, shot]));
     ensureDir(sequenceDir);
     const reports = [];
 
     for (const scene of shotPlan) {
+      const sceneSelectionRows = scene.shots.map((shot) => shotSelections.get(shot.shot_id)).filter(Boolean);
+      const sceneRecord = (sceneManifest.scenes || []).find((entry) => entry.id === scene.scene_id) || {};
+      const sequenceSummary = summarizeSceneSequence({
+        scene,
+        sceneRecord,
+        shotSelections: sceneSelectionRows
+      });
       const files = scene.shots.map((shot) => {
         const compositedPath = path.join(compositedShotDir, `${shot.shot_id}.mp4`);
         if (fs.existsSync(compositedPath)) {
@@ -67,10 +78,10 @@ function main() {
           workflow
         },
         selection_reason: workflow === "bricktoon_composited_scene_sequence_v1"
-          ? "AI or hybrid composited shots available for sequence assembly."
-          : "Procedural shot clips used because no composited shots were available.",
+          ? `AI or hybrid composited shots available for sequence assembly; continuity ${sequenceSummary.continuity_status}.`
+          : `Procedural shot clips used because no composited shots were available; continuity ${sequenceSummary.continuity_status}.`,
         quality_classification: workflow === "bricktoon_composited_scene_sequence_v1"
-          ? "premium_motion"
+          ? (sequenceSummary.continuity_status === "locked" ? "premium_motion" : "motion_ready")
           : "motion_ready",
         created_at: new Date().toISOString()
       });
@@ -108,7 +119,20 @@ function main() {
         created_at: new Date().toISOString()
       });
 
-      reports.push({ scene_id: scene.scene_id, shots: scene.shots.length, file: outputPath });
+      reports.push({
+        scene_id: scene.scene_id,
+        shots: scene.shots.length,
+        file: outputPath,
+        continuity_status: sequenceSummary.continuity_status,
+        continuity_notes: sequenceSummary.continuity_notes,
+        fallback_shots: sequenceSummary.fallback_shots,
+        premium_motion_shots: sequenceSummary.premium_motion_shots,
+        editorial_pacing: sequenceSummary.editorial_pacing,
+        subtitle_safe_region: sequenceSummary.subtitle_safe_region,
+        audio_mix_strategy: sequenceSummary.audio_mix_strategy,
+        promotion_status: sequenceSummary.promotion_status,
+        transition_roles: sequenceSummary.transition_roles
+      });
     }
 
     writeText(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);

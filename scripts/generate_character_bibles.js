@@ -26,6 +26,66 @@ function defaultPalette(member, blueprint) {
   };
 }
 
+function expressionStatesForMember(member, blueprint) {
+  const configured = Array.isArray(member.expressions)
+    ? member.expressions
+    : Array.isArray(blueprint.expressions)
+      ? blueprint.expressions
+      : [];
+  return [...new Set([...configured, "neutral", "talking", "worried", "emphatic", "blink_closed"])];
+}
+
+function gestureStatesForMember(member, blueprint) {
+  const configured = Array.isArray(member.poses)
+    ? member.poses
+    : Array.isArray(blueprint.poses)
+      ? blueprint.poses
+      : [];
+  return [...new Set([...configured, "neutral", "gesture_open", "gesture_point", "gesture_hold_prop"])];
+}
+
+function propStatesForMember(member) {
+  const propIds = Array.isArray(member.prop_ids) ? member.prop_ids : [];
+  return {
+    available_props: propIds,
+    default_prop_state: propIds.length > 0 ? "hold_primary_prop" : "no_prop",
+    required_readability: propIds.length > 0 ? "active_prop_must_be_fully_readable" : "prop_not_required"
+  };
+}
+
+function hybridHandoffContractForMember(characterId, definition) {
+  return {
+    benchmark_profile: "option2_phase1_repo_side_still_identity_lock",
+    required_reference_variants: [
+      `${characterId}/master.png`,
+      `${characterId}/front.png`,
+      `${characterId}/three_quarter.png`,
+      `${characterId}/expressions/talking.png`,
+      `${characterId}/expressions/worried.png`,
+      `${characterId}/expressions/blink_closed.png`,
+      `${characterId}/expressions/gesture_point.png`,
+      `${characterId}/expressions/hold_prop.png`
+    ],
+    continuity_hard_locks: definition.continuity_anchors,
+    motion_handoff_targets: [
+      "face",
+      "mouth",
+      "eyes",
+      "eyebrows",
+      "front_arm",
+      "rear_arm",
+      "primary_prop_socket"
+    ],
+    still_acceptance_focus: [
+      "identity_lock",
+      "thumbnail_style_match",
+      "expression_variant_readability",
+      "prop_continuity",
+      "hybrid_handoff_readiness"
+    ]
+  };
+}
+
 function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
@@ -79,13 +139,45 @@ function main() {
           neutral_turnaround: `${characterId}/front.png`,
           expression_sheet: `${characterId}/expression_sheet.png`,
           action_pose_sheet: `${characterId}/hand_sheet.png`,
-          outfit_prop_sheet: `${characterId}/outfit_sheet.png`
+          outfit_prop_sheet: `${characterId}/outfit_sheet.png`,
+          talking_closeup: `${characterId}/expressions/talking.png`,
+          blink_variant: `${characterId}/expressions/blink_closed.png`,
+          gesture_point_variant: `${characterId}/expressions/gesture_point.png`,
+          hold_prop_variant: `${characterId}/expressions/hold_prop.png`
         },
         continuity_anchors: [
           "face_print_layout",
           "hair_or_hat_silhouette",
           "primary_outfit_palette",
           "signature_prop_zone"
+        ],
+        expression_states: expressionStatesForMember(member, blueprint),
+        gesture_states: gestureStatesForMember(member, blueprint),
+        prop_states: propStatesForMember(member),
+        animation_ready_contract: {
+          benchmark_profile: "option1_phase1_animation_ready_art_lock",
+          framing_requirements: [
+            "preserve mouth readability",
+            "preserve eye and eyebrow readability",
+            "avoid cropping active hands when gesture or prop work matters",
+            "keep signature prop zones separable from background"
+          ],
+          rig_targets: [
+            "mouth",
+            "eyes",
+            "eyebrows",
+            "front_arm",
+            "rear_arm",
+            "prop_socket_primary"
+          ]
+        },
+        hybrid_handoff_contract: {},
+        benchmark_review_checklist: [
+          "identity is stable and recognizable",
+          "expression variants read clearly",
+          "talking variant keeps mouth area clean",
+          "gesture variant preserves readable arm silhouette",
+          "prop variant keeps the active prop fully readable"
         ],
         approved_visual_locks: {
           material_finish: "painted plastic with dimensional highlights",
@@ -104,6 +196,7 @@ function main() {
         palette: defaultPalette(member, blueprint),
         created_at: assetTimestamp()
       };
+      definition.hybrid_handoff_contract = hybridHandoffContractForMember(characterId, definition);
 
       const palettePath = path.join(characterDir, "palette.json");
       writeJson(path.join(characterDir, "character_definition.json"), definition);
@@ -140,6 +233,12 @@ function main() {
         continuity_anchors: definition.continuity_anchors,
         approved_visual_locks: definition.approved_visual_locks,
         reference_slots: definition.reference_slots,
+        expression_states: definition.expression_states,
+        gesture_states: definition.gesture_states,
+        prop_states: definition.prop_states,
+        animation_ready_contract: definition.animation_ready_contract,
+        hybrid_handoff_contract: definition.hybrid_handoff_contract,
+        benchmark_review_checklist: definition.benchmark_review_checklist,
         views: imageFiles.map((fileName) => relativeWorkspacePath(workspaceDir, path.join(characterDir, fileName)))
       });
 
@@ -156,6 +255,11 @@ function main() {
 
     writeJson(topLevelBiblePath, {
       visual_bible_version: 1,
+      benchmark_profile: "option1_phase1_animation_ready_art_lock",
+      benchmark_profiles: [
+        "option1_phase1_animation_ready_art_lock",
+        "option2_phase1_repo_side_still_identity_lock"
+      ],
       style_lock_package: {
         material_finish: "painted plastic with dimensional highlights",
         lighting_behavior: "dramatic directional lighting",
@@ -163,6 +267,34 @@ function main() {
         hand_arm_rules: ["no extra fingers", "no fused hands", "preserve wrist silhouette"],
         environment_density: "rich but controlled detail",
         never_generate: ["blurry faces", "distorted hands", "extra limbs", "floating props", "unreadable generated text"]
+      },
+      animation_ready_global_rules: {
+        framing: [
+          "keep speaking-shot mouths readable",
+          "preserve clean face separation for blink and brow animation",
+          "preserve readable hand silhouettes on gesture shots",
+          "keep active props separable from background"
+        ],
+        benchmark_acceptance: [
+          "animation-ready still, not poster-only still",
+          "identity lock before motion",
+          "prop readability when required",
+          "clean mouth zone for talking variants"
+        ]
+      },
+      hybrid_handoff_global_rules: {
+        benchmark_profile: "option2_phase1_repo_side_still_identity_lock",
+        still_quality_gate: [
+          "character master refs must be locked before hybrid motion handoff",
+          "shot stills must map cleanly to a shot class",
+          "talking and reaction variants must exist for hero characters",
+          "prop continuity must be explicit when story props matter",
+          "workflow and checkpoint evidence must be preserved beside outputs"
+        ],
+        benchmark_pack_outputs: [
+          "benchmark_pack/hybrid_still_benchmark_pack.json",
+          "benchmark_pack/hybrid_still_benchmark_pack.md"
+        ]
       },
       characters: characterBibles
     });

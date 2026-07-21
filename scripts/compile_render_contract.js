@@ -9,6 +9,9 @@ function getPaths(workspaceDir) {
     sceneCardsPath: path.join(workspaceDir, "05_scene_cards", "scene_cards.json"),
     sceneManifestPath: path.join(workspaceDir, "05_render_plan", "scene_manifest.json"),
     assetManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
+    shotPlanPath: path.join(workspaceDir, "07_shot_plans", "shot_plan.json"),
+    compositingReportPath: path.join(workspaceDir, "08_animation", "compositing_reports", "compositing_report.json"),
+    sceneSequenceReportPath: path.join(workspaceDir, "08_animation", "scene_sequences", "scene_sequence_report.json"),
     renderContractPath: path.join(workspaceDir, "09_edit_plan", "render_contract.json")
   };
 }
@@ -34,6 +37,9 @@ function main() {
     const sceneCards = readJson(paths.sceneCardsPath).scene_cards || [];
     const sceneManifest = readJson(paths.sceneManifestPath);
     const assetManifest = readJson(paths.assetManifestPath);
+    const shotPlan = readJson(paths.shotPlanPath);
+    const compositingReport = readJson(paths.compositingReportPath);
+    const sceneSequenceReport = readJson(paths.sceneSequenceReportPath);
     const profile = profileToContractDimensions(args.profile || "draft");
     const contract = compileRenderContract({
       workspaceId: path.basename(args.workspace),
@@ -41,7 +47,10 @@ function main() {
       profile,
       sceneCards,
       sceneManifest,
-      assetManifest
+      assetManifest,
+      shotPlan,
+      compositingReport,
+      sceneSequenceReport
     });
 
     writeText(paths.renderContractPath, `${JSON.stringify(contract, null, 2)}\n`);

@@ -25,6 +25,7 @@ const {
   writeWorkflowRequest
 } = require("../src/bricktoon/workflowContracts");
 const {
+  buildAnimationSafetyLines,
   buildCharacterLockLines,
   buildShotCompositionLines,
   buildShotNegativePrompt,
@@ -41,6 +42,37 @@ function keyframeCountForTier(tier) {
     return 1;
   }
   return 1;
+}
+
+function shotClassForGeneration(shot) {
+  const shotType = String(shot.shot_type || "").toLowerCase();
+  if ([
+    "closeup_face",
+    "medium_single",
+    "medium_two_shot",
+    "establishing_wide",
+    "top_down_document",
+    "document_insert",
+    "push_in_document"
+  ].includes(shotType)) {
+    return shotType;
+  }
+  if (shotType.includes("document") || shotType.includes("top_down")) {
+    return "document_insert";
+  }
+  if (shotType.includes("closeup")) {
+    return "closeup_face";
+  }
+  if (shotType.includes("two_shot")) {
+    return "medium_two_shot";
+  }
+  if (shotType.includes("medium")) {
+    return "medium_single";
+  }
+  if (shotType.includes("wide") || shotType.includes("establishing")) {
+    return "establishing_wide";
+  }
+  return "medium_single";
 }
 
 async function main() {
@@ -74,6 +106,7 @@ async function main() {
         const artDirection = readJsonSafe(path.join(artDirectionDir, `${shot.shot_id}.json`), {});
         const compositionGuide = readJsonSafe(path.join(workspaceDir, "07_visuals", "composition_guides", `${shot.shot_id}.json`), {});
         const shotCharacters = getShotCharacters(castPackage, shot);
+        const shotClass = shotClassForGeneration(shot);
         const characterRefs = selectCharacterRefPaths(workspaceDir, visualBible, shotCharacters, shot);
         const workspaceReferenceImages = collectReferenceImages(workspaceDir, {
           sceneId: scene.scene_id,
@@ -88,12 +121,47 @@ async function main() {
           artDirection,
           tier
         });
+        const animationSafetyLines = buildAnimationSafetyLines({
+          shot,
+          shotCharacters,
+          sceneCard,
+          primaryCharacter
+        });
         const approvalRecord = {
           shot_id: shot.shot_id,
           scene_id: scene.scene_id,
+          shot_class: shotClass,
           quality_tier: tier,
           approved_keyframes: [],
-          workflow_template_id: null
+          workflow_template_id: null,
+          benchmark_profiles: [
+            "option1_phase1_animation_ready_art_lock",
+            "option2_phase1_repo_side_still_identity_lock"
+          ],
+          animation_ready_review: {
+            benchmark_profile: "option1_phase1_animation_ready_art_lock",
+            checks: [
+              "identity_lock",
+              "face_readability",
+              "mouth_visibility",
+              "gesture_arm_readability",
+              "prop_readability_when_required",
+              "animation_safe_cropping"
+            ]
+          },
+          hybrid_handoff_contract: {
+            benchmark_profile: "option2_phase1_repo_side_still_identity_lock",
+            shot_class: shotClass,
+            required_character_refs: characterRefs.map((ref) => ref.relativeFile),
+            reference_image_files: workspaceReferenceImages.map((ref) => ref.relativeFile),
+            puppet_ready_focus: [
+              "identity_lock",
+              "mouth_or_face_readability",
+              "gesture_or_prop_zone_readability",
+              "screen_direction_stability",
+              "thumbnail_style_match"
+            ]
+          }
         };
 
         for (let index = 1; index <= count; index += 1) {
@@ -112,9 +180,11 @@ async function main() {
               primaryCharacter ? `Primary story subject: ${primaryCharacter.name} (${primaryCharacter.character_id}).` : "",
               ...characterLockLines,
               ...compositionLines,
+              ...animationSafetyLines,
               "Premium editorial bricktoon quality, cinematic lighting, strong depth, stable character identity, believable plastic toy materials.",
               "This must look like polished thumbnail-grade bricktoon art, not a rough draft, low-detail render, or flat placeholder image.",
               "No embedded text or logos. No brand copying. Keep the composition dense and visually finished.",
+              "This still must be usable for later cut-out puppet animation, not only as a poster image.",
               keyframeVariantLine,
               referencePromptAddendum(prioritizedReferences)
             ].join(" "),
@@ -139,6 +209,7 @@ async function main() {
               `07_visuals/art_direction/${shot.shot_id}.json`,
               `07_visuals/composition_guides/${shot.shot_id}.json`
             ],
+            shotClass,
             references: [
               ...prioritizedReferences.map((ref) => ({
                 type: ref.type,
@@ -155,9 +226,13 @@ async function main() {
               shotCharacters,
               primaryCharacterId: primaryCharacter?.character_id || null,
               styleGoal: tier === "hero" ? "premium_thumbnail_match" : "premium_editorial_match",
+              benchmarkProfile: "option2_phase1_repo_side_still_identity_lock",
+              animationSafetyLines,
               compositionGuide,
-              artDirection
+              artDirection,
+              shotClass
             },
+            benchmarkProfileId: "option2_phase1_repo_side_still_identity_lock",
             config: visualConfig,
             selectionReason: tier === "hero"
               ? "Hero-tier shot uses managed hero refinement workflow."
@@ -206,6 +281,7 @@ async function main() {
 
           approvalRecord.approved_keyframes.push({
             keyframe_id: baseName,
+            shot_class: shotClass,
             generated_file: relativeWorkspacePath(workspaceDir, generatedPath),
             approved_file: relativeWorkspacePath(workspaceDir, approvedPath),
             workflow_request_file: requestFile,
