@@ -1,6 +1,6 @@
 # Bricktoon Premium Quality Milestone 2 Plan
 
-Last updated: July 20, 2026
+Last updated: July 21, 2026
 
 Milestone id: `bricktoon_premium_quality`
 
@@ -57,14 +57,96 @@ Milestone 2 is not considered complete unless the pipeline supports all of the f
 These are the capability gaps still standing between the current system and the milestone target:
 
 - stable animation-ready character part separation
+- real layer extraction from approved art instead of placeholder layer outputs
+- clean-plate reconstruction that is actually usable for motion compositing
+- real puppet rigs with bound parts, sockets, and reusable controls instead of metadata-only rig declarations
 - speaking-shot mouth systems that look intentional instead of simulated drift
+- true mouth-shape / viseme playback for speaking shots
 - reusable expression-state packs per character
 - stronger gesture libraries for talking, reacting, pointing, typing, and revealing props
+- real head-turn, nod, and pose-swap performance behavior
 - prop attachment and release logic
+- dependable hand-to-prop contact behavior across shots
 - camera-language rules for closeups, inserts, reaction shots, and villain hero shots
+- true shot-performance rendering instead of still-motion-only fallback behavior
 - motion QC that judges acting quality, not just file existence
+- stronger visual QC for bad hands, prop drift, weak speaking shots, and identity drift
 - stronger continuity checks between still generation and animated shot output
 - a dependable preview-to-finish promotion rule that proves a scene is worth overnight rendering
+- stable long-run generation and overnight reliability for the premium path
+
+## Audit-Derived Must-Haves
+
+The latest quality audit makes the following requirement explicit:
+
+Milestone 2 is not complete unless the chosen path delivers all of these in real output, not just in planning contracts:
+
+- real extracted animation layers
+- real puppet-performance rigs
+- true mouth animation for speech
+- believable gesture and reaction performance
+- real prop interaction
+- shot-performance rendering that reads as acting
+- QC that can reject weak animation, not just missing files
+- repeatable reliability on the benchmark topic
+
+## Remaining Gaps That Still Belong To This Milestone
+
+In addition to the animation-core gaps above, the following planning and production gaps still block a trustworthy Jay Hona-style result:
+
+- benchmark reference pack is not yet locked tightly enough to show clear pass/fail examples
+- final milestone path decision is still open between Option 1, 2, and 3
+- reusable asset catalog is still too shallow for premium repeatable production
+- shot-keyframe quality is still not fully locked across single-character shots, thumbnail match, and identity consistency
+- continuity is not yet proven across a full animated multi-shot sequence
+- scene-performance quality is not yet proven across a benchmark-quality finished scene
+- preview-to-finish trust rules still need to become a dependable go/no-go gate
+- audio-performance integration is still weaker than the target editorial standard
+- premium cost/runtime control is still not strict enough for efficient overnight use
+- full production-readiness is still not proven for premium motion output
+
+## Secondary Operational Gaps
+
+These are not higher priority than the animation-core blockers, but they still need to be addressed inside Milestone 2 so the finished path is trustworthy on this machine:
+
+- model/workflow pinning is not yet strict enough to prevent benchmark-quality drift
+- the benchmark fixture is not yet governed as a locked acceptance target
+- fallback discipline is not yet strict enough for premium stages
+- manual review burden is still heavier than it should be
+- versioned quality evidence is not yet strong enough phase to phase
+- portability across another machine is documented but not yet proven for premium output
+- asset-library growth could become disorganized without stronger governance
+- throughput expectations for preview, premium preview, and overnight finish are not yet clearly locked
+
+## Hardware Constraint
+
+All Milestone 2 planning assumes the current local premium path must remain workable on the existing machine:
+
+- GPU: NVIDIA GeForce GTX 1080 8GB
+- primary local premium still provider: manual ComfyUI source install
+- operating requirement: a path that may be slow, but must remain feasible on this hardware
+
+This means:
+
+- quality is the priority
+- speed is secondary
+- the plan may prefer smaller batches, lower parallelism, staged approvals, and overnight runs
+- any chosen path must define how it behaves on GTX 1080-class constraints before it is treated as production-trustworthy
+
+Milestone 2 is therefore not blocked by slowness alone.
+
+It is blocked only if the path cannot produce the required quality on this machine at all.
+
+## Remaining Gap Expectations
+
+Milestone 2 should not be marked complete unless these are also handled at an acceptable level:
+
+- benchmark clarity: the team can compare output against locked examples and reject near-miss quality
+- asset depth: the shared library is deep enough to reduce repeated reinvention
+- continuity trust: a finished sequence keeps identity, props, and staging stable across cuts
+- preview trust: preview review is reliable enough to prevent wasteful premium runs
+- editorial fit: voice, music, pacing, and camera accents feel intentionally synced
+- production trust: premium output can be rerun, reviewed, and trusted without fragile manual luck
 
 ## The Three Practical Options
 
@@ -211,16 +293,21 @@ Goal:
 
 Focus:
 
+- real layer extraction from approved stills
+- clean-plate generation from approved stills
 - face zones
 - mouth zones
 - arm and hand zones
 - prop zones
 - clean plates
+- real bound rig assets
 - rig manifests and pose-state contracts
+- prop sockets and attachment points
 
 Done when:
 
 - the repo can generate repeatable motion-ready packages for selected hero characters and shots
+- the outputs are real animation assets, not placeholder layer files
 
 ### Phase 3: Speaking And Reaction Motion
 
@@ -231,6 +318,7 @@ Goal:
 Focus:
 
 - mouth movement for speech
+- viseme or mouth-shape playback that reads clearly on speaking shots
 - blink timing
 - head turns and nods
 - reaction-state timing
@@ -239,6 +327,7 @@ Focus:
 Done when:
 
 - a speaking closeup no longer looks like a static still with drift
+- the visible speaker reads as actually talking rather than pulsing or bobbing
 
 ### Phase 4: Prop And Camera Performance
 
@@ -249,6 +338,7 @@ Goal:
 Focus:
 
 - prop attachment and reveals
+- hand-to-prop contact consistency
 - pointing and document interaction
 - camera-angle rules
 - camera easing
@@ -271,10 +361,13 @@ Focus:
 - compositing rules
 - subtitle-safe framing
 - voice/music timing fit
+- continuity proof across a full benchmark sequence
+- audio-performance integration quality
 
 Done when:
 
 - one scene plays like a real animated documentary sequence, not a stitched prototype
+- the sequence keeps identity, prop, and screen-direction continuity across cuts
 
 ### Phase 6: Overnight Reliability
 
@@ -289,10 +382,16 @@ Focus:
 - QC gates
 - preview-to-finish approval rules
 - unattended run trust
+- stable long-run premium generation
+- premium cost/runtime control
+- GTX 1080-safe batch behavior
+- workflow/model pinning for repeatability
 
 Done when:
 
 - a benchmark topic can run overnight without the output collapsing into weak or fallback-heavy motion
+- the team can distinguish cheap preview, premium preview, and full premium finish without guesswork
+- the run profile is slow but stable on the GTX 1080 machine
 
 ## Option 2 Phases: Best Quality Hybrid Pipeline
 
@@ -309,10 +408,16 @@ Focus:
 - expression variants
 - prop continuity
 - shot-class workflow selection
+- benchmark still pass/fail examples
+- thumbnail-style benchmark lock
+- workflow/checkpoint pinning for benchmark runs
+- GTX 1080-safe premium still settings
 
 Done when:
 
 - the repo can consistently produce approved stills that are ready for hybrid animation finishing
+- the benchmark pack makes approval and rejection understandable without debate
+- the pinned premium still path is repeatable on the GTX 1080 setup
 
 ### Phase 2: Hybrid Animation Contract
 
@@ -323,15 +428,21 @@ Goal:
 Focus:
 
 - layer export contracts
+- real extracted layer requirements
 - mouth-shape requirements
 - pose-state requirements
 - rig metadata
+- prop socket and attachment metadata
 - audio timing handoff
 - shot timing handoff
+- fallback discipline for premium shots
+- versioned evidence requirements per handoff stage
 
 Done when:
 
 - there is no ambiguity about what the external motion layer receives and returns
+- the handoff contract is sufficient to create actual puppet-performance animation
+- weak fallback behavior is clearly blocked instead of silently accepted
 
 ### Phase 3: Minimum Viable Character Performance
 
@@ -346,6 +457,7 @@ Focus:
 - head reactions
 - arm gesture changes
 - prop reveals
+- real speaking-shot acting rather than still-motion simulation
 
 Done when:
 
@@ -365,10 +477,13 @@ Focus:
 - villain hero framing
 - camera pacing
 - editorial timing with voice and music
+- full-sequence continuity
+- sequence-level performance quality
 
 Done when:
 
 - one mixed shot sequence feels intentional, paced, and watchable at the target floor
+- the sequence stays visually coherent from shot to shot instead of only producing isolated wins
 
 ### Phase 5: Preview Gate And Promotion Rules
 
@@ -383,10 +498,17 @@ Focus:
 - motion-worthiness rules
 - rework routing
 - human checkpoint language
+- rejection rules for weak hands, weak mouth motion, prop drift, and identity drift
+- preview-to-finish cost protection
+- premium runtime tiering
+- manual review checklist reduction
+- throughput expectations for each run tier
 
 Done when:
 
 - the team can tell whether a scene should advance to hybrid finishing before the expensive step starts
+- preview is trustworthy enough to protect time and cost on premium runs
+- review expectations are tight enough that approval does not become vague or exhausting
 
 ### Phase 6: Benchmark Demo And Production Readiness Decision
 
@@ -401,10 +523,18 @@ Focus:
 - QC review
 - failure analysis
 - overnight trial
+- reliability under premium motion workload
+- production-readiness decision
+- shared asset-catalog sufficiency review
+- benchmark fixture governance
+- portability notes and re-run evidence
+- GTX 1080 production-trust review
 
 Done when:
 
 - the hybrid route either becomes the default milestone path or is formally rejected in favor of Option 1 or 3
+- the team can honestly say whether the path is trustworthy enough for repeated production use
+- the benchmark fixture is locked as a governed acceptance target
 
 ## Option 3 Phases: Fastest Professional Pipeline
 
@@ -421,10 +551,15 @@ Focus:
 - composition exports
 - reference packaging
 - audio and timing packaging
+- benchmark reference pack exports
+- asset-catalog packaging
+- benchmark fixture governance
+- versioned export evidence
 
 Done when:
 
 - all required upstream materials can be exported cleanly for external finishing
+- the external team/toolchain receives benchmark-safe guidance instead of vague quality intent
 
 ### Phase 2: Professional Toolchain Mapping
 
@@ -440,6 +575,7 @@ Focus:
 - prop interaction
 - shot compositing
 - camera control
+- exact mapping for extracted layers, mouth assets, and prop sockets
 
 Done when:
 
@@ -494,10 +630,16 @@ Focus:
 - overnight viability
 - handoff cost
 - scale tradeoffs
+- preview-to-finish trust
+- production-readiness threshold
+- manual review burden
+- throughput expectations
+- portability and repeatability evidence
 
 Done when:
 
 - the team knows whether this path is a permanent solution, a temporary accelerator, or only a benchmark route
+- the team also knows whether it can be scaled without hiding fragile manual work
 
 ## Common Milestone Gates Across All Options
 
@@ -508,24 +650,65 @@ No option should be treated as successful unless it passes these shared gates:
 - character identity is readable
 - composition is strong enough for animation
 - props and expressions are usable
+- benchmark still comparison is clear enough to make approval objective
 
 ### Gate 2: Performance Gate
 
 - speaking shots visibly animate
 - reactions feel intentional
 - gestures support the narration
+- mouth motion is readable as speech, not drift
+- prop handling looks attached and deliberate
 
 ### Gate 3: Scene Storytelling Gate
 
 - shots cut with purpose
 - camera language feels directed
 - scene pacing does not feel padded
+- continuity survives across the full sequence
+- voice/music timing supports the scene instead of merely accompanying it
 
 ### Gate 4: Production Gate
 
 - the workflow can be repeated on the benchmark topic
 - outputs are auditable
 - weak scenes are blocked before expensive finishing
+- long-run premium output is stable enough to trust overnight
+- asset-catalog depth is sufficient for the benchmark
+- preview-to-finish cost control is trustworthy
+- workflow/model pinning is locked for the accepted benchmark path
+- the accepted path is feasible on the GTX 1080 machine, even if slow
+
+## Phase Governance Rules
+
+To keep this milestone focused and realistic, every option phase should be treated with the following rules:
+
+- only one active implementation phase should be treated as the main focus at a time
+- each phase must have evidence, not only code or docs
+- a phase is not complete because a file exists; it is complete because the target behavior is visible and reviewable
+- if the GTX 1080 machine cannot complete the phase path at acceptable quality, the phase is not done
+- slow but correct is acceptable during this milestone
+- fast but weak is not acceptable during this milestone
+
+## Gap Coverage Status
+
+Status as of July 21, 2026:
+
+- all currently known Milestone 2 quality gaps have been documented
+- all currently known Milestone 2 operational gaps have been documented
+- all currently known blockers discussed during planning are now represented either as:
+  - required capabilities
+  - missing capabilities
+  - remaining gaps
+  - secondary operational gaps
+  - option phases
+  - shared milestone gates
+
+This does **not** mean the milestone is complete.
+
+It means the planning coverage is now considered complete enough to begin execution once a path is chosen.
+
+If new gaps are discovered during implementation, they must be added to this document, the pipeline state board, and the technical change log before they are treated as resolved.
 
 ## Milestone 2 Acceptance Standard
 

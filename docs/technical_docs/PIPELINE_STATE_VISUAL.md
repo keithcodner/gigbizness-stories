@@ -1,6 +1,6 @@
 # Pipeline State Visual
 
-Last updated: July 20, 2026
+Last updated: July 21, 2026
 
 ## Status Board
 
@@ -12,6 +12,7 @@ PIPELINE STATUS
 |   |-- minimum quality floor .............. [LOCKED]
 |   |-- implementation options ............. [LOCKED]
 |   |-- phased option tracks ............... [LOCKED]
+|   |-- known gap capture .................. [LOCKED]
 |   |-- path decision ...................... [OPEN]
 |   `-- proceed-past-gate approval ......... [BLOCKED]
 |
@@ -86,6 +87,7 @@ PIPELINE STATUS
     |-- comfy-generated art proven .......... [REAL]
     |-- premium final visual quality ........ [NOT LOCKED]
     |-- milestone 2 planning ................ [LOCKED]
+    |-- known-gap documentation ............. [LOCKED]
     `-- unattended overnight production ..... [CLOSE, NOT TRUSTED]
 ```
 
@@ -228,6 +230,33 @@ Minimum floor before proceeding:
 - prop interaction
 - shot-based compositing and timing
 
+Audit-confirmed missing pieces now folded into milestone planning:
+- real layer extraction
+- real puppet rigs
+- true speech mouth animation
+- believable gesture / reaction acting
+- dependable prop attachment / interaction
+- stronger animation QC
+- overnight premium reliability
+
+Additional milestone blockers now folded into planning:
+- benchmark reference pack lock
+- reusable asset-catalog depth
+- full-sequence continuity proof
+- preview-to-finish trust
+- audio / pacing editorial fit
+- premium cost/runtime control
+- final production-readiness decision
+- workflow/model pinning
+- benchmark fixture governance
+- fallback discipline
+- manual review burden
+- versioned quality evidence
+- portability proof
+- asset-library governance
+- throughput expectations
+- GTX 1080 feasibility for the accepted path
+
 Path options currently documented:
 1. Cheapest custom pipeline
 2. Best quality hybrid pipeline
@@ -240,4 +269,7 @@ Phase tracks:
 
 Recommended path:
 2. Best quality hybrid pipeline
+
+Known gap capture:
+- complete for currently known issues as of July 21, 2026
 ```

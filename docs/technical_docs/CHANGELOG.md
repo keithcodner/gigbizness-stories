@@ -2,6 +2,19 @@
 
 This log tracks implementation changes, bug fixes, and incidental fixes discovered while working on the pipeline.
 
+## 2026-07-21
+
+### Changed
+
+- Updated the Milestone 2 planning set to explicitly record that all currently known quality, operational, and production blockers discussed so far are now captured in the implementation planning documents, while keeping the milestone itself unfinished.
+- Updated `docs/technical_docs/BRICKTOON_PREMIUM_QUALITY_MILESTONE_2_PLAN.md` so the audit-identified gaps are now explicit milestone requirements, including real layer extraction, real puppet rigs, true speech mouth animation, believable gesture/reaction acting, dependable prop attachment, stronger animation QC, and overnight premium reliability.
+- Updated the phase tracks inside the Milestone 2 plan so those missing capabilities are now attached to concrete option phases and shared milestone gates instead of only living in audit notes.
+- Updated `docs/technical_docs/PIPELINE_STATE_VISUAL.md` so the active milestone gate now shows the audit-confirmed missing animation pieces that still block Jay Hona-level output.
+- Updated the Milestone 2 plan again so the remaining non-animation blockers are also explicit, including benchmark-pack lock, reusable asset-catalog depth, full-sequence continuity proof, preview-to-finish trust, editorial audio/pacing fit, premium cost/runtime control, and the final production-readiness decision.
+- Updated the pipeline state board so those broader milestone blockers are now visible alongside the animation-core blockers instead of remaining only in conversation notes.
+- Updated the Milestone 2 plan again so the remaining secondary operational gaps are explicitly phased too, including workflow/model pinning, benchmark-fixture governance, fallback discipline, manual-review burden, versioned evidence, portability proof, asset-library governance, throughput expectations, and GTX 1080 feasibility for the accepted path.
+- Updated the milestone governance rules so each option phase is now expected to complete with visible evidence and acceptable GTX 1080 behavior, even if the run is slow.
+
 ## 2026-07-20
 
 ### Added
