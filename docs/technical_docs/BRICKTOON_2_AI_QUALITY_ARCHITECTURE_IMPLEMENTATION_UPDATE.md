@@ -129,6 +129,62 @@ The current procedural frames should become **control images and layout blueprin
 
 ---
 
+## 3.1 Minimum Accepted Animation Standard
+
+High-quality stills alone are not enough.
+
+For this project, the minimum accepted final motion standard is a **premium cut-out animatic / puppet-animation look** with visible acting and editorial timing. A technically valid render should still be rejected if it is only:
+
+- text cards with subtle camera movement
+- a slideshow of stills
+- a static poster composition stretched across narration
+- image zooms that never become character performance
+
+At minimum, acceptable animated scenes should include:
+
+- scene-blocked shot changes
+- blink timing
+- mouth movement or talk-cycle behavior on speaking shots
+- head turns, nods, or reaction changes
+- arm gestures, pose changes, or prop-reveal action
+- storyboarded inserts, evidence shots, and cutaways
+
+This architecture update should therefore be interpreted as a path toward **premium illustrated cut-out storytelling**, not merely better still-image generation.
+
+## 3.2 Research-Based Production Model
+
+The closest practical production model for this quality target is:
+
+```text
+premium bricktoon still generation
++ approved layered character parts
++ keyframed cut-out / puppet motion
++ optional AI motion passes where they genuinely improve the shot
++ editorial compositing and timing
+```
+
+This model was selected because it matches how modern 2D documentary-style animation reaches a believable "alive" threshold without requiring full frame-by-frame animation for every shot.
+
+Reference direction used for this conclusion:
+
+- Toon Boom cut-out animation documentation
+- Adobe After Effects keyframe animation guidance
+- Adobe Puppet tool documentation
+- Adobe Animate auto lip-sync guidance
+- Adobe Character Animator behavior guidance
+
+## 3.3 Milestone 2 Alignment
+
+This implementation update is now part of `Milestone 2: bricktoon_premium_quality`.
+
+That means this document should be read as quality-gate architecture, not just future ideas. The milestone requires that the project not move forward as though premium animation is solved until the minimum cut-out animatic floor is met.
+
+Milestone source of truth:
+
+- `docs/technical_docs/BRICKTOON_PREMIUM_QUALITY_MILESTONE_2_PLAN.md`
+
+---
+
 ## 4. Updated High-Level Pipeline
 
 ```text

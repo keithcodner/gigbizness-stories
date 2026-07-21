@@ -52,6 +52,43 @@ This update preserves the current orchestrator and extends it.
 
 ---
 
+## 1.1 Minimum Accepted Animation Standard
+
+The minimum accepted output is not "an MP4 exists." The minimum accepted output is a **premium cut-out animatic / puppet-animation result** with clear shot staging and visible character acting.
+
+The following should be treated as failure even if the render technically completes:
+
+- text cards with drift or zoom presented as scene animation
+- one still image held for an entire narration beat
+- slideshow-only motion with no character performance
+- poster-style compositions with no speaking, reaction, or prop-action life
+
+At minimum, the upgraded architecture is expected to support:
+
+- multi-shot scene blocking instead of one held composition
+- blink timing and speaking-shot mouth movement
+- head turns, nods, and reaction changes
+- arm gestures or pose swaps that read as intentional acting
+- prop interaction when the story beat depends on it
+- camera motion with pacing and easing, not just generic drift
+- inserts and cutaways that feel storyboarded instead of padded
+
+This means the architecture target is closer to a premium documentary cut-out pipeline than to a moving thumbnail or slideshow renderer.
+
+## 1.2 Milestone 2 Alignment
+
+This architecture update now belongs to `Milestone 2: bricktoon_premium_quality`.
+
+That milestone locks the following rule:
+
+- the architecture should not be treated as sufficiently implemented until it can support the minimum accepted animation quality floor
+
+Milestone source of truth:
+
+- `docs/technical_docs/BRICKTOON_PREMIUM_QUALITY_MILESTONE_2_PLAN.md`
+
+---
+
 # 2. Current Architecture Baseline
 
 The current practical flow is:

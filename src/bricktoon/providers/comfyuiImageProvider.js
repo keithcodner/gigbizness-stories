@@ -70,6 +70,20 @@ function applyWorkflowTemplate(config, template = {}) {
   };
 }
 
+function inferReferenceDenoise(providerConfig = {}, config = {}) {
+  if (Number.isFinite(Number(providerConfig.referenceDenoise))) {
+    return Number(providerConfig.referenceDenoise);
+  }
+  const shotType = String(providerConfig.shotType || "").toLowerCase();
+  if (shotType.includes("closeup")) {
+    return Math.min(Number(config.denoise || 1), 0.4);
+  }
+  if (shotType.includes("medium_single") || shotType.includes("medium_two_shot")) {
+    return Math.min(Number(config.denoise || 1), 0.48);
+  }
+  return Math.min(Number(config.denoise || 1), 0.55);
+}
+
 function promptForCharacter(args) {
   if (args.workflowRequest?.prompt_contract?.prompt_text) {
     return normalizePromptText(args.workflowRequest.prompt_contract.prompt_text);
@@ -315,14 +329,20 @@ async function generateImage(outputPath, { prompt, negativePrompt, width, height
   const referenceImagePaths = Array.isArray(providerConfig.referenceImagePaths)
     ? providerConfig.referenceImagePaths.filter((filePath) => filePath && fs.existsSync(filePath))
     : [];
+  const effectiveConfig = referenceImagePaths.length > 0
+    ? {
+      ...config,
+      denoise: inferReferenceDenoise(providerConfig, config)
+    }
+    : config;
   const uploadedReferenceName = referenceImagePaths.length > 0
-    ? await uploadInputImage(config.baseUrl, referenceImagePaths[0])
+    ? await uploadInputImage(effectiveConfig.baseUrl, referenceImagePaths[0])
     : null;
   const workflow = uploadedReferenceName
     ? buildImg2ImgWorkflow({
       prompt,
       negativePrompt,
-      config,
+      config: effectiveConfig,
       uploadedReferenceName
     })
     : buildTxt2ImgWorkflow({
@@ -330,11 +350,11 @@ async function generateImage(outputPath, { prompt, negativePrompt, width, height
       negativePrompt,
       width,
       height,
-      config
+      config: effectiveConfig
     });
-  const { promptId } = await queuePrompt(config.baseUrl, workflow);
-  const imageInfo = await waitForImage(config.baseUrl, promptId, config);
-  const buffer = await downloadImage(config.baseUrl, imageInfo);
+  const { promptId } = await queuePrompt(effectiveConfig.baseUrl, workflow);
+  const imageInfo = await waitForImage(effectiveConfig.baseUrl, promptId, effectiveConfig);
+  const buffer = await downloadImage(effectiveConfig.baseUrl, imageInfo);
 
   ensureDir(path.dirname(outputPath));
   const tempPath = path.join(os.tmpdir(), `comfyui_image_${Date.now()}_${path.basename(outputPath)}`);
@@ -356,10 +376,12 @@ async function generateImage(outputPath, { prompt, negativePrompt, width, height
       width,
       height,
       reference_image_used: Boolean(uploadedReferenceName),
-      sampler: config.sampler,
-      scheduler: config.scheduler,
-      steps: config.steps,
-      cfg: config.cfg
+      reference_image_count: referenceImagePaths.length,
+      sampler: effectiveConfig.sampler,
+      scheduler: effectiveConfig.scheduler,
+      steps: effectiveConfig.steps,
+      cfg: effectiveConfig.cfg,
+      denoise: effectiveConfig.denoise
     }
   };
 }

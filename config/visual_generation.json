@@ -148,7 +148,15 @@
           "aspect_ratio": "16:9",
           "filename_pattern": "{shot_id}.png"
         },
-        "pass_plan": ["composition", "detail", "upscale"]
+        "pass_plan": ["composition", "detail", "upscale"],
+        "prompt_additions": [
+          "Premium bricktoon editorial still.",
+          "Strong subject readability, polished toy-brick materials, cinematic contrast, dense finished composition.",
+          "Maintain exact character identity from provided character refs and keep wardrobe and silhouette locked."
+        ],
+        "negative_prompt_additions": [
+          "duplicate characters, extra people, flat lighting, wrong costume, wrong hat, identity drift, empty background"
+        ]
       },
       "hero_refine_v1": {
         "required_inputs": ["prompt_text", "shot_plan", "art_direction", "character_reference_images"],
@@ -167,7 +175,11 @@
         "pass_plan": ["composition", "detail", "hero_refine", "upscale"],
         "prompt_additions": [
           "Premium cinematic bricktoon hero keyframe.",
-          "Strong expression, dramatic depth, dimensional plastic lighting."
+          "Strong expression, dramatic depth, dimensional plastic lighting.",
+          "Thumbnail-grade focal hierarchy, bold silhouette, high face readability, exact identity lock from the provided cast references."
+        ],
+        "negative_prompt_additions": [
+          "identity drift, duplicate subject, wrong facial hair, wrong headwear, weak expression, washed-out lighting, empty frame"
         ]
       },
       "motion_pass_source_v1": {

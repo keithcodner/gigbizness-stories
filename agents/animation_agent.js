@@ -15,6 +15,90 @@ function getPaths(workspaceDir) {
   };
 }
 
+function inferPerformanceClass(shot) {
+  const type = String(shot.shot_type || "").toLowerCase();
+  if (type.includes("closeup")) {
+    return "closeup_talking_puppet";
+  }
+  if (type.includes("medium_single")) {
+    return "single_character_explainer";
+  }
+  if (type.includes("medium_two")) {
+    return "two_character_exchange";
+  }
+  if (type.includes("document") || type.includes("top_down")) {
+    return "document_insert_motion";
+  }
+  if (type.includes("wide") || type.includes("establishing")) {
+    return "staged_cutout_tableau";
+  }
+  return "editorial_cutout_default";
+}
+
+function visibleCharacterLimitForShot(shot) {
+  const type = String(shot.shot_type || "").toLowerCase();
+  if (type.includes("closeup") || type.includes("medium_single")) {
+    return 1;
+  }
+  if (type.includes("medium_two")) {
+    return 2;
+  }
+  if (type.includes("document") || type.includes("top_down")) {
+    return 0;
+  }
+  return Math.max(1, (shot.cast_member_ids || []).length || 1);
+}
+
+function mouthSyncModeForShot(shot) {
+  const type = String(shot.shot_type || "").toLowerCase();
+  if (type.includes("closeup")) {
+    return "viseme_emphasis";
+  }
+  if (type.includes("medium")) {
+    return "talk_cycles";
+  }
+  return "limited";
+}
+
+function gestureProfileForMember(member, shot) {
+  const intent = String(member.action_intent || "").toLowerCase();
+  const role = String(member.role || "").toLowerCase();
+  const shotType = String(shot.shot_type || "").toLowerCase();
+  if (intent.includes("moustache")) {
+    return "villain_showmanship";
+  }
+  if (intent.includes("folder reveal")) {
+    return "prop_reveal";
+  }
+  if (intent.includes("phone")) {
+    return "phone_hold_react";
+  }
+  if (intent.includes("point")) {
+    return "explain_point";
+  }
+  if (role.includes("narrator") && /closeup|medium/.test(shotType)) {
+    return "host_explainer";
+  }
+  return "idle_support";
+}
+
+function secondaryActionForShot(shot, card) {
+  const text = `${shot.purpose || ""} ${card?.narration || ""}`.toLowerCase();
+  if (/invoice|bill|fee|quote|amount|price/.test(text)) {
+    return "counter_change";
+  }
+  if (/hack|cyber|breach|data|server/.test(text)) {
+    return "typing_loop";
+  }
+  if (/truck|door|close|slam/.test(text)) {
+    return "impact_hit";
+  }
+  if (/proof|folder|document|evidence/.test(text)) {
+    return "document_reveal";
+  }
+  return "ambient_hold";
+}
+
 function inferSceneMotions(card, sceneAssignment, castPackage) {
   const text = `${card.narration} ${card.caption_text} ${card.environment} ${card.visual_prompt}`.toLowerCase();
   const motions = [];
@@ -124,8 +208,8 @@ function main() {
     const castPackage = readJson(paths.castPath);
     const animationPlan = {
       animation_plan_version: 2,
-      style: "bricktoon_motion_plus",
-      strategy: "Scene-aware motion directives plus shot-level performance timing for procedural multi-shot bricktoon sequences.",
+      style: "bricktoon_puppet_animatic",
+      strategy: "Scene-aware motion directives plus shot-level puppet performance cues for cut-out style bricktoon sequences with camera-blocked acting, blink passes, talk cycles, gesture swaps, and insert motion.",
       scenes: []
     };
     animationPlan.scenes = sceneCards.map((card) => {
@@ -156,9 +240,23 @@ function main() {
       return scene.shots.map((shot) => ({
         scene_id: scene.scene_id,
         shot_id: shot.shot_id,
+        performance_class: inferPerformanceClass(shot),
         duration_seconds: Number((shot.end - shot.start).toFixed(2)),
+        visible_character_limit: visibleCharacterLimitForShot(shot),
+        camera_recipe: {
+          movement: shot.camera?.movement || "steady_push",
+          easing: shot.camera?.easing || "ease_in_out",
+          start_scale: shot.camera?.start_scale || 1,
+          end_scale: shot.camera?.end_scale || 1.06
+        },
+        mouth_sync_mode: mouthSyncModeForShot(shot),
+        blink_profile: /closeup|medium/.test(String(shot.shot_type || "").toLowerCase()) ? "cinematic_readable" : "ambient_sparse",
+        head_motion_profile: /closeup|medium/.test(String(shot.shot_type || "").toLowerCase()) ? "readable_turns" : "subtle_nods",
         performances: sceneAssignment.cast.map((member, index) => ({
           actor_id: member.cast_member_id,
+          character_id: member.character_id,
+          role: member.role,
+          gesture_profile: gestureProfileForMember(member, shot),
           actions: [
             {
               action: index === 0 ? "talk_calm" : "idle_basic",
@@ -178,15 +276,26 @@ function main() {
               end: Number((shot.end - shot.start).toFixed(2)),
               intensity: member.action_intent === "moustache twirl" ? 0.8 : 0.5
             }
-          ]
+          ],
+          mouth_track: index === 0 && visibleCharacterLimitForShot(shot) !== 0,
+          blink_track: true,
+          head_turn_track: index === 0
         })),
+        secondary_action: secondaryActionForShot(shot, card),
         narration_hint: card?.caption_text || ""
       }));
     });
 
     writeText(paths.animationPlanPath, `${JSON.stringify(animationPlan, null, 2)}\n`);
     writeText(paths.cameraMovesPath, `${JSON.stringify(cameraMoves, null, 2)}\n`);
-    writeText(paths.shotPerformancePath, `${JSON.stringify({ shot_performances: shotPerformances }, null, 2)}\n`);
+    writeText(paths.shotPerformancePath, `${JSON.stringify({
+      animation_standard: "premium_cutout_animatic_minimum",
+      notes: [
+        "This is the minimum acceptable animation standard for premium bricktoon output.",
+        "Shots should read like storyboarded cut-out animation, not slideshow-only motion."
+      ],
+      shots: shotPerformances
+    }, null, 2)}\n`);
 
     console.log(`Animation plan generated for topic '${args.topic}'.`);
   } catch (error) {

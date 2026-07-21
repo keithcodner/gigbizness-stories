@@ -24,6 +24,14 @@ const {
   writeExecutionReport,
   writeWorkflowRequest
 } = require("../src/bricktoon/workflowContracts");
+const {
+  buildCharacterLockLines,
+  buildShotCompositionLines,
+  buildShotNegativePrompt,
+  getShotCharacters,
+  selectCharacterRefPaths
+} = require("../src/bricktoon/shotKeyframeGuidance");
+const { readJson } = require("../agents/common");
 
 function keyframeCountForTier(tier) {
   if (tier === "hero") {
@@ -48,6 +56,7 @@ async function main() {
     const generatedDir = path.join(workspaceDir, "07_visuals", "generated_keyframes");
     const approvedDir = path.join(workspaceDir, "07_visuals", "approved_keyframes");
     const visualBible = readJsonSafe(path.join(workspaceDir, "03_cast", "visual_character_bible.json"), {});
+    const castPackage = readJson(path.join(workspaceDir, "03_cast", "cast.json"));
     const sceneCards = readJsonSafe(path.join(workspaceDir, "05_scene_cards", "scene_cards.json"), {});
     const productionRoutes = readJsonSafe(path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json"), {});
     const manifest = loadManifest(workspaceDir);
@@ -62,9 +71,22 @@ async function main() {
         const count = keyframeCountForTier(tier);
         const route = (productionRoutes.routes || []).find((item) => item.shot_id === shot.shot_id) || {};
         const sceneCard = (sceneCards.scene_cards || []).find((item) => item.scene_id === scene.scene_id) || {};
-        const referenceImages = collectReferenceImages(workspaceDir, {
+        const artDirection = readJsonSafe(path.join(artDirectionDir, `${shot.shot_id}.json`), {});
+        const compositionGuide = readJsonSafe(path.join(workspaceDir, "07_visuals", "composition_guides", `${shot.shot_id}.json`), {});
+        const shotCharacters = getShotCharacters(castPackage, shot);
+        const characterRefs = selectCharacterRefPaths(workspaceDir, visualBible, shotCharacters, shot);
+        const workspaceReferenceImages = collectReferenceImages(workspaceDir, {
           sceneId: scene.scene_id,
           shotId: shot.shot_id
+        });
+        const prioritizedReferences = [...characterRefs, ...workspaceReferenceImages];
+        const { primaryCharacter, lines: characterLockLines } = buildCharacterLockLines(shotCharacters, shot);
+        const compositionLines = buildShotCompositionLines({
+          shot,
+          sceneCard,
+          compositionGuide,
+          artDirection,
+          tier
         });
         const approvalRecord = {
           shot_id: shot.shot_id,
@@ -78,17 +100,25 @@ async function main() {
           const baseName = `${shot.shot_id}_KF_${String(index).padStart(2, "0")}`;
           const generatedPath = path.join(generatedDir, `${baseName}.png`);
           const approvedPath = path.join(approvedDir, `${baseName}.png`);
+          const keyframeVariantLine = count > 1
+            ? `Keyframe variant ${index} of ${count}. Keep the same cast identity, wardrobe, and environment continuity while changing only expression, camera emphasis, or micro-pose.`
+            : "Single approved still. Lock identity and continuity exactly.";
           const prompt = {
             prompt_text: [
               `Scene ${scene.scene_id} shot ${shot.shot_id}.`,
               `Shot type: ${shot.shot_type}.`,
               `Purpose: ${shot.purpose}.`,
               `Camera movement: ${shot.camera?.movement || "steady_push"}.`,
-              "Premium editorial bricktoon quality, cinematic lighting, strong depth, stable character identity.",
-              "No embedded text or logos.",
-              referencePromptAddendum(referenceImages)
+              primaryCharacter ? `Primary story subject: ${primaryCharacter.name} (${primaryCharacter.character_id}).` : "",
+              ...characterLockLines,
+              ...compositionLines,
+              "Premium editorial bricktoon quality, cinematic lighting, strong depth, stable character identity, believable plastic toy materials.",
+              "This must look like polished thumbnail-grade bricktoon art, not a rough draft, low-detail render, or flat placeholder image.",
+              "No embedded text or logos. No brand copying. Keep the composition dense and visually finished.",
+              keyframeVariantLine,
+              referencePromptAddendum(prioritizedReferences)
             ].join(" "),
-            negative_prompt_text: "unreadable text, extra limbs, malformed hands, off-model face"
+            negative_prompt_text: buildShotNegativePrompt(shotCharacters, shot)
           };
           const workflowRequest = buildWorkflowRequest({
             workspaceDir,
@@ -104,25 +134,29 @@ async function main() {
             promptComponents: ["shot_plan", "art_direction", "production_route", "scene_card", "quality_profile"],
             continuitySourceRefs: [
               `03_cast/visual_character_bible.json`,
+              `03_cast/cast.json`,
               `07_visuals/production_routes/production_routes.json#${shot.shot_id}`,
-              `07_visuals/art_direction/${shot.shot_id}.json`
+              `07_visuals/art_direction/${shot.shot_id}.json`,
+              `07_visuals/composition_guides/${shot.shot_id}.json`
             ],
             references: [
-              ...(shot.cast_member_ids || []).map((characterId) => ({
-                type: "character_reference",
-                asset_id: `CHAR_${characterId}_MASTER`
-              })),
-              ...referenceImages.map((ref) => ({
+              ...prioritizedReferences.map((ref) => ({
                 type: ref.type,
                 file: ref.relativeFile,
                 label: ref.label,
-                reference_id: ref.reference_id
+                reference_id: ref.reference_id,
+                character_id: ref.character_id || null
               }))
             ],
             productionMode: route.production_mode,
             context: {
               visualQualityProfile: visualBible.style_lock_package ? { production_target: visualBible.style_lock_package, avoid: visualBible.style_lock_package.never_generate } : {},
-              referenceImageFiles: referenceImages.map((ref) => ref.relativeFile)
+              referenceImageFiles: prioritizedReferences.map((ref) => ref.relativeFile),
+              shotCharacters,
+              primaryCharacterId: primaryCharacter?.character_id || null,
+              styleGoal: tier === "hero" ? "premium_thumbnail_match" : "premium_editorial_match",
+              compositionGuide,
+              artDirection
             },
             config: visualConfig,
             selectionReason: tier === "hero"
@@ -139,11 +173,14 @@ async function main() {
               height: workflowRequest.output_contract.height,
               qualityTier: tier,
               shotId: shot.shot_id,
-              referenceImagePaths: referenceImages.map((ref) => ref.filePath),
+              referenceImagePaths: prioritizedReferences.map((ref) => ref.filePath),
               workflowRequest,
               providerConfig: {
                 ...providerConfig,
-                workflowTemplate: workflowRequest.workflow_template
+                workflowTemplate: workflowRequest.workflow_template,
+                referenceImagePaths: prioritizedReferences.map((ref) => ref.filePath),
+                shotType: shot.shot_type,
+                referenceDenoise: tier === "hero" ? 0.42 : 0.5
               }
             });
             return {

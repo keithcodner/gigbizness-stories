@@ -6,19 +6,31 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Added
 
+- Added `docs/technical_docs/BRICKTOON_PREMIUM_QUALITY_MILESTONE_2_PLAN.md` as the planning source of truth for `Milestone 2: bricktoon_premium_quality`, locking the minimum animation-quality floor, the required capability set, and the three practical implementation-path options before further build work.
+- Added phased execution tracks inside `docs/technical_docs/BRICKTOON_PREMIUM_QUALITY_MILESTONE_2_PLAN.md` for all three milestone paths so each option now has a concrete planning sequence before any JS implementation resumes.
 - Added `scripts/build_library_catalog.js`, `library/general_assets/catalog_templates.json`, and `npm run library:catalog` so the shared reference library now has a reusable indexed catalog contract instead of only loose folders.
+- Added shot-keyframe guidance helpers and a regression test so single-subject shots now explicitly prioritize hero character refs, enforce cast-visibility rules, and keep that behavior from silently drifting later.
+- Added `docs/technical_docs/COMFYUI_STABILITY_AND_PREMIUM_KEYFRAME_IMPLEMENTATION_PLAN.md` as the focused multi-phase execution plan for moving ComfyUI runtime stability, shot keyframe quality, single-character lock, thumbnail match, and identity consistency from `PARTIAL`/`UNSTABLE` to `WORKING`.
 
 ### Changed
 
+- Updated the main implementation-planning docs so they now explicitly align under `Milestone 2: bricktoon_premium_quality` and treat premium cut-out / puppet-style animation quality as a hard gate instead of an aspirational improvement.
+- Updated the pipeline visual state board so it now shows milestone phase-track planning as locked while the final path decision remains open.
+- Updated the pipeline visual state board so the active milestone gate, locked minimum capability floor, open path decision, and blocked proceed-past-gate status are visible in the shared status view.
 - Updated the AI motion-pass stage so approved/generated keyframes can now be turned into real motion clips with recipe-based zoom, drift, and crossfade behavior before compositing.
 - Updated stabilization so motion clips are normalized through FFmpeg before compositing instead of being passed through as raw copies when the render succeeds.
 - Updated compositing reports so selected motion clips now record when the winning source came from keyframe-derived motion instead of only labeling everything as generic AI motion.
 - Updated the pipeline visual state board so the shared catalog and premium-motion statuses reflect the current implementation more honestly.
+- Updated shot-keyframe generation so it now builds stronger cast-lock, continuity, composition, and thumbnail-style contracts from `cast.json`, `visual_character_bible.json`, shot art direction, and composition guides instead of relying mostly on generic prompt text.
+- Updated the ComfyUI provider so reference-led keyframes use lower-denoise img2img behavior, allowing the supplied character refs to influence identity and wardrobe lock more strongly.
+- Updated managed shot-keyframe workflow defaults so premium still requests now carry stronger thumbnail-grade style cues and identity-drift negatives even outside the script-level prompt builder.
 
 ### Fixed
 
 - Fixed a core motion-stage gap where `ai-video-motion-passes` claimed success while only copying the existing procedural shot clip instead of generating a motion pass from approved stills.
 - Fixed a reusable-library gap where the shared catalog had folder scaffolding but no generated index to show what references and category slots were actually available for future topics.
+- Fixed a core shot-generation gap where the first reference image used by the ComfyUI path could be a generic workspace image instead of the actual cast reference that should control hero-shot identity.
+- Fixed a prompt-contract gap where closeups and medium singles could still carry secondary-cast noise, weakening single-character lock and increasing the chance of duplicate or off-model subjects.
 
 ## 2026-07-14
 

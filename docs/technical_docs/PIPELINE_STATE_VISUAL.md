@@ -7,6 +7,14 @@ Last updated: July 20, 2026
 ```text
 PIPELINE STATUS
 |
+|-- MILESTONE 2: BRICKTOON PREMIUM QUALITY . [ACTIVE GATE]
+|   |-- milestone name ...................... [LOCKED]
+|   |-- minimum quality floor .............. [LOCKED]
+|   |-- implementation options ............. [LOCKED]
+|   |-- phased option tracks ............... [LOCKED]
+|   |-- path decision ...................... [OPEN]
+|   `-- proceed-past-gate approval ......... [BLOCKED]
+|
 |-- FOUNDATION / ORCHESTRATOR ............... [WORKING]
 |   |-- stage wiring ........................ [WORKING]
 |   |-- topic workspace generation .......... [WORKING]
@@ -46,9 +54,9 @@ PIPELINE STATUS
 |   |-- character refs generate files ....... [WORKING]
 |   |-- shot keyframes generate files ....... [PARTIAL]
 |   |-- placeholder rejection ............... [WORKING]
-|   |-- single-character lock ............... [WEAK]
-|   |-- thumbnail-style match ............... [WEAK]
-|   `-- identity consistency ................ [WEAK]
+|   |-- single-character lock ............... [PARTIAL]
+|   |-- thumbnail-style match ............... [PARTIAL]
+|   `-- identity consistency ................ [PARTIAL]
 |
 |-- PREVIEW GATE ............................ [WORKING]
 |   |-- reference-sync stage ................ [WORKING]
@@ -77,6 +85,7 @@ PIPELINE STATUS
     |-- preview checkpoint .................. [REAL]
     |-- comfy-generated art proven .......... [REAL]
     |-- premium final visual quality ........ [NOT LOCKED]
+    |-- milestone 2 planning ................ [LOCKED]
     `-- unattended overnight production ..... [CLOSE, NOT TRUSTED]
 ```
 
@@ -191,7 +200,44 @@ MAIN BLOCKERS:
 1. ComfyUI shot-keyframe generation is still not stable enough
    for unattended long-run preview approval.
 
-2. The motion stage now converts approved stills into moving clips,
-   but believable premium motion still depends on stronger still quality,
-   tighter character lock, and a much larger reusable asset catalog.
+2. Character-lock and thumbnail-match contracts are now stronger,
+   but they still need visual re-validation through a fresh preview run
+   before we can treat premium still quality as locked.
+
+3. The motion stage now converts approved stills into moving clips,
+   but believable premium motion still depends on stronger still quality
+   and a much larger reusable asset catalog.
+
+4. Milestone 2 is now the active gate, so the project should not
+   treat scale, automation, or production readiness as the next win
+   until the minimum animation floor is actually met.
+```
+
+## Milestone 2 Gate
+
+```text
+ACTIVE QUALITY GATE:
+
+bricktoon_premium_quality
+
+Minimum floor before proceeding:
+- layered character parts
+- keyframed poses and camera moves
+- mouth movement for speech
+- blink / reaction / gesture changes
+- prop interaction
+- shot-based compositing and timing
+
+Path options currently documented:
+1. Cheapest custom pipeline
+2. Best quality hybrid pipeline
+3. Fastest professional pipeline
+
+Phase tracks:
+- Option 1: 6 phases
+- Option 2: 6 phases
+- Option 3: 5 phases
+
+Recommended path:
+2. Best quality hybrid pipeline
 ```
