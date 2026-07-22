@@ -8,6 +8,67 @@ const { qualityClassificationForAsset } = require("../src/bricktoon/workflowCont
 const { classifyShotRole, subtitleSafeModeForShotType } = require("../src/bricktoon/sequencePolish");
 const { collectShotIdsFromScenes, filterScenes, hasSceneSelection, mergeScopedRecords, parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
+const PERFORMANCE_PRIORITY_CLASSES = new Set([
+  "closeup_talking_puppet",
+  "single_character_explainer",
+  "two_character_exchange",
+  "staged_cutout_tableau",
+  "hybrid_speaking_proof"
+]);
+
+const INSERT_MOTION_CLASSES = new Set([
+  "document_insert_motion",
+  "hybrid_insert_proof"
+]);
+
+function shouldPreferProceduralShotClip(clipInfo = {}, motionInfo = {}) {
+  const performanceClass = String(clipInfo.performance_class || "").trim().toLowerCase();
+  const mouthSyncMode = String(clipInfo.mouth_sync_mode || "").trim().toLowerCase();
+  const secondaryAction = String(clipInfo.secondary_action || "").trim().toLowerCase();
+  const executionMode = String(motionInfo.execution_mode || "").trim().toLowerCase();
+  const motionRecipe = String(motionInfo.motion_recipe || "").trim().toLowerCase();
+
+  if (executionMode === "fallback_copy") {
+    return true;
+  }
+  if (PERFORMANCE_PRIORITY_CLASSES.has(performanceClass) || INSERT_MOTION_CLASSES.has(performanceClass)) {
+    return true;
+  }
+  if (["talk_cycles", "viseme_emphasis"].includes(mouthSyncMode)) {
+    return true;
+  }
+  if (["counter_change", "document_reveal"].includes(secondaryAction)) {
+    return true;
+  }
+  if (["talking_character", "typing_action_insert", "reaction_emphasis", "pressure_reveal"].includes(motionRecipe)) {
+    return true;
+  }
+  return false;
+}
+
+function qualityClassificationForSelection(sourceAssetType, clipInfo = {}) {
+  const performanceClass = String(clipInfo.performance_class || "").trim().toLowerCase();
+  if (sourceAssetType === "bricktoon_shot_clip") {
+    if (PERFORMANCE_PRIORITY_CLASSES.has(performanceClass)) {
+      return "premium_motion";
+    }
+    return "motion_ready";
+  }
+  return qualityClassificationForAsset(sourceAssetType);
+}
+
+function selectionReasonForSource({ prefersProcedural, usedStabilized, motionInfo = {} }) {
+  if (usedStabilized) {
+    return motionInfo.execution_mode === "keyframe_motion_render"
+      ? "stabilized keyframe-derived motion chosen"
+      : "stabilized AI motion chosen";
+  }
+  if (prefersProcedural) {
+    return "procedural performance animation chosen over still-derived drift";
+  }
+  return "procedural fallback chosen";
+}
+
 function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
@@ -35,22 +96,25 @@ function main() {
     for (const scene of scenes) {
       for (const [shotIndex, shot] of (scene.shots || []).entries()) {
         const stabilizedPath = path.join(stabilizedDir, `${shot.shot_id}_stabilized.mp4`);
-        const fallbackPath = path.join(baseShotDir, `${shot.shot_id}.mp4`);
-        const source = fs.existsSync(stabilizedPath) ? stabilizedPath : fallbackPath;
-        const sourceAssetType = fs.existsSync(stabilizedPath) ? "stabilized_motion_pass" : "bricktoon_shot_clip";
+        const proceduralPath = path.join(baseShotDir, `${shot.shot_id}.mp4`);
         const motionInfo = motionLookup.get(shot.shot_id) || {};
         const clipInfo = clipLookup.get(shot.shot_id) || {};
+        const stabilizedExists = fs.existsSync(stabilizedPath);
+        const proceduralExists = fs.existsSync(proceduralPath);
+        const prefersProcedural = proceduralExists && shouldPreferProceduralShotClip(clipInfo, motionInfo);
+        const source = stabilizedExists && !prefersProcedural ? stabilizedPath : proceduralPath;
+        const sourceAssetType = stabilizedExists && !prefersProcedural ? "stabilized_motion_pass" : "bricktoon_shot_clip";
         if (!fs.existsSync(source)) {
           continue;
         }
         const target = path.join(compositedDir, `${shot.shot_id}.mp4`);
         fs.copyFileSync(source, target);
-        const qualityClassification = qualityClassificationForAsset(sourceAssetType);
-        const selectionReason = fs.existsSync(stabilizedPath)
-          ? (motionInfo.execution_mode === "keyframe_motion_render"
-            ? "stabilized keyframe-derived motion chosen"
-            : "stabilized AI motion chosen")
-          : "procedural fallback chosen";
+        const qualityClassification = qualityClassificationForSelection(sourceAssetType, clipInfo);
+        const selectionReason = selectionReasonForSource({
+          prefersProcedural,
+          usedStabilized: sourceAssetType === "stabilized_motion_pass",
+          motionInfo
+        });
         const sequenceRole = classifyShotRole(shot, shotIndex, (scene.shots || []).length);
         report.shots.push({
           shot_id: shot.shot_id,
@@ -64,6 +128,7 @@ function main() {
           focus_target: clipInfo.focus_target || null,
           performance_class: clipInfo.performance_class || null,
           subtitle_safe_mode: subtitleSafeModeForShotType(shot.shot_type),
+          motion_source_policy: prefersProcedural ? "prefer_procedural_animation" : "prefer_stabilized_motion",
           source: relativeWorkspacePath(workspaceDir, source),
           composited_file: relativeWorkspacePath(workspaceDir, target)
         });

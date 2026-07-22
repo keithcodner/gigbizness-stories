@@ -563,6 +563,10 @@ function getTopicPaths(topicId) {
     bricktoonBenchmarkReliabilityReportMdPath: path.join(workspaceDir, "10_qc", "bricktoon_benchmark_reliability_report.md"),
     benchmarkSceneProofReportPath: path.join(workspaceDir, "10_qc", "benchmark_scene_proof_report.json"),
     benchmarkSceneProofReportMdPath: path.join(workspaceDir, "10_qc", "benchmark_scene_proof_report.md"),
+    bricktoonRenderOutputProofPath: path.join(workspaceDir, "10_qc", "bricktoon_render_output_proof.json"),
+    bricktoonRenderOutputProofMdPath: path.join(workspaceDir, "10_qc", "bricktoon_render_output_proof.md"),
+    bricktoonFinalRenderOutputProofPath: path.join(workspaceDir, "10_qc", "bricktoon_final_render_output_proof.json"),
+    bricktoonFinalRenderOutputProofMdPath: path.join(workspaceDir, "10_qc", "bricktoon_final_render_output_proof.md"),
     bricktoonRecoveryPlanPath: path.join(workspaceDir, "10_qc", "bricktoon_recovery_plan.json"),
     bricktoonRecoveryPlanMdPath: path.join(workspaceDir, "10_qc", "bricktoon_recovery_plan.md"),
     bricktoonSceneReviewDecisionsPath: path.join(workspaceDir, "10_qc", "bricktoon_scene_review_decisions.json"),
@@ -1985,6 +1989,24 @@ function runBricktoonReliabilityStage(topicId, runtimeProfile = null) {
   return workspaceDir;
 }
 
+function runRenderOutputProofStage(topicId, runtimeProfile = null, profile = "draft") {
+  const workspaceDir = ensureWorkspace(topicId);
+  const effectiveRuntimeProfile = runtimeProfile || "gtx1080_overnight_finish_draft";
+  writeLog(`Starting render-output-proof stage for topic '${topicId}' with profile '${profile}' and runtime profile '${effectiveRuntimeProfile}'`);
+
+  runNodeScript("scripts/build_render_output_proof.js", [
+    "--workspace",
+    workspaceDir,
+    "--profile",
+    profile,
+    "--runtime-profile",
+    effectiveRuntimeProfile
+  ]);
+
+  writeLog(`Completed render-output-proof stage for topic '${topicId}' with profile '${profile}' and runtime profile '${effectiveRuntimeProfile}'`);
+  return workspaceDir;
+}
+
 function runBricktoonRecoveryPlanStage(topicId, runtimeProfile = null) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting bricktoon-recovery-plan stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
@@ -2146,6 +2168,19 @@ function runBricktoonFinishStage(topicId, profile = "draft", runtimeProfile = nu
     throw new Error(`Bricktoon finish blocked by reliability gate. Review ${getTopicPaths(topicId).bricktoonReliabilityReportMdPath}`);
   }
   runRenderStage(topicId, profile);
+  runRenderOutputProofStage(topicId, runtimeProfile, profile);
+  runBricktoonReliabilityStage(topicId, runtimeProfile);
+
+  const renderOutputProofPath = profile === "draft"
+    ? getTopicPaths(topicId).bricktoonRenderOutputProofPath
+    : getTopicPaths(topicId).bricktoonFinalRenderOutputProofPath;
+  const renderOutputProofMdPath = profile === "draft"
+    ? getTopicPaths(topicId).bricktoonRenderOutputProofMdPath
+    : getTopicPaths(topicId).bricktoonFinalRenderOutputProofMdPath;
+  const renderOutputProof = readJson(renderOutputProofPath, {});
+  if (hardGate && renderOutputProof.gate?.decision !== "approved") {
+    throw new Error(`Bricktoon finish failed render output proof. Review ${renderOutputProofMdPath}`);
+  }
 
   writeLog(`Completed bricktoon-finish stage for topic '${topicId}' with profile '${profile}'${runtimeProfile ? ` and runtime profile '${runtimeProfile}'` : ""}`);
   return workspaceDir;

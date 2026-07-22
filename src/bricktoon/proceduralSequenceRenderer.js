@@ -26,6 +26,14 @@ function smoothstep(edge0, edge1, value) {
   return x * x * (3 - 2 * x);
 }
 
+function hashString(value) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash * 31) + value.charCodeAt(index)) >>> 0;
+  }
+  return hash >>> 0;
+}
+
 function crc32(buffer) {
   let crc = 0xffffffff;
   for (let i = 0; i < buffer.length; i += 1) {
@@ -412,26 +420,169 @@ function buildPerformanceFrameState({
   };
 }
 
-function drawBackground(buffer, width, height, shotType, progress, impact, cameraState = { offsetX: 0, offsetY: 0, scale: 1 }) {
+function sceneEnvironmentProfile(sceneCard = {}, shotType = "", progress = 0) {
+  const context = `${sceneCard.title || ""} ${sceneCard.narration || ""}`.toLowerCase();
+  const seed = hashString(context || shotType || "scene");
+  const variant = seed % 3;
+  if (/hack|cyber|server|breach|email|data|laptop|typing/.test(context)) {
+    return {
+      name: "cyber_room",
+      sky: [40, 58, 86],
+      ground: [23, 31, 44],
+      structure: [55, 68, 91],
+      accent: [82, 214, 166],
+      window: [113, 182, 255],
+      door: [31, 42, 61],
+      overlays: { monitorGrid: true, sidePanels: true, statusPulse: true },
+      pulse: 0.12 + (Math.sin(progress * Math.PI * 4) * 0.08),
+      variant
+    };
+  }
+  if (/viewer|lesson|watch|takeaway|protect|advice|tips|red flag/.test(context)) {
+    return {
+      name: "viewer_briefing",
+      sky: [139, 193, 208],
+      ground: [76, 90, 88],
+      structure: [230, 225, 203],
+      accent: [47, 84, 97],
+      window: [190, 220, 221],
+      door: [95, 82, 64],
+      overlays: { deskBand: true, checklistBoard: true, officeBands: true },
+      pulse: 0.09 + (Math.sin(progress * Math.PI * 2.5) * 0.03),
+      variant
+    };
+  }
+  if (/pressure|warning|fee|invoice|bill|leverage|deadline|risk|urgent/.test(context)) {
+    return {
+      name: "pressure_scene",
+      sky: [216, 172, 94],
+      ground: [126, 86, 42],
+      structure: [214, 186, 132],
+      accent: [176, 63, 35],
+      window: [247, 216, 124],
+      door: [110, 72, 40],
+      overlays: { hazardStripe: true, warningBoard: true, sidePanels: true },
+      pulse: 0.18 + (Math.sin(progress * Math.PI * 3) * 0.06),
+      variant
+    };
+  }
+  if (/proof|evidence|police|court|investigat|report|document|paperwork/.test(context) || /document_insert|push_in_document/.test(shotType)) {
+    return {
+      name: "evidence_room",
+      sky: [185, 204, 221],
+      ground: [106, 109, 104],
+      structure: [220, 223, 214],
+      accent: [71, 96, 126],
+      window: [174, 204, 225],
+      door: [88, 73, 58],
+      overlays: { briefingBoard: true, evidenceBoxes: true, ceilingBand: true },
+      pulse: 0.08 + (Math.sin(progress * Math.PI * 2) * 0.03),
+      variant
+    };
+  }
+  if (/move|truck|home|house|customer|service|business|company|office|store/.test(context)) {
+    return {
+      name: "service_exterior",
+      sky: [124, 196, 238],
+      ground: [103, 111, 81],
+      structure: [234, 224, 197],
+      accent: [68, 109, 151],
+      window: [108, 173, 220],
+      door: [110, 84, 59],
+      overlays: { awning: true, curbBand: true, sidewalkCard: true },
+      pulse: 0.05 + (Math.sin(progress * Math.PI * 1.5) * 0.02),
+      variant
+    };
+  }
+  return {
+    name: "neutral_story",
+    sky: [146, 185, 206],
+    ground: [91, 99, 84],
+    structure: [224, 214, 189],
+    accent: [87, 106, 128],
+    window: [146, 193, 222],
+    door: [110, 84, 59],
+    overlays: { officeBands: true },
+    pulse: 0.06 + (Math.sin(progress * Math.PI * 2) * 0.02),
+    variant
+  };
+}
+
+function drawBackground(buffer, width, height, shotType, sceneCard, progress, impact, cameraState = { offsetX: 0, offsetY: 0, scale: 1 }) {
   const topDown = /top_down/.test(shotType) || cameraState.angleProfile === "top_down_insert";
-  const sky = topDown ? [215, 227, 237] : [124, 196, 238];
+  const profile = sceneEnvironmentProfile(sceneCard, shotType, progress);
+  const sky = topDown ? [215, 227, 237] : profile.sky;
+  const variant = Number(profile.variant || 0);
+  const doorX = variant === 0 ? 0.43 : variant === 1 ? 0.28 : 0.58;
+  const leftWindowX = variant === 0 ? 0.18 : variant === 1 ? 0.12 : 0.24;
+  const rightWindowX = variant === 0 ? 0.59 : variant === 1 ? 0.66 : 0.54;
+  const facadeY = variant === 2 ? 0.14 : 0.16;
+  const facadeH = variant === 1 ? 0.4 : 0.38;
   createCanvas(width, height, sky).copy(buffer);
   const dx = cameraState.offsetX || 0;
   const dy = cameraState.offsetY || 0;
   if (topDown) {
     fillRect(buffer, width, height, width * 0.08 + dx * 0.2, height * 0.14 + dy * 0.15, width * 0.84, height * 0.7, [227, 216, 190]);
     fillRect(buffer, width, height, width * 0.14 + dx * 0.25, height * 0.22 + dy * 0.18, width * 0.72, height * 0.48, [243, 238, 224]);
-    fillRect(buffer, width, height, width * 0.2 + dx * 0.25, height * 0.28 + dy * 0.18, width * 0.18, height * 0.1, [219, 199, 110]);
+    fillRect(buffer, width, height, width * 0.2 + dx * 0.25, height * 0.28 + dy * 0.18, width * 0.18, height * 0.1, profile.accent);
     fillRect(buffer, width, height, width * 0.42 + dx * 0.25, height * 0.52 + dy * 0.18, width * 0.26, height * 0.11, [239, 239, 239], 0.95);
+    if (profile.overlays.briefingBoard || profile.overlays.checklistBoard) {
+      fillRect(buffer, width, height, width * 0.58, height * 0.28, width * 0.16, height * 0.14, profile.accent, 0.82);
+    }
+    if (profile.overlays.monitorGrid) {
+      fillRect(buffer, width, height, width * 0.26, height * 0.48, width * 0.44, height * 0.08, [31, 42, 61], 0.88);
+      fillRect(buffer, width, height, width * 0.29, height * 0.505, width * (0.1 + progress * 0.12), height * 0.012, profile.accent, 0.92);
+    }
     fillRect(buffer, width, height, width * 0.08 + dx * 0.15, height * 0.14 + dy * 0.12, width * 0.84, height * 0.7, [255, 255, 255], 0.03 + progress * 0.03);
     return;
   }
-  fillRect(buffer, width, height, 0, height * 0.62 + impact + dy * 0.4, width, height * 0.38, [103, 111, 81]);
-  fillRect(buffer, width, height, width * 0.11 + dx * 0.45, height * 0.16 + dy * 0.25, width * 0.78, height * 0.38, [234, 224, 197]);
-  fillRect(buffer, width, height, width * 0.2 + dx * 0.6, height * 0.22 + dy * 0.3, width * 0.56, height * 0.07, [68, 109, 151]);
-  fillRect(buffer, width, height, width * 0.18 + dx * 0.75, height * 0.34 + dy * 0.2, width * 0.18, height * 0.14, [108, 173, 220]);
-  fillRect(buffer, width, height, width * 0.59 + dx * 0.75, height * 0.34 + dy * 0.2, width * 0.18, height * 0.14, [108, 173, 220]);
-  fillRect(buffer, width, height, width * 0.43 + dx * 0.7, height * 0.36 + dy * 0.25, width * 0.14, height * 0.26, [110, 84, 59]);
+  fillRect(buffer, width, height, 0, height * 0.62 + impact + dy * 0.4, width, height * 0.38, profile.ground);
+  fillRect(buffer, width, height, width * 0.11 + dx * 0.45, height * facadeY + dy * 0.25, width * 0.78, height * facadeH, profile.structure);
+  fillRect(buffer, width, height, width * 0.2 + dx * 0.6, height * 0.22 + dy * 0.3, width * 0.56, height * 0.07, profile.accent);
+  fillRect(buffer, width, height, width * leftWindowX + dx * 0.75, height * (0.32 + variant * 0.01) + dy * 0.2, width * 0.18, height * 0.14, profile.window);
+  fillRect(buffer, width, height, width * rightWindowX + dx * 0.75, height * (0.31 + (2 - variant) * 0.012) + dy * 0.2, width * 0.18, height * 0.14, profile.window);
+  fillRect(buffer, width, height, width * doorX + dx * 0.7, height * (0.34 + variant * 0.02) + dy * 0.25, width * 0.14, height * 0.28, profile.door);
+  if (variant === 1) {
+    fillRect(buffer, width, height, width * 0.12, height * 0.5, width * 0.18, height * 0.1, [244, 236, 214], 0.86);
+  }
+  if (variant === 2) {
+    fillRect(buffer, width, height, width * 0.74, height * 0.49, width * 0.1, height * 0.12, [234, 229, 210], 0.84);
+  }
+  if (profile.overlays.sidePanels) {
+    fillRect(buffer, width, height, width * 0.02 + dx * 0.18, height * 0.2, width * 0.08, height * 0.32, profile.accent, 0.45);
+    fillRect(buffer, width, height, width * 0.9 + dx * 0.18, height * 0.2, width * 0.06, height * 0.32, profile.accent, 0.38);
+  }
+  if (profile.overlays.officeBands || profile.overlays.ceilingBand) {
+    fillRect(buffer, width, height, width * 0.11, height * 0.14, width * 0.78, height * 0.035, [255, 255, 255], 0.18);
+  }
+  if (profile.overlays.warningBoard) {
+    fillRect(buffer, width, height, width * 0.62, height * 0.2, width * 0.16, height * 0.1, [244, 214, 83], 0.95);
+    fillRect(buffer, width, height, width * 0.635, height * (0.225 + profile.pulse * 0.02), width * 0.11, height * 0.018, [127, 45, 28], 0.92);
+  }
+  if (profile.overlays.briefingBoard || profile.overlays.checklistBoard) {
+    fillRect(buffer, width, height, width * 0.68, height * 0.27, width * 0.18, height * 0.18, [245, 243, 232], 0.94);
+    fillRect(buffer, width, height, width * 0.7, height * 0.295, width * 0.12, height * 0.014, profile.accent, 0.85);
+    fillRect(buffer, width, height, width * 0.7, height * 0.33, width * (0.09 + profile.pulse * 0.08), height * 0.01, [97, 111, 125], 0.7);
+    fillRect(buffer, width, height, width * 0.7, height * 0.358, width * 0.1, height * 0.01, [97, 111, 125], 0.58);
+  }
+  if (profile.overlays.evidenceBoxes) {
+    fillRect(buffer, width, height, width * 0.14, height * 0.54, width * 0.1, height * 0.08, [164, 128, 84], 0.96);
+    fillRect(buffer, width, height, width * 0.74, height * 0.56, width * 0.08, height * 0.06, [154, 116, 78], 0.96);
+  }
+  if (profile.overlays.awning) {
+    fillRect(buffer, width, height, width * (0.15 + variant * 0.03), height * (0.27 + variant * 0.01), width * (0.54 - variant * 0.04), height * 0.035, [255, 255, 255], 0.35);
+  }
+  if (profile.overlays.curbBand) {
+    fillRect(buffer, width, height, 0, height * 0.66 + impact + dy * 0.45, width, height * 0.018, [225, 203, 116], 0.88);
+  }
+  if (profile.overlays.sidewalkCard) {
+    fillRect(buffer, width, height, width * (0.08 + profile.pulse * 0.08), height * 0.72, width * 0.12, height * 0.06, [241, 235, 214], 0.82);
+  }
+  if (profile.overlays.monitorGrid || profile.overlays.statusPulse) {
+    fillRect(buffer, width, height, width * 0.14, height * 0.26, width * 0.18, height * 0.12, [27, 37, 52], 0.88);
+    fillRect(buffer, width, height, width * 0.17, height * 0.29, width * (0.09 + profile.pulse * 0.05), height * 0.012, profile.accent, 0.92);
+    fillRect(buffer, width, height, width * 0.17, height * 0.315, width * (0.06 + profile.pulse * 0.03), height * 0.01, [176, 238, 220], 0.9);
+  }
   fillRect(buffer, width, height, width * 0.1 + dx * 0.25, height * 0.16 + dy * 0.25, width * 0.8, height * 0.38, [255, 255, 255], 0.04 + progress * 0.04);
 }
 
@@ -676,7 +827,7 @@ function renderShotFrame({ width, height, shot, sceneCard, castMembers, motionDi
   const buffer = createCanvas(width, height, [124, 196, 238]);
   const impact = motions.has("impact_shake") ? Math.sin(progress * Math.PI * 24) * smoothstep(0.45, 0.7, progress) * 10 : 0;
   const cameraState = cameraStateForFrame(progress, shotPerformance, motionDirectives);
-  drawBackground(buffer, width, height, shot.shot_type, progress, impact, cameraState);
+  drawBackground(buffer, width, height, shot.shot_type, sceneCard, progress, impact, cameraState);
   const slots = slotLayout(shot, castMembers, shotPerformance);
   const lookup = new Map(slots.map((slot) => [slot.character_id, slot]));
   const durationSeconds = Math.max(0.1, Number(shotPerformance.duration_seconds || 0) || Math.max(0.1, Number(shot.end || 0) - Number(shot.start || 0)));
@@ -797,5 +948,6 @@ module.exports = {
   cameraStateForFrame,
   concatClips,
   ensureDir,
-  renderShotClip
+  renderShotClip,
+  sceneEnvironmentProfile
 };

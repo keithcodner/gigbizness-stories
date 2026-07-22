@@ -17,6 +17,15 @@ function readJsonSafe(filePath, fallback = {}) {
   }
 }
 
+function readFirstExistingJson(filePaths = [], fallback = {}) {
+  for (const filePath of filePaths) {
+    if (fs.existsSync(filePath)) {
+      return readJsonSafe(filePath, fallback);
+    }
+  }
+  return fallback;
+}
+
 function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
@@ -81,6 +90,10 @@ function main() {
       sceneReviewDecisions: readJsonSafe(path.join(workspaceDir, "10_qc", "bricktoon_scene_review_decisions.json"), {}),
       visualReadiness: readJsonSafe(path.join(workspaceDir, "04_assets", "visual_readiness.json"), {}),
       artifactFreshness,
+      renderOutputProof: readFirstExistingJson([
+        path.join(workspaceDir, "10_qc", "bricktoon_final_render_output_proof.json"),
+        path.join(workspaceDir, "10_qc", "bricktoon_render_output_proof.json")
+      ], {}),
       visualPreviewExists: fs.existsSync(path.join(workspaceDir, "06_renders", "previews", "visual_preview.mp4")),
       finalApprovalText: fs.existsSync(path.join(workspaceDir, "10_qc", "final_approval.md"))
         ? fs.readFileSync(path.join(workspaceDir, "10_qc", "final_approval.md"), "utf8")

@@ -127,6 +127,7 @@ function summarizeSequenceHealth(scenes = []) {
   const fragileScenes = scenes.filter((scene) => scene.continuity_status === "fragile").length;
   const reviewScenes = scenes.filter((scene) => scene.promotion_status === "review_before_finish").length;
   const holdScenes = scenes.filter((scene) => scene.promotion_status === "hold_for_polish").length;
+  const scenesWithFallback = scenes.filter((scene) => Number(scene.fallback_shots || 0) > 0).length;
   const premiumMotionShots = scenes.reduce((sum, scene) => sum + Number(scene.premium_motion_shots || 0), 0);
   const fallbackShots = scenes.reduce((sum, scene) => sum + Number(scene.fallback_shots || 0), 0);
   return {
@@ -134,10 +135,12 @@ function summarizeSequenceHealth(scenes = []) {
     fragile_scenes: fragileScenes,
     review_scenes: reviewScenes,
     hold_scenes: holdScenes,
+    scenes_with_fallback: scenesWithFallback,
     premium_motion_shots: premiumMotionShots,
     fallback_shots: fallbackShots,
     fallback_ratio: ratio(fallbackShots, premiumMotionShots + fallbackShots),
-    fragile_scene_ratio: ratio(fragileScenes, totalScenes)
+    fragile_scene_ratio: ratio(fragileScenes, totalScenes),
+    scenes_with_fallback_ratio: ratio(scenesWithFallback, totalScenes)
   };
 }
 
@@ -152,6 +155,7 @@ function summarizeReadinessInputs({
   promotionGate = {},
   sceneReviewDecisions = {},
   artifactFreshness = {},
+  renderOutputProof = {},
   scope = "topic"
 }) {
   const scopedScenes = buildScopedSceneRecords({
@@ -204,10 +208,16 @@ function summarizeReadinessInputs({
     pending_review_scene_ids: pendingReviewSceneIds,
     review_scenes: pendingReviewSceneIds.length,
     hold_scenes: sequenceHealth.hold_scenes,
+    scenes_with_fallback: sequenceHealth.scenes_with_fallback,
     premium_motion_shots: sequenceHealth.premium_motion_shots,
     fallback_shots: sequenceHealth.fallback_shots,
     fallback_ratio: Number(sequenceHealth.fallback_ratio.toFixed(3)),
-    fragile_scene_ratio: Number(sequenceHealth.fragile_scene_ratio.toFixed(3))
+    fragile_scene_ratio: Number(sequenceHealth.fragile_scene_ratio.toFixed(3)),
+    scenes_with_fallback_ratio: Number(sequenceHealth.scenes_with_fallback_ratio.toFixed(3)),
+    render_output_proof_ready: String(renderOutputProof.gate?.decision || "") === "approved",
+    render_output_proof_decision: renderOutputProof.gate?.decision || null,
+    render_output_proof_blockers: safeArray(renderOutputProof.gate?.blockers),
+    render_output_proof_warnings: safeArray(renderOutputProof.gate?.warnings)
   };
 }
 
@@ -245,8 +255,23 @@ function evaluateReliabilityGate(runtimeProfile, readiness) {
   if (readiness.fallback_ratio > Number(runtimeProfile.max_fallback_ratio || 1)) {
     blockers.push(`fallback ratio exceeds profile allowance (${readiness.fallback_ratio} > ${runtimeProfile.max_fallback_ratio})`);
   }
+  if (readiness.scenes_with_fallback_ratio > Number(runtimeProfile.max_scenes_with_fallback_ratio || 1)) {
+    blockers.push(`scene fallback spread exceeds profile allowance (${readiness.scenes_with_fallback_ratio} > ${runtimeProfile.max_scenes_with_fallback_ratio})`);
+  }
   if (readiness.fragile_scene_ratio > Number(runtimeProfile.max_fragile_scene_ratio || 1)) {
     blockers.push(`fragile scene ratio exceeds profile allowance (${readiness.fragile_scene_ratio} > ${runtimeProfile.max_fragile_scene_ratio})`);
+  }
+  if (runtimeProfile.require_render_output_proof && !readiness.render_output_proof_ready) {
+    if (readiness.render_output_proof_decision) {
+      for (const blocker of safeArray(readiness.render_output_proof_blockers)) {
+        blockers.push(`render output proof: ${blocker}`);
+      }
+      if (safeArray(readiness.render_output_proof_blockers).length === 0) {
+        blockers.push(`render output proof did not approve the output (${readiness.render_output_proof_decision})`);
+      }
+    } else {
+      blockers.push("render output proof is missing");
+    }
   }
 
   if (readiness.review_scenes > 0) {
@@ -287,6 +312,7 @@ function buildReliabilityReport({
   sceneReviewDecisions,
   visualReadiness,
   artifactFreshness,
+  renderOutputProof,
   visualPreviewExists,
   finalApprovalText,
   scope = "topic"
@@ -302,6 +328,7 @@ function buildReliabilityReport({
     promotionGate,
     sceneReviewDecisions,
     artifactFreshness,
+    renderOutputProof,
     scope
   });
   const gate = evaluateReliabilityGate(runtimeProfile, readiness);
@@ -424,10 +451,12 @@ function buildReliabilityMarkdown(report) {
     `- Unresolved high-priority assets: ${report.readiness.unresolved_high_priority_count}`,
     `- Stale downstream artifacts: ${report.readiness.stale_artifact_count ?? 0}`,
     `- Fallback ratio: ${report.readiness.fallback_ratio}`,
+    `- Scene fallback spread: ${report.readiness.scenes_with_fallback_ratio}`,
     `- Fragile scene ratio: ${report.readiness.fragile_scene_ratio}`,
     `- Review scenes pending: ${report.readiness.review_scenes}`,
     `- Review scenes approved: ${report.readiness.review_scenes_approved ?? 0}`,
     `- Hold scenes: ${report.readiness.hold_scenes}`,
+    `- Render output proof: ${report.readiness.render_output_proof_decision || "not_run"}`,
     "",
     "## Stale Artifacts",
     ""

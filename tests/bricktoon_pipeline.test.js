@@ -13,6 +13,7 @@ const {
   evaluateReliabilityGate,
   summarizeOvernightState
 } = require("../src/bricktoon/reliabilityGate");
+const { evaluateRenderOutputProof } = require("../src/bricktoon/renderOutputProof");
 const {
   buildReliabilityRecoveryPlan,
   buildSceneRecoveryQueue,
@@ -26,7 +27,7 @@ const {
 } = require("../src/bricktoon/benchmarkSceneProof");
 const { splitNarrationIntoCaptionChunks, summarizeSceneSequence } = require("../src/bricktoon/sequencePolish");
 const { loadVisualGenerationConfig, resolveWorkflowTemplate, qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
-const { buildPerformanceFrameState, cameraStateForFrame } = require("../src/bricktoon/proceduralSequenceRenderer");
+const { buildPerformanceFrameState, cameraStateForFrame, sceneEnvironmentProfile } = require("../src/bricktoon/proceduralSequenceRenderer");
 const { inferProductionMode } = require("../src/bricktoon/aiQualityPipeline");
 const { buildHybridCharacterContract, buildHybridShotContract } = require("../src/bricktoon/hybridAnimationContract");
 const { buildHybridProofPerformance, selectHybridProofShots } = require("../src/bricktoon/hybridPerformanceProof");
@@ -225,6 +226,7 @@ test("hero shot workflow resolves to managed hero refinement template", () => {
 
 test("quality classification favors composited motion outputs", () => {
   assert.equal(qualityClassificationForAsset("composited_shot_clip"), "premium_motion");
+  assert.equal(qualityClassificationForAsset("bricktoon_shot_clip"), "motion_ready");
   assert.equal(qualityClassificationForAsset("approved_keyframe"), "premium_still");
 });
 
@@ -486,6 +488,26 @@ test("camera frame state honors push recipes and idle drift", () => {
   assert.notEqual(state.offsetY, 0);
 });
 
+test("scene environment profile varies backgrounds by scene context", () => {
+  const pressure = sceneEnvironmentProfile({
+    title: "Where Pressure Enters",
+    narration: "The invoice grows and the fee pressure spikes."
+  }, "medium_single", 0.4);
+  const cyber = sceneEnvironmentProfile({
+    title: "Hackers Inside",
+    narration: "A typing scene reveals a data breach on the server."
+  }, "medium_single", 0.4);
+  const viewer = sceneEnvironmentProfile({
+    title: "Advice For Viewers",
+    narration: "The takeaway is to watch the invoice and protect yourself."
+  }, "medium_single", 0.4);
+
+  assert.equal(pressure.name, "pressure_scene");
+  assert.equal(cyber.name, "cyber_room");
+  assert.equal(viewer.name, "viewer_briefing");
+  assert.notDeepEqual(pressure.sky, cyber.sky);
+});
+
 test("camera recipe strengthens closeups and document inserts", () => {
   const closeup = cameraRecipeForShot({
     shot_type: "closeup_face",
@@ -603,6 +625,81 @@ test("reliability gate blocks overnight finish when fallback and hold pressure a
   assert.equal(gate.decision, "blocked");
   assert.ok(gate.blockers.some((item) => item.includes("hold_for_polish")));
   assert.ok(gate.blockers.some((item) => item.includes("fallback ratio")));
+});
+
+test("reliability gate blocks when fallback spreads across too many scenes", () => {
+  const gate = evaluateReliabilityGate({
+    require_preview: true,
+    require_sequence_reports: true,
+    require_render_contract: true,
+    require_qc_approval: false,
+    allow_review_required_finish: false,
+    intended_flow: "overnight_finish",
+    max_unresolved_high_priority: 3,
+    max_fallback_ratio: 0.35,
+    max_scenes_with_fallback_ratio: 0.6,
+    max_fragile_scene_ratio: 0.25
+  }, {
+    preview_exists: true,
+    sequence_reports_ready: true,
+    render_contract_ready: true,
+    qc_approved: false,
+    unresolved_high_priority_count: 0,
+    fallback_ratio: 0.2,
+    scenes_with_fallback_ratio: 1,
+    fragile_scene_ratio: 0.1,
+    review_scenes: 0,
+    hold_scenes: 0
+  });
+
+  assert.equal(gate.decision, "blocked");
+  assert.ok(gate.blockers.some((item) => item.includes("scene fallback spread")));
+});
+
+test("render output proof blocks static low-audio slideshow outputs", () => {
+  const proofGate = evaluateRenderOutputProof({
+    render_output_proof: {
+      min_audio_bitrate: 12000,
+      min_mean_volume_db: -38,
+      max_scenes_with_fallback_ratio: 0.6,
+      max_fallback_document_shot_ratio: 0.25,
+      min_distinct_frame_ratio: 0.65,
+      max_low_detail_frame_ratio: 0.34,
+      max_duplicate_frame_ratio: 0.34,
+      max_static_motion_sample_ratio: 0.5
+    }
+  }, {
+    render_exists: true,
+    media: {
+      available: true,
+      audio: {
+        bitrate: 3049
+      }
+    },
+    audio_levels: {
+      available: true,
+      mean_volume_db: -46
+    },
+    frame_summary: {
+      analyzed_samples: 7,
+      distinct_frame_ratio: 0.43,
+      duplicate_frame_ratio: 0.57,
+      low_detail_frame_ratio: 0.43
+    },
+    motion_summary: {
+      analyzed_windows: 7,
+      static_window_ratio: 0.86
+    },
+    contract_signals: {
+      scenes_with_fallback_ratio: 1,
+      fallback_document_shot_ratio: 0.31
+    }
+  });
+
+  assert.equal(proofGate.decision, "blocked");
+  assert.ok(proofGate.blockers.some((item) => item.includes("audio bitrate")));
+  assert.ok(proofGate.blockers.some((item) => item.includes("repetitive")));
+  assert.ok(proofGate.blockers.some((item) => item.includes("effectively static")));
 });
 
 test("artifact freshness detects stale downstream files after dependency updates", () => {

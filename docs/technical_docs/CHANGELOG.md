@@ -6,6 +6,12 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Changed
 
+- Added `src/bricktoon/renderOutputProof.js` plus `scripts/build_render_output_proof.js` so the pipeline now has a post-render proof layer that inspects the encoded video itself instead of trusting manifest labels alone.
+- Updated `agents/orchestrator.js` so `bricktoon-finish` now runs render-output proof after encode, refreshes reliability artifacts, and fails the finish when the rendered output is effectively a static slideshow, overly fallback-heavy, repetitive, or near-silent.
+- Updated `src/bricktoon/reliabilityGate.js`, `scripts/build_bricktoon_reliability_report.js`, and `config/bricktoon_runtime_profiles.json` so reliability now tracks scene fallback spread, records render-output-proof state, and tightens GTX 1080 runtime thresholds around fallback distribution.
+- Added regression coverage in `tests/bricktoon_pipeline.test.js` for the new scene-fallback-spread blocker and the new static low-audio render-output-proof blocker.
+- Verified the new render-output proof against `workspaces/test_story_template/06_renders/draft_01.mp4` on Wednesday, July 22, 2026. The new proof correctly blocked the render for low audio bitrate, fallback overuse, repetitive sampled frames, and effectively static motion samples.
+- Refreshed `workspaces/test_story_template/10_qc/bricktoon_reliability_report.{json,md}` on Wednesday, July 22, 2026 so the live topic no longer carries an outdated ready-to-finish impression after the new gating rules were added.
 - Continued executable build work for `Milestone 2 -> Option 1 -> Phase 6: Overnight Reliability`.
 - Executed the new scoped recovery path against the `heavy_rework` bucket for `S05`, refreshing keyframes, validation, preview, motion, stabilization, compositing, sequence assembly, render contract, promotion gate, reliability, review packet, and recovery plan in one governed pass.
 - Updated the live recovery state for `workspaces/test_story_template` so `S05` now moves out of rework and into governed manual review, leaving no remaining rework scenes in the current benchmark topic.
@@ -457,3 +463,33 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 - Any fix discovered while working, even if incidental to the main request, must be documented in this change log.
 - When an implementation phase is completed, the phase is not fully closed until its implementation report is written and linked from the milestone docs and reflected in this change log.
+
+### July 22, 2026 Motion Pass Follow-Up
+
+#### Changed
+
+- Updated `scripts/composite_bricktoon_shots.js` so speaking, reaction, exchange, and insert-heavy shots now prefer repo-side procedural performance clips over still-derived motion drift when those clips are available.
+- Updated `src/bricktoon/workflowContracts.js` so `bricktoon_shot_clip` assets are classified as motion-capable instead of fallback-quality placeholders.
+- Updated `src/bricktoon/proceduralSequenceRenderer.js` so the procedural bricktoon stage now derives scene-aware environments from scene narration and applies stronger motion-aware background decoration instead of reusing one generic storefront wall across most scenes.
+- Added scene-environment regression coverage to `tests/bricktoon_pipeline.test.js` so scene-context routing does not quietly collapse back into one visual set.
+
+#### Fixed
+
+- Fixed the immediate render-truth failure where the final draft could pass through compositing while selecting weaker stabilized still-motion instead of the richer procedural acting clips.
+- Fixed the worst slideshow failure mode for `test_story_template`: the render-output proof no longer blocks because of zero meaningful motion or fallback-document dominance.
+
+#### Current Result
+
+- `workspaces/test_story_template/06_renders/draft_01.mp4` now uses procedural shot clips throughout the topic instead of collapsing to static-like stabilized drifts.
+- The render-output proof is still intentionally blocked for two remaining reasons:
+- audio bitrate remains far below the configured floor
+- sampled frames remain too repetitive for premium approval
+- Verified current state:
+- motion exists and is measurable
+- fallback shot spread is cleared
+- premium visual diversity is still not good enough yet
+
+#### Next Fix Target
+
+- Strengthen scene-to-scene visual identity further so different scenes stop reading like the same puppet stage with new captions.
+- Raise real audio presence so the proof gate can evaluate a usable narration/music layer instead of near-silent AAC output.

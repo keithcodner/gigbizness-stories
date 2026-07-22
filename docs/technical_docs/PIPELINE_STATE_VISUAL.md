@@ -190,6 +190,9 @@ PIPELINE STATUS
 |   |-- evidence vocabulary alignment ....... [WORKING]
 |   |-- benchmark-scoped reliability ........ [WORKING]
 |   |-- benchmark scene proof render ........ [WORKING]
+|   |-- scene fallback spread gate .......... [WORKING]
+|   |-- render output proof gate ............ [WORKING]
+|   |-- static slideshow rejection .......... [WORKING]
 |   |-- premium finish hard gate ............ [WORKING]
 |   `-- benchmark overnight trust ........... [BLOCKED]
 |
@@ -199,12 +202,16 @@ PIPELINE STATUS
 |   |-- ai motion pass contract ............. [WORKING]
 |   |-- shot compositing .................... [WORKING]
 |   |-- scene assembly ...................... [WORKING]
+|   |-- procedural performance routing ...... [WORKING]
 |   `-- premium believable motion ........... [PARTIAL]
 |
 |-- RENDER OUTPUT ........................... [PARTIAL]
 |   |-- draft render path ................... [WORKING]
 |   |-- render contract ..................... [WORKING]
 |   |-- sequence outputs .................... [WORKING]
+|   |-- output proof / audibility checks .... [WORKING]
+|   |-- no-motion slideshow blocking ........ [WORKING]
+|   |-- measurable motion in final draft .... [WORKING]
 |   `-- premium overnight-ready output ...... [NOT READY]
 |
 `-- CURRENT REALITY
@@ -215,6 +222,7 @@ PIPELINE STATUS
     |-- milestone 2 planning ................ [LOCKED]
     |-- known-gap documentation ............. [LOCKED]
     |-- reliability gate .................... [REAL]
+    |-- render truth gate ................... [REAL]
     |-- professional toolchain mapping ..... [REAL]
     |-- professional hero scene package .... [REAL]
     |-- professional reintegration ......... [REAL]
@@ -420,7 +428,18 @@ MAIN BLOCKERS:
     `heavy_rework`, and it moved `S03`, `S05`, `S06`, and `S07` out of
     rework without a whole-topic rerun.
 
-12. Milestone 2 is now the active gate, so the project should not
+12. The compositing stack now reliably chooses repo-side procedural
+    performance clips over weaker still-derived drifts for speaking,
+    reaction, exchange, and document-led acting beats, which means the
+    current draft is no longer failing as a pure static slideshow.
+
+13. The next quality blocker is no longer "is there motion?" but
+    "does the motion happen inside visually distinct enough scenes?"
+    The current render-output proof still blocks because repeated
+    environment layouts and extremely weak audio keep the draft below
+    the premium floor.
+
+14. Milestone 2 is now the active gate, so the project should not
     treat scale, automation, or production readiness as the next win
     until the minimum animation floor is actually met.
 ```

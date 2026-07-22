@@ -219,7 +219,7 @@ function qualityClassificationForAsset(assetType) {
   if (["bricktoon_composited_shot_sequence", "stabilized_motion_pass", "composited_shot_clip"].includes(assetType)) {
     return "premium_motion";
   }
-  if (["bricktoon_scene_sequence", "bricktoon_animated_clip", "ai_motion_pass"].includes(assetType)) {
+  if (["bricktoon_scene_sequence", "bricktoon_animated_clip", "bricktoon_shot_clip", "ai_motion_pass"].includes(assetType)) {
     return "motion_ready";
   }
   if (["approved_keyframe", "character_reference", "bricktoon_scene", "generated_keyframe"].includes(assetType)) {
