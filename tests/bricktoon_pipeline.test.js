@@ -11,6 +11,25 @@ const { cameraRecipeForShot, propTrackForMember } = require("../src/bricktoon/sh
 const { splitNarrationIntoCaptionChunks, summarizeSceneSequence } = require("../src/bricktoon/sequencePolish");
 const { loadVisualGenerationConfig, resolveWorkflowTemplate, qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
 const { buildPerformanceFrameState, cameraStateForFrame } = require("../src/bricktoon/proceduralSequenceRenderer");
+const { buildHybridCharacterContract, buildHybridShotContract } = require("../src/bricktoon/hybridAnimationContract");
+const { buildHybridProofPerformance, selectHybridProofShots } = require("../src/bricktoon/hybridPerformanceProof");
+const {
+  buildHybridEditorialPerformance,
+  selectHybridEditorialScene,
+  summarizeHybridEditorialSequence
+} = require("../src/bricktoon/hybridEditorialProof");
+const {
+  buildHybridPromotionGateReport,
+  buildScenePromotionDecisions,
+  evaluateHybridPromotionGate,
+  summarizeStillBenchmark
+} = require("../src/bricktoon/hybridPromotionGate");
+const {
+  buildHybridProductionReadinessReport,
+  evaluateHybridProductionReadiness,
+  summarizeAssetCatalog,
+  summarizeBenchmarkFixture
+} = require("../src/bricktoon/hybridProductionReadiness");
 const {
   buildAnimationSafetyLines,
   buildCharacterLockLines,
@@ -545,4 +564,577 @@ test("reliability report promotes clean draft finish readiness", () => {
   assert.equal(report.gate.decision, "ready_for_overnight_finish");
   assert.equal(report.readiness.fallback_ratio, 0.222);
   assert.equal(report.readiness.fragile_scene_ratio, 0);
+});
+
+test("hybrid character contract preserves cast-member binding for handoff", () => {
+  const contract = buildHybridCharacterContract({
+    character: {
+      character_id: "BT_CHAR_0001",
+      cast_member_id: "CAST_001",
+      continuity_anchors: ["face_print_layout"],
+      hybrid_handoff_contract: {
+        motion_handoff_targets: ["mouth", "eyes"]
+      }
+    },
+    rig: {
+      file: "07_visuals/character_rigs/BT_CHAR_0001/rig.json",
+      data: {
+        rig_type: "hybrid_2d_ai",
+        motion_states: {
+          talk: ["neutral", "talk_open"]
+        },
+        sockets: {
+          prop_socket_primary: { x: 0.7, y: 0.6 }
+        },
+        source_reference_assets: {
+          master: "07_visuals/character_refs/BT_CHAR_0001/master.png"
+        }
+      }
+    },
+    identityPackage: {
+      package_file: "07_visuals/character_refs/BT_CHAR_0001/hybrid_identity_package.json"
+    }
+  });
+
+  assert.equal(contract.cast_member_id, "CAST_001");
+  assert.equal(contract.rig_type, "hybrid_2d_ai");
+  assert.ok(contract.return_requirements.preserve_identity_locks);
+});
+
+test("hybrid shot contract blocks premium speaking shots when layer or rig handoff is missing", () => {
+  const contract = buildHybridShotContract({
+    scene: {
+      scene_id: "S02"
+    },
+    shot: {
+      shot_id: "S02_SHOT_002",
+      shot_type: "closeup_face",
+      start: 8,
+      end: 16,
+      cast_member_ids: ["CAST_001"]
+    },
+    route: {
+      production_mode: "hybrid_2d_ai",
+      quality_tier: "hero"
+    },
+    approval: {
+      approved_keyframes: [
+        { approved_file: "07_visuals/approved_keyframes/S02_SHOT_002_KF_01.png" }
+      ]
+    },
+    layerManifest: null,
+    performance: {
+      performance_class: "closeup_talking_puppet",
+      narration_hint: "Show the reaction clearly.",
+      timing_windows: {
+        emphasis_start: 2.72
+      },
+      performances: [
+        {
+          actor_id: "CAST_001"
+        }
+      ]
+    },
+    characterContracts: [
+      {
+        character_id: "BT_CHAR_0001",
+        cast_member_id: "CAST_001",
+        rig_file: "07_visuals/character_rigs/BT_CHAR_0001/rig.json",
+        identity_package_file: "07_visuals/character_refs/BT_CHAR_0001/hybrid_identity_package.json",
+        sockets: {
+          prop_socket_primary: { x: 0.73, y: 0.64 }
+        }
+      }
+    ],
+    voiceoverFile: "03_voice/voiceover_clean.wav",
+    captionsFile: "03_voice/captions.srt"
+  });
+
+  assert.equal(contract.rig_bindings.length, 1);
+  assert.equal(contract.motion_requirements.return_type, "puppet_performance_shot");
+  assert.equal(contract.fallback_discipline.silent_fallback_allowed, false);
+  assert.ok(contract.fallback_discipline.block_if_missing.includes("layer_manifest"));
+  assert.ok(contract.fallback_discipline.block_if_missing.includes("character_rig"));
+});
+
+test("hybrid proof shot selection prefers closeup, speaking single, dialogue, then insert", () => {
+  const selected = selectHybridProofShots({
+    shot_contracts: [
+      { shot_id: "A", shot_class: "establishing_wide" },
+      { shot_id: "B", shot_class: "medium_single" },
+      { shot_id: "C", shot_class: "document_insert" },
+      { shot_id: "D", shot_class: "closeup_face" },
+      { shot_id: "E", shot_class: "medium_two_shot" }
+    ]
+  }, 4);
+
+  assert.deepEqual(selected.map((shot) => shot.shot_id), ["D", "B", "E", "C"]);
+});
+
+test("hybrid proof performance boosts speaking closeups into visible acting mode", () => {
+  const proof = buildHybridProofPerformance({
+    shot_id: "S02_SHOT_002",
+    shot_class: "closeup_face",
+    motion_requirements: {
+      return_type: "puppet_performance_shot"
+    },
+    timing_handoff: {
+      duration_seconds: 8,
+      timing_windows: {
+        emphasis_start: 2.72,
+        emphasis_end: 5.92
+      },
+      narration_hint: "At first the service can look normal."
+    },
+    performance_handoff: {
+      performance_class: "closeup_talking_puppet",
+      visible_character_limit: 1,
+      camera_recipe: {
+        movement: "steady_push",
+        start_scale: 1,
+        end_scale: 1.12,
+        angle_profile: "closeup_eye_level",
+        focus_target: "speaker_face"
+      },
+      actor_tracks: [
+        {
+          actor_id: "CAST_001",
+          screen_position: "center",
+          gesture_profile: "explain_point",
+          prop_track: {
+            interaction: "host_point_with_support_prop"
+          },
+          mouth_track: true
+        }
+      ]
+    }
+  });
+
+  assert.equal(proof.proof_profile, "option2_phase3_minimum_viable_character_performance");
+  assert.equal(proof.mouth_sync_mode, "viseme_emphasis");
+  assert.equal(proof.blink_profile, "cinematic_readable");
+  assert.equal(proof.visible_character_limit, 1);
+  assert.ok(proof.performances[0].mouth_track);
+  assert.equal(proof.performances[0].actions[1].action, "talk_emphasis");
+});
+
+test("hybrid editorial scene selection prefers the strongest mixed-coverage scene", () => {
+  const selected = selectHybridEditorialScene({
+    shot_contracts: [
+      { shot_id: "S01_A", scene_id: "S01", shot_class: "establishing_wide" },
+      { shot_id: "S01_B", scene_id: "S01", shot_class: "closeup_face" },
+      { shot_id: "S02_A", scene_id: "S02", shot_class: "establishing_wide" },
+      { shot_id: "S02_B", scene_id: "S02", shot_class: "medium_single" },
+      { shot_id: "S02_C", scene_id: "S02", shot_class: "document_insert" },
+      { shot_id: "S02_D", scene_id: "S02", shot_class: "closeup_face" }
+    ]
+  }, {
+    sceneSequenceReport: {
+      scenes: [
+        { scene_id: "S01", editorial_pacing: "balanced" },
+        { scene_id: "S02", editorial_pacing: "balanced" }
+      ]
+    },
+    compositingReport: {
+      shots: [
+        { shot_id: "S02_A", scene_id: "S02", quality_classification: "premium_motion" },
+        { shot_id: "S02_D", scene_id: "S02", quality_classification: "premium_motion" }
+      ]
+    }
+  });
+
+  assert.equal(selected.scene_id, "S02");
+  assert.ok(selected.coverage.has_closeup);
+  assert.ok(selected.coverage.has_insert);
+  assert.ok(selected.reasons.includes("has evidence/insert coverage"));
+});
+
+test("hybrid editorial performance upgrades closeups into sequence-aware camera language", () => {
+  const performance = buildHybridEditorialPerformance({
+    shot_id: "S04_SHOT_004",
+    shot_class: "closeup_face",
+    motion_requirements: {
+      return_type: "puppet_performance_shot"
+    },
+    timing_handoff: {
+      duration_seconds: 6,
+      timing_windows: {
+        emphasis_start: 2,
+        emphasis_end: 4.5
+      }
+    },
+    performance_handoff: {
+      performance_class: "closeup_talking_puppet",
+      visible_character_limit: 1,
+      camera_recipe: {
+        movement: "steady_push",
+        start_scale: 1,
+        end_scale: 1.08,
+        angle_profile: "closeup_eye_level",
+        focus_target: "speaker_face"
+      },
+      actor_tracks: [
+        {
+          actor_id: "CAST_001",
+          screen_position: "center",
+          gesture_profile: "explain_point",
+          mouth_track: true
+        }
+      ]
+    }
+  }, {
+    shotIndex: 2,
+    totalShots: 5
+  });
+
+  assert.equal(performance.proof_profile, "option2_phase4_shot_language_editorial_quality");
+  assert.equal(performance.editorial_role, "performance");
+  assert.ok(performance.camera_recipe.end_scale >= 1.12);
+  assert.ok(performance.motion_directives.some((item) => item.type === "talk_emphasis"));
+});
+
+test("hybrid editorial sequence summary reports benchmark readiness for mixed coverage", () => {
+  const summary = summarizeHybridEditorialSequence({
+    sceneSelection: {
+      scene_id: "S04",
+      shots: [
+        { shot_class: "establishing_wide" },
+        { shot_class: "medium_single" },
+        { shot_class: "document_insert" },
+        { shot_class: "closeup_face" }
+      ]
+    },
+    sceneRecord: {
+      id: "S04",
+      title: "Where Pressure Enters",
+      duration_seconds: 24
+    },
+    shotReports: [
+      { quality_classification: "premium_motion", stage_warnings: [] },
+      { quality_classification: "premium_motion", stage_warnings: [] },
+      { quality_classification: "premium_motion", stage_warnings: [] },
+      { quality_classification: "premium_motion", stage_warnings: [] }
+    ]
+  });
+
+  assert.equal(summary.continuity_status, "locked");
+  assert.equal(summary.benchmark_status, "editorial_benchmark_ready");
+  assert.equal(summary.promotion_status, "ready_for_finish");
+});
+
+test("hybrid still benchmark summary reports approval readiness and checklist", () => {
+  const summary = summarizeStillBenchmark({
+    coverage: {
+      shot_classes_covered: 6,
+      shots_with_approved_keyframes: 4
+    },
+    benchmark_profile: {
+      approval_focus: ["identity_lock", "thumbnail_style_match", "prop_continuity"]
+    }
+  });
+
+  assert.equal(summary.ready, true);
+  assert.equal(summary.approved_shot_count, 4);
+  assert.ok(summary.checklist.some((line) => line.includes("character identity")));
+  assert.ok(summary.checklist.some((line) => line.includes("mouth motion")));
+});
+
+test("hybrid promotion decisions promote benchmark editorial scenes over legacy hold status", () => {
+  const decisions = buildScenePromotionDecisions({
+    sceneSequenceReport: {
+      scenes: [
+        {
+          scene_id: "S04",
+          continuity_status: "fragile",
+          promotion_status: "hold_for_polish",
+          premium_motion_shots: 4,
+          fallback_shots: 2
+        }
+      ]
+    },
+    renderContract: {
+      scenes: [
+        {
+          scene_id: "S04",
+          title: "Where Pressure Enters"
+        }
+      ]
+    },
+    editorialReport: {
+      scene: {
+        scene_id: "S04"
+      },
+      summary: {
+        benchmark_status: "editorial_benchmark_ready"
+      }
+    }
+  });
+
+  assert.equal(decisions.length, 1);
+  assert.equal(decisions[0].decision, "promote_to_hybrid_finish");
+  assert.equal(decisions[0].is_benchmark_scene, true);
+});
+
+test("hybrid promotion gate allows selected-scene promotion before topic-wide promotion", () => {
+  const gate = evaluateHybridPromotionGate({
+    stillBenchmark: {
+      ready: true
+    },
+    previewReport: {
+      output_file: "06_renders/previews/visual_preview.mp4"
+    },
+    editorialReport: {
+      summary: {
+        benchmark_status: "editorial_benchmark_ready"
+      }
+    },
+    visualReadiness: {
+      unresolved_high_priority_count: 2
+    },
+    runtimeProfile: {
+      profile_id: "gtx1080_premium_preview",
+      max_unresolved_high_priority: 5
+    },
+    sceneDecisions: [
+      {
+        scene_id: "S04",
+        decision: "promote_to_hybrid_finish"
+      },
+      {
+        scene_id: "S05",
+        decision: "rework_required"
+      }
+    ]
+  });
+
+  assert.equal(gate.selected_scene_ready, true);
+  assert.equal(gate.topic_wide_ready, false);
+  assert.equal(gate.decision, "approved_for_selected_scene_promotion");
+  assert.equal(gate.runtime_tier_recommendation, "gtx1080_premium_preview");
+});
+
+test("hybrid promotion gate report captures benchmark approval language", () => {
+  const report = buildHybridPromotionGateReport({
+    topicId: "test_story_template",
+    runtimeProfile: {
+      profile_id: "gtx1080_premium_preview",
+      label: "GTX 1080 Premium Preview",
+      intended_flow: "preview_plus_gate",
+      max_unresolved_high_priority: 5
+    },
+    stillBenchmarkPack: {
+      coverage: {
+        shot_classes_covered: 6,
+        shots_with_approved_keyframes: 3
+      },
+      benchmark_profile: {
+        approval_focus: ["identity_lock", "thumbnail_style_match"]
+      }
+    },
+    previewReport: {
+      output_file: "06_renders/previews/visual_preview.mp4",
+      scenes: [{ scene_id: "S04" }],
+      frame_count: 12,
+      voiceover_used: true,
+      music_used: true
+    },
+    editorialReport: {
+      scene: {
+        scene_id: "S04",
+        scene_title: "Where Pressure Enters"
+      },
+      summary: {
+        benchmark_status: "editorial_benchmark_ready",
+        promotion_status: "ready_for_finish",
+        continuity_status: "locked"
+      }
+    },
+    sceneSequenceReport: {
+      scenes: [
+        {
+          scene_id: "S04",
+          continuity_status: "mixed",
+          promotion_status: "hold_for_polish",
+          premium_motion_shots: 4,
+          fallback_shots: 1
+        }
+      ]
+    },
+    renderContract: {
+      scenes: [
+        {
+          scene_id: "S04",
+          title: "Where Pressure Enters"
+        }
+      ]
+    },
+    visualReadiness: {
+      unresolved_high_priority_count: 1
+    }
+  });
+
+  assert.equal(report.gate.decision, "approved_for_topic_promotion");
+  assert.equal(report.benchmark_editorial_scene.scene_id, "S04");
+  assert.match(report.human_checkpoint.approval_language, /approved to advance/i);
+});
+
+test("benchmark fixture summary locks a governed benchmark when references and scene proof exist", () => {
+  const fixture = summarizeBenchmarkFixture({
+    topicId: "test_story_template",
+    stillBenchmarkPack: {
+      coverage: {
+        shot_classes_covered: 6,
+        shots_with_approved_keyframes: 3
+      }
+    },
+    editorialReport: {
+      scene: {
+        scene_id: "S04",
+        scene_title: "Where Pressure Enters"
+      },
+      summary: {
+        benchmark_status: "editorial_benchmark_ready"
+      }
+    },
+    promotionGate: {
+      benchmark_editorial_scene: {
+        scene_id: "S04",
+        title: "Where Pressure Enters"
+      },
+      gate: {
+        selected_scene_ready: true
+      }
+    },
+    referenceManifest: {
+      selected_references: ["04_assets/reference_images/ref_01.png"]
+    }
+  });
+
+  assert.equal(fixture.fixture_locked, true);
+  assert.equal(fixture.benchmark_scene_id, "S04");
+  assert.equal(fixture.selected_reference_count, 1);
+});
+
+test("asset catalog summary flags structural-only libraries that lack actual categorized images", () => {
+  const summary = summarizeAssetCatalog({
+    referenceManifest: {
+      selected_references: ["04_assets/reference_images/ref_01.png"],
+      selected_asset_categories: []
+    },
+    libraryIndex: {
+      reference_image_count: 3,
+      general_asset_category_count: 19,
+      general_asset_image_count: 0
+    }
+  });
+
+  assert.equal(summary.sufficiency_decision, "structural_only");
+  assert.ok(summary.warnings.some((item) => item.includes("unpopulated")));
+});
+
+test("production readiness keeps option2 in benchmark mode when scene proof exists but reliability blocks default use", () => {
+  const decision = evaluateHybridProductionReadiness({
+    benchmarkFixture: {
+      fixture_locked: true,
+      benchmark_promotion_ready: true
+    },
+    promotionGate: {
+      gate: {
+        topic_wide_ready: false
+      }
+    },
+    reliabilityReport: {
+      gate: {
+        decision: "blocked",
+        blockers: ["fallback ratio exceeds profile allowance"]
+      }
+    },
+    machineProfile: {
+      gpu: {
+        model: "NVIDIA GeForce GTX 1080"
+      }
+    },
+    assetCatalog: {
+      sufficiency_decision: "structural_only"
+    },
+    overnightTrial: {
+      status: "not_recorded"
+    }
+  });
+
+  assert.equal(decision.decision, "keep_option2_in_benchmark_mode");
+  assert.equal(decision.option2_default_approved, false);
+  assert.ok(decision.warnings.some((item) => item.includes("reliability detail")));
+});
+
+test("production readiness report can approve option2 default when full-topic trust is proven", () => {
+  const report = buildHybridProductionReadinessReport({
+    topicId: "test_story_template",
+    stillBenchmarkPack: {
+      coverage: {
+        shot_classes_covered: 7,
+        shots_with_approved_keyframes: 26
+      }
+    },
+    editorialReport: {
+      scene: {
+        scene_id: "S04",
+        scene_title: "Where Pressure Enters"
+      },
+      summary: {
+        benchmark_status: "editorial_benchmark_ready"
+      }
+    },
+    promotionGate: {
+      benchmark_editorial_scene: {
+        scene_id: "S04",
+        title: "Where Pressure Enters"
+      },
+      gate: {
+        decision: "approved_for_topic_promotion",
+        topic_wide_ready: true,
+        selected_scene_ready: true,
+        promoted_scene_count: 7,
+        review_scene_count: 0,
+        rework_scene_count: 0
+      }
+    },
+    reliabilityReport: {
+      gate: {
+        decision: "ready_for_overnight_finish",
+        blockers: []
+      },
+      readiness: {
+        fallback_ratio: 0.2,
+        fragile_scene_ratio: 0.1,
+        review_scenes: 0,
+        hold_scenes: 0
+      }
+    },
+    machineProfile: {
+      gpu: {
+        model: "NVIDIA GeForce GTX 1080",
+        vram_gb: 8
+      },
+      target_resolution: "1920x1080",
+      overnight_mode: true
+    },
+    referenceManifest: {
+      selected_references: ["04_assets/reference_images/ref_01.png"],
+      selected_asset_categories: ["trucks"]
+    },
+    libraryIndex: {
+      reference_image_count: 3,
+      general_asset_category_count: 19,
+      general_asset_image_count: 120
+    },
+    overnightState: {
+      completed_at: "2026-07-22T03:00:00.000Z",
+      completed_steps: ["preview", "finish"],
+      last_reliability_decision: "ready_for_overnight_finish"
+    }
+  });
+
+  assert.equal(report.decision.decision, "approve_option2_as_default");
+  assert.equal(report.default_path_recommendation, "make_option2_the_default_milestone_path");
 });

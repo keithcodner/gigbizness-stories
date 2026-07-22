@@ -63,16 +63,21 @@ function summarizeReadinessInputs({
   sceneSequenceReport = {},
   renderContract = {},
   finalApprovalText = "",
-  visualReadiness = {}
+  visualReadiness = {},
+  promotionGate = {}
 }) {
   const sequenceHealth = summarizeSequenceHealth(sceneSequenceReport);
   const renderScenes = Array.isArray(renderContract.scenes) ? renderContract.scenes.length : 0;
+  const promotionGateState = promotionGate.gate || {};
   return {
     machine_target: runtimeProfile.machine_target || null,
     machine_gpu: machineProfile.gpu?.model || null,
     preview_exists: visualPreviewExists,
     sequence_reports_ready: sequenceHealth.total_scenes > 0,
     render_contract_ready: renderScenes > 0,
+    promotion_gate_ready: ["approved_for_topic_promotion", "approved_for_selected_scene_promotion"].includes(promotionGateState.decision || ""),
+    benchmark_scene_ready: Boolean(promotionGateState.selected_scene_ready),
+    promoted_scene_count: Number(promotionGateState.promoted_scene_count || 0),
     qc_approved: String(finalApprovalText || "").startsWith("APPROVED"),
     unresolved_high_priority_count: Number(visualReadiness.unresolved_high_priority_count || 0),
     total_scenes: sequenceHealth.total_scenes,
@@ -99,6 +104,9 @@ function evaluateReliabilityGate(runtimeProfile, readiness) {
   if (runtimeProfile.require_render_contract && !readiness.render_contract_ready) {
     blockers.push("render contract is missing or empty");
   }
+  if (runtimeProfile.require_promotion_gate && !readiness.promotion_gate_ready) {
+    blockers.push("hybrid promotion gate has not approved the topic or benchmark scene");
+  }
   if (runtimeProfile.require_qc_approval && !readiness.qc_approved) {
     blockers.push("QC final approval is missing");
   }
@@ -123,6 +131,9 @@ function evaluateReliabilityGate(runtimeProfile, readiness) {
       blockers.push(reviewMessage);
     }
   }
+  if (readiness.benchmark_scene_ready && !readiness.promotion_gate_ready) {
+    warnings.push("benchmark scene is ready, but the full promotion gate still blocks topic-wide finishing");
+  }
 
   let decision = "blocked";
   if (blockers.length === 0) {
@@ -146,6 +157,7 @@ function buildReliabilityReport({
   machineProfile,
   sceneSequenceReport,
   renderContract,
+  promotionGate,
   visualReadiness,
   visualPreviewExists,
   finalApprovalText
@@ -157,7 +169,8 @@ function buildReliabilityReport({
     sceneSequenceReport,
     renderContract,
     finalApprovalText,
-    visualReadiness
+    visualReadiness,
+    promotionGate
   });
   const gate = evaluateReliabilityGate(runtimeProfile, readiness);
 
@@ -190,6 +203,9 @@ function buildReliabilityMarkdown(report) {
     `- Preview exists: ${report.readiness.preview_exists ? "yes" : "no"}`,
     `- Sequence reports ready: ${report.readiness.sequence_reports_ready ? "yes" : "no"}`,
     `- Render contract ready: ${report.readiness.render_contract_ready ? "yes" : "no"}`,
+    `- Promotion gate ready: ${report.readiness.promotion_gate_ready ? "yes" : "no"}`,
+    `- Benchmark scene ready: ${report.readiness.benchmark_scene_ready ? "yes" : "no"}`,
+    `- Promoted scenes: ${report.readiness.promoted_scene_count}`,
     `- QC approved: ${report.readiness.qc_approved ? "yes" : "no"}`,
     `- Unresolved high-priority assets: ${report.readiness.unresolved_high_priority_count}`,
     `- Fallback ratio: ${report.readiness.fallback_ratio}`,

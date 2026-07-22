@@ -1,6 +1,6 @@
 # Pipeline State Visual
 
-Last updated: July 21, 2026
+Last updated: July 22, 2026
 
 ## Status Board
 
@@ -20,7 +20,12 @@ PIPELINE STATUS
 |   |-- option 1 / phase 4 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
 |   |-- option 1 / phase 5 status ......... [BUILD DONE, SEQUENCE SIGNOFF PENDING]
 |   |-- option 1 / phase 6 status ......... [PARTIAL]
-|   |-- option 2 / phase 1 status ......... [IN PROGRESS]
+|   |-- option 2 / phase 1 status ......... [BUILD DONE, FRESH STILL SIGNOFF PENDING]
+|   |-- option 2 / phase 2 status ......... [BUILD DONE, ROUNDTRIP SIGNOFF PENDING]
+|   |-- option 2 / phase 3 status ......... [BUILD DONE, SAMPLE SIGNOFF PENDING]
+|   |-- option 2 / phase 4 status ......... [BUILD DONE, EDITORIAL SIGNOFF PENDING]
+|   |-- option 2 / phase 5 status ......... [BUILD DONE, TOPIC-WIDE PROMOTION BLOCKED]
+|   |-- option 2 / phase 6 status ......... [BUILD DONE, DEFAULT NOT APPROVED]
 |   `-- proceed-past-gate approval ......... [BLOCKED]
 |
 |-- FOUNDATION / ORCHESTRATOR ............... [WORKING]
@@ -74,6 +79,49 @@ PIPELINE STATUS
 |   |-- pass/fail review cues ............... [WORKING]
 |   `-- fresh still rerun signoff ........... [PENDING]
 |
+|-- HYBRID HANDOFF CONTRACT ................. [PARTIAL]
+|   |-- orchestrator stage .................. [WORKING]
+|   |-- character contract packages ......... [WORKING]
+|   |-- shot contract packages .............. [WORKING]
+|   |-- layer / rig / timing handoff ........ [WORKING]
+|   |-- premium fallback blocking ........... [WORKING]
+|   |-- route-mismatch warnings ............. [WORKING]
+|   `-- external motion roundtrip proof ..... [PENDING]
+|
+|-- HYBRID PERFORMANCE PROOF ............... [PARTIAL]
+|   |-- proof-profile builder ............... [WORKING]
+|   |-- proof-stage orchestrator wiring ..... [WORKING]
+|   |-- closeup speaking proof .............. [WORKING]
+|   |-- medium-single speaking proof ........ [WORKING]
+|   |-- dialogue/two-shot proof ............. [WORKING]
+|   |-- insert/document proof ............... [WORKING]
+|   |-- combined proof sequence ............. [WORKING]
+|   `-- human signoff against quality floor . [PENDING]
+|
+|-- HYBRID EDITORIAL SEQUENCE .............. [PARTIAL]
+|   |-- benchmark scene selection ........... [WORKING]
+|   |-- editorial-role assignment ........... [WORKING]
+|   |-- sequence-wide shot rendering ........ [WORKING]
+|   |-- camera-language upgrade ............. [WORKING]
+|   |-- benchmark editorial report .......... [WORKING]
+|   `-- phase-5 benchmark input ............. [WORKING]
+|
+|-- HYBRID PROMOTION GATE ................... [PARTIAL]
+|   |-- scene-level promotion decisions ..... [WORKING]
+|   |-- benchmark-scene override ............ [WORKING]
+|   |-- human checkpoint checklist .......... [WORKING]
+|   |-- runtime-tier recommendation ......... [WORKING]
+|   |-- orchestrator stage .................. [WORKING]
+|   `-- topic-wide promotion ................ [BLOCKED]
+|
+|-- HYBRID PRODUCTION READINESS ............. [PARTIAL]
+|   |-- benchmark fixture lock .............. [WORKING]
+|   |-- default-use decision layer .......... [WORKING]
+|   |-- asset-catalog sufficiency review .... [WORKING]
+|   |-- GTX 1080 trust review ............... [WORKING]
+|   |-- implementation closeout report ...... [WORKING]
+|   `-- default path approval ............... [BLOCKED]
+|
 |-- PREVIEW GATE ............................ [WORKING]
 |   |-- reference-sync stage ................ [WORKING]
 |   |-- bricktoon-preview stage ............. [WORKING]
@@ -86,6 +134,7 @@ PIPELINE STATUS
 |   |-- runtime profiles .................... [WORKING]
 |   |-- reliability gate .................... [WORKING]
 |   |-- reliability report .................. [WORKING]
+|   |-- promotion-gate awareness ............ [WORKING]
 |   |-- resumable overnight runner .......... [WORKING]
 |   |-- premium finish hard gate ............ [WORKING]
 |   `-- benchmark overnight trust ........... [BLOCKED]
@@ -263,12 +312,32 @@ MAIN BLOCKERS:
    fall back too often to procedural shots to call the sequence
    premium-ready.
 
-4. The new reliability report is working, and it is currently blocking
-   `test_story_template` for concrete reasons: 5 hold-for-polish scenes,
-   fallback ratio `0.577`, fragile-scene ratio `0.714`, and 2 scenes
-   still marked for review before finish.
+4. The new Option 2 hybrid animation contract is now real and generated,
+   but the external motion layer has not yet been proven to consume it
+   and return benchmark-quality puppet performance.
 
-5. Milestone 2 is now the active gate, so the project should not
+5. The new Option 2 hybrid performance proof stage now generates a
+   controlled acting sample, but it is still a repo-side proof layer
+   rather than the final external hybrid-motion roundtrip.
+
+6. The new Option 2 hybrid editorial sequence stage now generates a
+   coherent benchmark-scene sample, and the new promotion gate can now
+   promote that benchmark scene even while holding the rest of the
+   topic back.
+
+7. Several medium-single and medium-two-shot scenes still carry older
+   `procedural_document` production-route labels even though the new
+   hybrid handoff contract correctly flags them as character-performance
+   shots; that mismatch is now visible, but it still needs cleanup in a
+   later phase.
+
+8. The new reliability report is working, and it is currently blocking
+   `test_story_template` for concrete reasons even after the benchmark
+   scene clears promotion: 5 hold-for-polish scenes, fallback ratio
+   `0.577`, fragile-scene ratio `0.714`, and 2 scenes still marked for
+   review before finish.
+
+9. Milestone 2 is now the active gate, so the project should not
    treat scale, automation, or production readiness as the next win
    until the minimum animation floor is actually met.
 ```
@@ -333,6 +402,6 @@ Known gap capture:
 
 Current active build:
 - Option 2
-- Phase 1: Repo-Side Still And Identity Lock
-- completion status: in progress
+- Phase 6: Benchmark Demo And Production Readiness Decision
+- completion status: build done, default not approved
 ```

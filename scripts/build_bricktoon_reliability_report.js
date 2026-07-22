@@ -35,6 +35,7 @@ function main() {
       machineProfile: readJsonSafe(path.join(rootDir, "config", "machine_profile.json"), {}),
       sceneSequenceReport: readJsonSafe(path.join(workspaceDir, "08_animation", "scene_sequences", "scene_sequence_report.json"), {}),
       renderContract: readJsonSafe(path.join(workspaceDir, "09_edit_plan", "render_contract.json"), {}),
+      promotionGate: readJsonSafe(path.join(workspaceDir, "10_qc", "hybrid_promotion_gate_report.json"), {}),
       visualReadiness: readJsonSafe(path.join(workspaceDir, "04_assets", "visual_readiness.json"), {}),
       visualPreviewExists: fs.existsSync(path.join(workspaceDir, "06_renders", "previews", "visual_preview.mp4")),
       finalApprovalText: fs.existsSync(path.join(workspaceDir, "10_qc", "final_approval.md"))

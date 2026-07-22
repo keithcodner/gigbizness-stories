@@ -2,10 +2,54 @@
 
 This log tracks implementation changes, bug fixes, and incidental fixes discovered while working on the pipeline.
 
+## 2026-07-22
+
+### Changed
+
+- Started executable build work for `Milestone 2 -> Option 2 -> Phase 6: Benchmark Demo And Production Readiness Decision`.
+- Added `src/bricktoon/hybridProductionReadiness.js` so the hybrid path now has a reusable production-readiness layer for benchmark fixture locking, asset-catalog sufficiency review, overnight-trial summary, and default-path decisions.
+- Added `scripts/build_hybrid_production_readiness_report.js` so each workspace can emit `hybrid_production_readiness_report.{json,md}` instead of leaving the default-use decision scattered across multiple reports.
+- Updated `agents/orchestrator.js` and `package.json` so `hybrid-production-readiness` / `npm run hybrid:readiness` are first-class pipeline entrypoints.
+- Added `docs/technical_docs/OPTION2_PHASE6_IMPLEMENTATION_REPORT.md` so Option 2 Phase 6 now closes with a governed implementation report and explicit final assessment.
+- Updated the milestone plan and pipeline state board so Option 2 Phase 6 is now tracked as the active build phase and the production-readiness layer is visible in the shared system view.
+- Started executable build work for `Milestone 2 -> Option 2 -> Phase 5: Preview Gate And Promotion Rules`.
+- Added `src/bricktoon/hybridPromotionGate.js` so the hybrid path now has a reusable promotion-gate layer for still-benchmark readiness, benchmark-scene overrides, scene-level promotion decisions, runtime-tier recommendations, and human checkpoint language.
+- Added `scripts/build_hybrid_promotion_gate.js` so each workspace can emit `hybrid_promotion_gate_report.{json,md}` before expensive premium finishing begins.
+- Updated `src/bricktoon/reliabilityGate.js` and `scripts/build_bricktoon_reliability_report.js` so reliability now recognizes promotion-gate approval state, benchmark-scene readiness, and promoted-scene counts instead of treating preview approval as a binary full-topic pass/fail.
+- Updated `config/bricktoon_runtime_profiles.json` so `gtx1080_premium_preview`, `gtx1080_overnight_finish_draft`, and `gtx1080_overnight_finish_1080p` now explicitly require promotion-gate approval, while `gtx1080_preview` remains the lighter early-review tier.
+- Updated `agents/orchestrator.js` and `package.json` so `hybrid-promotion-gate` / `npm run hybrid:gate` are first-class pipeline entrypoints and `bricktoon-auto` now routes through preview, promotion gate, and reliability in sequence.
+- Updated the milestone plan and pipeline state board so Option 2 Phase 5 is now tracked as the active build phase and the promotion-gate layer is visible in the shared system view.
+
+### Verified
+
+- Verified Option 2 Phase 6 code-level behavior on Wednesday, July 22, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 37 tests, including the new production-readiness coverage.
+- Verified real Option 2 Phase 6 artifact generation on `workspaces/test_story_template` by running `node agents\\orchestrator.js --topic test_story_template --stage hybrid-production-readiness --runtime-profile gtx1080_premium_preview`.
+- Current Option 2 Phase 6 evidence now includes `10_qc/hybrid_production_readiness_report.{json,md}` marking the benchmark fixture as locked, but the current governed verdict as `keep_option2_in_benchmark_mode` with default recommendation `hold_option2_as_benchmark_only`.
+- Verified Option 2 Phase 5 code-level behavior on Wednesday, July 22, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 33 tests, including the new promotion-gate coverage.
+- Verified real Option 2 Phase 5 artifact generation on `workspaces/test_story_template` by running `node agents\\orchestrator.js --topic test_story_template --stage hybrid-promotion-gate --runtime-profile gtx1080_premium_preview`.
+- Current Option 2 Phase 5 evidence now includes `10_qc/hybrid_promotion_gate_report.{json,md}` marking scene `S04` as the benchmark-approved promotion candidate with topic decision `approved_for_selected_scene_promotion`.
+- Verified the updated reliability integration on Wednesday, July 22, 2026: `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-reliability --runtime-profile gtx1080_premium_preview` now reports that promotion-gate readiness is present while the full topic remains blocked for concrete fallback/fragility/review reasons.
+
 ## 2026-07-21
 
 ### Changed
 
+- Started executable build work for `Milestone 2 -> Option 2 -> Phase 4: Shot Language And Editorial Quality`.
+- Added `src/bricktoon/hybridEditorialProof.js` so the hybrid path now has a reusable editorial-sequence layer for benchmark-scene selection, editorial-role assignment, and sequence-readiness summaries.
+- Added `scripts/render_hybrid_editorial_sequence.js` so the repo can consume the hybrid contract into a full benchmark-scene editorial sample with per-shot outputs, posters, reports, and a combined sequence file under `08_animation/hybrid_editorial/`.
+- Updated `agents/orchestrator.js` and `package.json` so `hybrid-editorial-proof` / `npm run hybrid:editorial` are first-class pipeline entrypoints.
+- Updated the milestone plan and pipeline state board so Option 2 Phase 4 is now tracked as the active implementation phase and the editorial benchmark stage is visible as a real pipeline layer.
+- Started executable build work for `Milestone 2 -> Option 2 -> Phase 3: Minimum Viable Character Performance`.
+- Added `src/bricktoon/hybridPerformanceProof.js` so the hybrid path now has a reusable proof-profile layer for selecting representative benchmark shots and boosting them into a controlled speaking-performance sample.
+- Added `scripts/render_hybrid_performance_proof.js` so the repo can consume the Phase 2 hybrid contract into real proof clips, proof posters, a combined proof sequence, and proof reports under `08_animation/hybrid_shots/`.
+- Updated `agents/orchestrator.js` and `package.json` so `hybrid-performance-proof` / `npm run hybrid:proof` are first-class pipeline entrypoints.
+- Updated the milestone plan and pipeline state board so Option 2 Phase 3 is now tracked as the active implementation phase and the new proof stage is visible as a real pipeline layer.
+- Started executable build work for `Milestone 2 -> Option 2 -> Phase 2: Hybrid Animation Contract`.
+- Added `src/bricktoon/hybridAnimationContract.js` as the reusable character-package and shot-package handoff layer for the hybrid animation path.
+- Added `scripts/build_hybrid_animation_contract.js` so the repo now emits concrete hybrid handoff packages at `08_animation/hybrid_contract/` instead of relying on loose still/layer/rig/timing files.
+- Updated the hybrid character contract so it now preserves `cast_member_id` alongside `character_id`, allowing shot plans keyed to `CAST_*` ids to bind back to the correct rig and identity package during handoff.
+- Updated `agents/orchestrator.js` and `package.json` so `hybrid-animation-contract` / `npm run hybrid:contract` are first-class pipeline entrypoints.
+- Updated the milestone plan and pipeline state board so Option 2 Phase 2 is now tracked as the active implementation phase and the new handoff package is visible as a real pipeline layer rather than planning-only intent.
 - Started executable build work for `Milestone 2 -> Option 2 -> Phase 1: Repo-Side Still And Identity Lock`.
 - Added `option2_phase1_repo_side_still_identity_lock` to `config/visual_generation.json` so the hybrid still-lock path now has a pinned GTX 1080 benchmark profile, explicit approval focus, shot-class workflow expectations, and benchmark-pack requirements.
 - Added managed shot-class workflow routing plus new hybrid still templates for closeups, dialogue/two-shots, establishing frames, and document inserts so repo-side still generation can prepare cleaner hybrid-motion handoff stills instead of only using generic quality-tier routing.
@@ -61,6 +105,15 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Fixed
 
+- Fixed a sequence-proof gap where Option 2 could prove isolated acting clips but still had no executable path for a full editorial benchmark scene.
+- Fixed a selection gap where the editorial sample could have been picked ad hoc; the new stage now scores and selects the strongest mixed-coverage benchmark scene.
+- Fixed a camera-language gap where editorial insert and establishing shots could inherit generic framing labels; the new editorial layer now forces shot-language-specific camera profiles for wide, closeup, push-in, and top-down beats.
+- Fixed a proof-stage gap where Option 2 Phase 3 had no executable sample path, leaving the milestone dependent on abstract contract files instead of a visible acting proof sequence.
+- Fixed a review gap where speaking-proof shot selection could have been ad hoc; the new proof layer now selects a predictable closeup, speaking single, dialogue/two-shot, and insert sample set.
+- Fixed a reporting-honesty gap where insert/document proof beats could inherit speaking-oriented visibility and mouth-mode expectations; the proof builder now keeps insert beats document-focused.
+- Fixed a hybrid-binding gap where the new external-motion handoff layer could preserve `character_id` but not the current `cast_member_id`, making shot-level rig binding ambiguous for `CAST_*` keyed plans.
+- Fixed a workflow gap where Option 2 Phase 2 existed only in milestone planning and helper code, but not as a callable orchestrator stage that could generate a manifest-tracked contract package.
+- Fixed a visibility gap where older production-route heuristics could still label medium-single or medium-two-shot character-performance shots as `procedural_document`; the new contract package now flags those mismatches explicitly instead of hiding them as silent assumptions.
 - Fixed a still-handoff gap where the hybrid path had no repo-owned benchmark pack, leaving approval dependent on ad hoc screenshot review instead of a generated pass/fail evidence set.
 - Fixed a contract gap where character refs could exist as image files without an explicit hybrid identity package for later motion-tool handoff.
 - Fixed a workflow-selection gap where repo-side shot-keyframe generation could not pick different managed workflows by shot class, even though the hybrid path depends on different still expectations for closeups, dialogue, establishing shots, and document inserts.
@@ -77,6 +130,15 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Notes
 
+- Verified Option 2 Phase 4 code-level behavior on Tuesday, July 21, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 29 tests, including the new hybrid editorial scene-selection and sequence-readiness coverage.
+- Verified real Option 2 Phase 4 artifact generation on `workspaces/test_story_template` by running `node agents\\orchestrator.js --topic test_story_template --stage hybrid-editorial-proof`.
+- Current Option 2 Phase 4 evidence now includes 5 editorial benchmark shot clips, per-shot editorial posters, `08_animation/hybrid_editorial/S04_hybrid_editorial_sequence.mp4`, and `hybrid_editorial_sequence_report.{json,md}` marking scene `S04` as `editorial_benchmark_ready` with `continuity_status: locked` and `promotion_status: ready_for_finish`.
+- Verified Option 2 Phase 3 code-level behavior on Tuesday, July 21, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 26 tests, including the new hybrid proof-selection and proof-performance coverage.
+- Verified real Option 2 Phase 3 artifact generation on `workspaces/test_story_template` by running `node agents\\orchestrator.js --topic test_story_template --stage hybrid-performance-proof`.
+- Current Option 2 Phase 3 evidence now includes 4 controlled proof shots, per-shot proof posters, per-shot proof clips, and `08_animation/hybrid_shots/hybrid_performance_proof_sequence.mp4`, with route-mismatch warnings preserved where older production-route heuristics still under-classify character-performance shots.
+- Verified Option 2 Phase 2 code-level behavior on Tuesday, July 21, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 24 tests, including the new hybrid-contract binding and fallback-discipline coverage.
+- Verified real Option 2 Phase 2 artifact generation on `workspaces/test_story_template` by running `node agents\\orchestrator.js --topic test_story_template --stage hybrid-animation-contract`.
+- Current Option 2 Phase 2 evidence now includes 4 character handoff packages, 26 shot handoff packages, 9 hybrid-character shots that explicitly block if layers/rigs/timing are missing, and route-mismatch warnings where older production routes still under-classify character-performance shots.
 - Verified Option 2 Phase 1 code-level behavior on July 21, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 22 tests, including the new hybrid still-lock profile and shot-class workflow routing coverage.
 - Verified lightweight Option 2 Phase 1 artifact generation on `workspaces/test_story_template` by re-running `visual-character-bible` and generating `07_visuals/benchmark_pack/hybrid_still_benchmark_pack.{json,md}`.
 - Current Option 2 Phase 1 evidence shows 4 character identity packages, 7 shot classes, and 26 approved-shot references in the generated benchmark pack, but most existing approved stills still predate the new shot-class templates and need a fresh rerun for final visual signoff.
