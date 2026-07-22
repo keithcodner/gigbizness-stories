@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { parseArgs } = require("../agents/common");
 const { readJsonSafe, writeJson, writeMarkdown } = require("../src/bricktoon/aiQualityPipeline");
+const { filterScenes, parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
 function main() {
   try {
@@ -14,13 +15,16 @@ function main() {
 
     const workspaceDir = path.resolve(args.workspace);
     const shotPlan = readJsonSafe(path.join(workspaceDir, "07_shot_plans", "shot_plan.json"), {});
+    const selectedSceneIds = parseSceneIdsArg(args["scene-ids"]);
+    const allScenes = shotPlan.scenes || [];
+    const scenes = filterScenes(allScenes, selectedSceneIds);
     const approvedDir = path.join(workspaceDir, "07_visuals", "approved_keyframes");
     const reportsDir = path.join(workspaceDir, "07_visuals", "consistency_reports");
     const visualBible = readJsonSafe(path.join(workspaceDir, "03_cast", "visual_character_bible.json"), {});
     const manifest = readJsonSafe(path.join(workspaceDir, "07_visuals", "asset_manifest.json"), { assets: [] });
     const summaryLines = ["# Consistency Summary", ""];
 
-    for (const scene of shotPlan.scenes || []) {
+    for (const scene of scenes) {
       for (const shot of scene.shots || []) {
         const approvedFiles = fs.readdirSync(approvedDir).filter((fileName) => fileName.startsWith(`${shot.shot_id}_KF_`));
         const approvedAssets = (manifest.assets || []).filter((asset) => asset.asset_type === "approved_keyframe" && asset.shot_ids?.includes(shot.shot_id));
@@ -52,7 +56,17 @@ function main() {
           required_fixes: approvedFiles.length > 0 ? [] : ["Generate at least one approved keyframe."]
         };
         writeJson(path.join(reportsDir, `${shot.shot_id}.json`), report);
-        summaryLines.push(`- ${shot.shot_id}: ${report.status}${reportWarnings.length ? ` (${reportWarnings.join("; ")})` : ""}`);
+      }
+    }
+
+    for (const scene of allScenes) {
+      for (const shot of scene.shots || []) {
+        const report = readJsonSafe(path.join(reportsDir, `${shot.shot_id}.json`), null);
+        if (!report) {
+          summaryLines.push(`- ${shot.shot_id}: report_missing`);
+          continue;
+        }
+        summaryLines.push(`- ${shot.shot_id}: ${report.status}${report.warnings?.length ? ` (${report.warnings.join("; ")})` : ""}`);
       }
     }
 

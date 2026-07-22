@@ -19,7 +19,7 @@ PIPELINE STATUS
 |   |-- option 1 / phase 3 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
 |   |-- option 1 / phase 4 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
 |   |-- option 1 / phase 5 status ......... [BUILD DONE, SEQUENCE SIGNOFF PENDING]
-|   |-- option 1 / phase 6 status ......... [PARTIAL, BENCHMARK PROOF + RECOVERY PLANNING WORKING]
+|   |-- option 1 / phase 6 status ......... [PARTIAL, BENCHMARK PROOF + REVIEW CLEARANCE WORKING]
 |   |-- option 2 / phase 1 status ......... [BUILD DONE, FRESH STILL SIGNOFF PENDING]
 |   |-- option 2 / phase 2 status ......... [BUILD DONE, ROUNDTRIP SIGNOFF PENDING]
 |   |-- option 2 / phase 3 status ......... [BUILD DONE, SAMPLE SIGNOFF PENDING]
@@ -179,7 +179,10 @@ PIPELINE STATUS
 |   |-- runtime profiles .................... [WORKING]
 |   |-- reliability gate .................... [WORKING]
 |   |-- reliability report .................. [WORKING]
+|   |-- scene review packet ................ [WORKING]
+|   |-- review decision file ............... [WORKING]
 |   |-- recovery plan stage ................. [WORKING]
+|   |-- scene-scoped recovery reruns ........ [WORKING]
 |   |-- promotion-gate awareness ............ [WORKING]
 |   |-- resumable overnight runner .......... [WORKING]
 |   |-- overnight state history ............. [WORKING]
@@ -297,7 +300,10 @@ RELIABILITY GATE
 |
         |
         +--> BLOCKED
+        |     -> bricktoon-scene-review
         |     -> bricktoon-recovery-plan
+        |     -> bricktoon-scene-recovery --bucket light_rework / heavy_rework
+        |     -> approve or reject review scenes
         |     -> ranked scene queue
         |     -> clear review scenes first
         |     -> rework light scenes, then heavy scenes
@@ -347,6 +353,8 @@ human review
     ->
 bricktoon-reliability
     ->
+bricktoon-scene-review if review scenes remain
+    ->
 bricktoon-recovery-plan if blocked
     ->
 bricktoon-finish only if approved
@@ -383,15 +391,17 @@ MAIN BLOCKERS:
    promote that benchmark scene even while holding the rest of the
    topic back.
 
-7. Several medium-single and medium-two-shot scenes still carry older
-   `procedural_document` production-route labels even though the new
-   hybrid handoff contract correctly flags them as character-performance
-   shots; that mismatch is now visible, but it still needs cleanup in a
-   later phase.
+7. The older medium-single and medium-two-shot route mismatch has now
+   been cleaned up at the contract layer:
+   `S03_SHOT_002`, `S04_SHOT_002`, `S05_SHOT_002`, `S06_SHOT_002`, and
+   `S07_SHOT_002` now resolve as `hybrid_2d_ai` inside the refreshed
+   hybrid animation contract, and the refreshed compositing report now
+   selects stabilized motion for those bridge shots instead of leaving
+   them stuck behind stale fallback metadata.
 
 8. The new reliability report is working, and it is currently blocking
-   `test_story_template` for concrete reasons even after the benchmark
-   scene clears promotion: 4 hold-for-polish scenes, fragile-scene ratio
+   `test_story_template` for concrete reasons even after the stale-output
+   gap was removed: 4 hold-for-polish scenes, fragile-scene ratio
    `0.571`, and 2 scenes still marked for review before finish.
 
 9. The new recovery-plan stage now converts those blockers into a ranked
@@ -401,9 +411,18 @@ MAIN BLOCKERS:
    heavy rework -> `S05`
    benchmark locked -> `S04`
 
-10. Milestone 2 is now the active gate, so the project should not
-   treat scale, automation, or production readiness as the next win
-   until the minimum animation floor is actually met.
+10. The new scene-review stage now creates a governed approval file for
+    `S01` and `S02`, and the reliability gate is ready to stop counting a
+    review scene once that file marks it approved.
+
+11. The new scene-scoped recovery stage now lets us rerun only the queued
+    weak scenes while preserving the rest of the topic reports:
+    `npm run bricktoon:scene-recovery -- --topic test_story_template --bucket light_rework`
+    is now the intended recovery path instead of burning a full-topic rerun.
+
+12. Milestone 2 is now the active gate, so the project should not
+    treat scale, automation, or production readiness as the next win
+    until the minimum animation floor is actually met.
 ```
 
 ## Milestone 2 Gate
@@ -467,5 +486,5 @@ Known gap capture:
 Current active build:
 - Option 1
 - Phase 6: Overnight Reliability
-- completion status: partial, benchmark proof path and recovery planning are working and full-topic overnight trust is still blocked
+- completion status: partial, benchmark proof path, review clearance, recovery planning, and scene-scoped recovery reruns are working and full-topic overnight trust is still blocked
 ```

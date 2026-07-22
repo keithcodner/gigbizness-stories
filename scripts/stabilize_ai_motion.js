@@ -13,6 +13,7 @@ const {
   assetTimestamp,
   writeJson
 } = require("../src/bricktoon/aiQualityPipeline");
+const { collectShotIdsFromScenes, filterScenes, hasSceneSelection, mergeScopedRecords, parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
 function runFfmpeg(args, label) {
   const result = spawnSync("ffmpeg", args, { encoding: "utf8" });
@@ -35,10 +36,16 @@ function main() {
     }
 
     const workspaceDir = path.resolve(args.workspace);
+    const shotPlan = readJsonSafe(path.join(workspaceDir, "07_shot_plans", "shot_plan.json"), {});
+    const selectedSceneIds = parseSceneIdsArg(args["scene-ids"]);
+    const selectedScenes = filterScenes(shotPlan.scenes || [], selectedSceneIds);
+    const selectedShotIds = hasSceneSelection(selectedSceneIds) ? collectShotIdsFromScenes(selectedScenes) : [];
+    const selectedShotIdSet = new Set(selectedShotIds);
     const rawDir = path.join(workspaceDir, "08_animation", "raw_ai_video");
     const stabilizedDir = path.join(workspaceDir, "08_animation", "stabilized_ai_video");
     ensureDir(stabilizedDir);
     const manifest = loadManifest(workspaceDir);
+    const existingReport = readJsonSafe(path.join(stabilizedDir, "stabilization_report.json"), {});
     const stabilizationReport = {
       generated_at: assetTimestamp(),
       status: "stabilization_ready",
@@ -47,6 +54,10 @@ function main() {
 
     for (const fileName of fs.existsSync(rawDir) ? fs.readdirSync(rawDir) : []) {
       if (!fileName.endsWith(".mp4")) {
+        continue;
+      }
+      const shotId = fileName.replace("_ai_motion.mp4", "");
+      if (selectedShotIds.length > 0 && !selectedShotIdSet.has(shotId)) {
         continue;
       }
       const source = path.join(rawDir, fileName);
@@ -69,7 +80,6 @@ function main() {
         fs.copyFileSync(source, target);
         qualityGate = "accepted_copy_after_stabilization_failure";
       }
-      const shotId = fileName.replace("_ai_motion.mp4", "");
       upsertAsset(manifest, {
         asset_id: `STABILIZED_${shotId}`,
         asset_type: "stabilized_motion_pass",
@@ -90,6 +100,10 @@ function main() {
       });
     }
 
+    stabilizationReport.shots = mergeScopedRecords(existingReport.shots || [], stabilizationReport.shots, {
+      idField: "shot_id",
+      scopedIds: selectedShotIds
+    });
     saveManifest(workspaceDir, manifest);
     writeJson(path.join(stabilizedDir, "stabilization_report.json"), stabilizationReport);
     console.log(`AI motion stabilization completed for '${path.basename(workspaceDir)}'.`);

@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { parseArgs } = require("../agents/common");
 const { buildReliabilityMarkdown, buildReliabilityReport, loadRuntimeProfiles, resolveRuntimeProfile } = require("../src/bricktoon/reliabilityGate");
+const { summarizeArtifactFreshness } = require("../src/bricktoon/artifactFreshness");
 
 function readJsonSafe(filePath, fallback = {}) {
   if (!fs.existsSync(filePath)) {
@@ -29,6 +30,46 @@ function main() {
     const runtimeProfiles = loadRuntimeProfiles(rootDir);
     const runtimeProfile = resolveRuntimeProfile(runtimeProfiles, args["runtime-profile"]);
     const scope = args.scope || "topic";
+    const artifactFreshness = summarizeArtifactFreshness([
+      {
+        artifact_id: "hybrid_animation_contract",
+        target_path: path.join(workspaceDir, "08_animation", "hybrid_contract", "hybrid_animation_contract.json"),
+        dependencies: {
+          production_routes: path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json"),
+          shot_performances: path.join(workspaceDir, "08_animation", "shot_performances.json")
+        }
+      },
+      {
+        artifact_id: "ai_motion_passes",
+        target_path: path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json"),
+        dependencies: {
+          production_routes: path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json"),
+          shot_clip_report: path.join(workspaceDir, "08_animation", "shot_clips", "shot_clip_report.json")
+        }
+      },
+      {
+        artifact_id: "stabilized_motion_passes",
+        target_path: path.join(workspaceDir, "08_animation", "stabilized_ai_video", "stabilization_report.json"),
+        dependencies: {
+          ai_motion_report: path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json")
+        }
+      },
+      {
+        artifact_id: "shot_compositing",
+        target_path: path.join(workspaceDir, "08_animation", "compositing_reports", "compositing_report.json"),
+        dependencies: {
+          ai_motion_report: path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json"),
+          shot_clip_report: path.join(workspaceDir, "08_animation", "shot_clips", "shot_clip_report.json")
+        }
+      },
+      {
+        artifact_id: "scene_sequence_assembly",
+        target_path: path.join(workspaceDir, "08_animation", "scene_sequences", "scene_sequence_report.json"),
+        dependencies: {
+          compositing_report: path.join(workspaceDir, "08_animation", "compositing_reports", "compositing_report.json")
+        }
+      }
+    ]);
 
     const report = buildReliabilityReport({
       topicId,
@@ -37,7 +78,9 @@ function main() {
       sceneSequenceReport: readJsonSafe(path.join(workspaceDir, "08_animation", "scene_sequences", "scene_sequence_report.json"), {}),
       renderContract: readJsonSafe(path.join(workspaceDir, "09_edit_plan", "render_contract.json"), {}),
       promotionGate: readJsonSafe(path.join(workspaceDir, "10_qc", "hybrid_promotion_gate_report.json"), {}),
+      sceneReviewDecisions: readJsonSafe(path.join(workspaceDir, "10_qc", "bricktoon_scene_review_decisions.json"), {}),
       visualReadiness: readJsonSafe(path.join(workspaceDir, "04_assets", "visual_readiness.json"), {}),
+      artifactFreshness,
       visualPreviewExists: fs.existsSync(path.join(workspaceDir, "06_renders", "previews", "visual_preview.mp4")),
       finalApprovalText: fs.existsSync(path.join(workspaceDir, "10_qc", "final_approval.md"))
         ? fs.readFileSync(path.join(workspaceDir, "10_qc", "final_approval.md"), "utf8")

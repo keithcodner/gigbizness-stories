@@ -363,6 +363,8 @@ Phase 6 implementation work started so far:
 - updated `agents/orchestrator.js` so `bricktoon-reliability` and `bricktoon-overnight` are now first-class stages, `bricktoon-finish` can enforce runtime-profile gates, and draft-only manual testing can still proceed without pretending the premium path is trusted
 - added `src/bricktoon/reliabilityRecoveryPlan.js` plus `scripts/build_bricktoon_recovery_plan.js` so blocked reliability runs now emit a ranked scene-recovery package instead of leaving the user to manually correlate multiple QC artifacts
 - updated `agents/orchestrator.js` and `package.json` so `bricktoon-recovery-plan` / `npm run bricktoon:recovery` are now first-class recovery entrypoints, and `bricktoon-reliability` automatically writes the recovery plan after each gated run
+- added `src/bricktoon/sceneReviewClearance.js` plus `scripts/build_bricktoon_scene_review.js` so review-required scenes now emit a governed review packet and a reusable decision file instead of living only as promotion-gate warnings
+- updated `src/bricktoon/reliabilityGate.js` so approved review scenes can stop counting as unresolved review blockers once `bricktoon_scene_review_decisions.json` is filled in
 - fixed render-contract readiness checks so the orchestrator now validates the current render-contract shape instead of an older stale field expectation
 - added regression coverage for reliability-gate decisions so fallback-heavy or hold-heavy benchmark states are blocked intentionally instead of slipping through silently
 - strengthened the overnight evidence contract so blocked, failed, running, and completed overnight states now normalize through one reusable report summary instead of ad hoc state interpretation
@@ -507,6 +509,7 @@ Option 2 Phase 5 validation evidence so far:
 - `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-reliability --runtime-profile gtx1080_premium_preview` now shows that the premium preview path recognizes the promotion gate while still blocking topic-wide finish for concrete reasons instead of vague "not ready" language
 - the latest full-topic reliability run now records a narrower blocker set than the earlier stale report: 4 hold scenes, 4 fragile scenes, 2 review scenes, fallback ratio `0.462`, and fragile-scene ratio `0.571`
 - the latest recovery output now exists at `workspaces/test_story_template/10_qc/bricktoon_recovery_plan.{json,md}` and ranks the remaining queue as `S01`, `S02`, `S03`, `S06`, `S07`, `S05`, with `S04` isolated as benchmark-locked proof instead of ordinary rework
+- the latest review-clearance output now exists at `workspaces/test_story_template/10_qc/bricktoon_scene_review_packet.{json,md}` and seeds `bricktoon_scene_review_decisions.json` for `S01` and `S02` as the current manual-review bucket
 
 Option 2 Phase 5 is still in progress because:
 

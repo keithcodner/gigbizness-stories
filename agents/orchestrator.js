@@ -4,6 +4,8 @@ const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { parseCsv, toCsv, writeText } = require("./common");
+const { isFreshArtifact } = require("../src/bricktoon/artifactFreshness");
+const { parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
 const ROOT = path.resolve(__dirname, "..");
 const TOPICS_DIR = path.join(ROOT, "topics");
@@ -446,6 +448,10 @@ function isFileNewerOrEqual(targetPath, dependencyPath) {
   return fs.statSync(targetPath).mtimeMs >= fs.statSync(dependencyPath).mtimeMs;
 }
 
+function areArtifactsFresh(targetPath, dependencyPaths = []) {
+  return isFreshArtifact(targetPath, dependencyPaths);
+}
+
 function getTopicPaths(topicId) {
   const workspaceDir = getWorkspaceDir(topicId);
   return {
@@ -508,6 +514,11 @@ function getTopicPaths(topicId) {
     hybridContractDir: path.join(workspaceDir, "08_animation", "hybrid_contract"),
     hybridAnimationContractPath: path.join(workspaceDir, "08_animation", "hybrid_contract", "hybrid_animation_contract.json"),
     hybridAnimationContractMdPath: path.join(workspaceDir, "08_animation", "hybrid_contract", "hybrid_animation_contract.md"),
+    shotClipReportPath: path.join(workspaceDir, "08_animation", "shot_clips", "shot_clip_report.json"),
+    aiMotionReportPath: path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json"),
+    stabilizationReportPath: path.join(workspaceDir, "08_animation", "stabilized_ai_video", "stabilization_report.json"),
+    compositingReportPath: path.join(workspaceDir, "08_animation", "compositing_reports", "compositing_report.json"),
+    sceneSequenceReportPath: path.join(workspaceDir, "08_animation", "scene_sequences", "scene_sequence_report.json"),
     hybridEditorialReportPath: path.join(workspaceDir, "08_animation", "hybrid_editorial", "hybrid_editorial_sequence_report.json"),
     hybridPromotionGatePath: path.join(workspaceDir, "10_qc", "hybrid_promotion_gate_report.json"),
     hybridPromotionGateMdPath: path.join(workspaceDir, "10_qc", "hybrid_promotion_gate_report.md"),
@@ -554,6 +565,9 @@ function getTopicPaths(topicId) {
     benchmarkSceneProofReportMdPath: path.join(workspaceDir, "10_qc", "benchmark_scene_proof_report.md"),
     bricktoonRecoveryPlanPath: path.join(workspaceDir, "10_qc", "bricktoon_recovery_plan.json"),
     bricktoonRecoveryPlanMdPath: path.join(workspaceDir, "10_qc", "bricktoon_recovery_plan.md"),
+    bricktoonSceneReviewDecisionsPath: path.join(workspaceDir, "10_qc", "bricktoon_scene_review_decisions.json"),
+    bricktoonSceneReviewPacketPath: path.join(workspaceDir, "10_qc", "bricktoon_scene_review_packet.json"),
+    bricktoonSceneReviewPacketMdPath: path.join(workspaceDir, "10_qc", "bricktoon_scene_review_packet.md"),
     bricktoonOvernightStatePath: path.join(workspaceDir, "10_qc", "bricktoon_overnight_state.json"),
     bricktoonOvernightReportPath: path.join(workspaceDir, "10_qc", "bricktoon_overnight_report.json"),
     bricktoonOvernightReportMdPath: path.join(workspaceDir, "10_qc", "bricktoon_overnight_report.md"),
@@ -781,14 +795,36 @@ function isCharacterRiggingReady(topicId) {
   return directoryHasFiles(getTopicPaths(topicId).characterRigsDir);
 }
 
+function isHybridAnimationContractReady(topicId) {
+  const paths = getTopicPaths(topicId);
+  return fileHasContent(paths.hybridAnimationContractPath)
+    && areArtifactsFresh(paths.hybridAnimationContractPath, [
+      paths.productionRoutesPath,
+      path.join(paths.workspaceDir, "08_animation", "shot_performances.json")
+    ]);
+}
+
 function isAiVideoMotionReady(topicId) {
   const paths = getTopicPaths(topicId);
-  return directoryHasFiles(paths.rawAiVideoDir) && directoryHasFiles(paths.stabilizedAiVideoDir);
+  return directoryHasFiles(paths.rawAiVideoDir)
+    && directoryHasFiles(paths.stabilizedAiVideoDir)
+    && areArtifactsFresh(paths.aiMotionReportPath, [
+      paths.productionRoutesPath,
+      paths.shotClipReportPath
+    ])
+    && areArtifactsFresh(paths.stabilizationReportPath, [
+      paths.aiMotionReportPath
+    ]);
 }
 
 function isShotCompositingReady(topicId) {
   const paths = getTopicPaths(topicId);
-  return directoryHasFiles(paths.compositedShotClipsDir) && directoryHasFiles(paths.compositingReportsDir);
+  return directoryHasFiles(paths.compositedShotClipsDir)
+    && directoryHasFiles(paths.compositingReportsDir)
+    && areArtifactsFresh(paths.compositingReportPath, [
+      paths.aiMotionReportPath,
+      paths.shotClipReportPath
+    ]);
 }
 
 function isBricktoonClipsReady(topicId) {
@@ -803,7 +839,11 @@ function isBricktoonClipsReady(topicId) {
   ).length;
   const manifestSequenceCount = countManifestAssetsByType(topicId, ["bricktoon_scene_sequence", "bricktoon_animated_clip"]);
 
-  return existingSequenceCount >= expectedSceneIds.length && manifestSequenceCount >= expectedSceneIds.length;
+  return existingSequenceCount >= expectedSceneIds.length
+    && manifestSequenceCount >= expectedSceneIds.length
+    && areArtifactsFresh(paths.sceneSequenceReportPath, [
+      paths.compositingReportPath
+    ]);
 }
 
 function isBricktoonShotsReady(topicId) {
@@ -816,7 +856,12 @@ function isBricktoonShotsReady(topicId) {
   const existingShotCount = expectedShotIds.filter((shotId) =>
     fileHasContent(path.join(paths.shotClipsDir, `${shotId}.mp4`))
   ).length;
-  return existingShotCount >= expectedShotIds.length;
+  return existingShotCount >= expectedShotIds.length
+    && areArtifactsFresh(paths.shotClipReportPath, [
+      paths.animationPlanPath,
+      paths.editPlanPath,
+      path.join(paths.workspaceDir, "08_animation", "shot_performances.json")
+    ]);
 }
 
 function isDraftReady(topicId) {
@@ -1308,6 +1353,13 @@ function runNodeScript(relativeScriptPath, args) {
   }
 }
 
+function appendSceneScopeArgs(args, sceneIds = []) {
+  if (!Array.isArray(sceneIds) || sceneIds.length === 0) {
+    return args;
+  }
+  return [...args, "--scene-ids", sceneIds.join(",")];
+}
+
 function runResearchStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting research stage for topic '${topicId}'`);
@@ -1476,7 +1528,7 @@ function runCompositionGuidesStage(topicId) {
   return workspaceDir;
 }
 
-function runAssetGenerationStage(topicId) {
+function runAssetGenerationStage(topicId, sceneIds = []) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting asset-generation stage for topic '${topicId}'`);
 
@@ -1489,7 +1541,7 @@ function runAssetGenerationStage(topicId) {
   if (!isCompositionGuidesReady(topicId)) {
     runCompositionGuidesStage(topicId);
   }
-  runNodeScript("scripts/generate_shot_keyframes.js", ["--workspace", workspaceDir]);
+  runNodeScript("scripts/generate_shot_keyframes.js", appendSceneScopeArgs(["--workspace", workspaceDir], sceneIds));
 
   writeLog(`Completed asset-generation stage for topic '${topicId}'`);
   return workspaceDir;
@@ -1514,14 +1566,14 @@ function runHybridStillBenchmarkStage(topicId) {
   return workspaceDir;
 }
 
-function runAssetConsistencyValidationStage(topicId) {
+function runAssetConsistencyValidationStage(topicId, sceneIds = []) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting asset-consistency-validation stage for topic '${topicId}'`);
 
   if (!isAssetGenerationReady(topicId)) {
     runAssetGenerationStage(topicId);
   }
-  runNodeAgent("asset_consistency_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+  runNodeAgent("asset_consistency_agent.js", appendSceneScopeArgs(["--topic", topicId, "--workspace", workspaceDir], sceneIds));
 
   writeLog(`Completed asset-consistency-validation stage for topic '${topicId}'`);
   return workspaceDir;
@@ -1560,7 +1612,7 @@ function runHybridPerformanceProofStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting hybrid-performance-proof stage for topic '${topicId}'`);
 
-  if (!fileHasContent(getTopicPaths(topicId).hybridAnimationContractPath)) {
+  if (!isHybridAnimationContractReady(topicId)) {
     runHybridAnimationContractStage(topicId);
   }
   runNodeScript("scripts/render_hybrid_performance_proof.js", ["--workspace", workspaceDir]);
@@ -1573,7 +1625,7 @@ function runHybridEditorialProofStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting hybrid-editorial-proof stage for topic '${topicId}'`);
 
-  if (!fileHasContent(getTopicPaths(topicId).hybridAnimationContractPath)) {
+  if (!isHybridAnimationContractReady(topicId)) {
     runHybridAnimationContractStage(topicId);
   }
   runSceneAssemblyStage(topicId);
@@ -1674,7 +1726,7 @@ function runProfessionalToolchainMapStage(
   if (!fileHasContent(getTopicPaths(topicId).professionalExportLockLatestPath)) {
     runProfessionalExportLockStage(topicId, runtimeProfile);
   }
-  if (!fileHasContent(getTopicPaths(topicId).hybridAnimationContractPath)) {
+  if (!isHybridAnimationContractReady(topicId)) {
     runHybridAnimationContractStage(topicId);
   }
   if (!fileHasContent(getTopicPaths(topicId).hybridProductionReadinessPath)) {
@@ -1858,20 +1910,20 @@ function runBricktoonShotsStage(topicId) {
   return workspaceDir;
 }
 
-function runAiVideoMotionPassesStage(topicId) {
+function runAiVideoMotionPassesStage(topicId, sceneIds = []) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting ai-video-motion-passes stage for topic '${topicId}'`);
 
   if (!isBricktoonShotsReady(topicId)) {
     runBricktoonShotsStage(topicId);
   }
-  runNodeAgent("ai_video_motion_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+  runNodeAgent("ai_video_motion_agent.js", appendSceneScopeArgs(["--topic", topicId, "--workspace", workspaceDir], sceneIds));
 
   writeLog(`Completed ai-video-motion-passes stage for topic '${topicId}'`);
   return workspaceDir;
 }
 
-function runShotCompositingStage(topicId) {
+function runShotCompositingStage(topicId, sceneIds = []) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting shot-compositing stage for topic '${topicId}'`);
 
@@ -1879,22 +1931,22 @@ function runShotCompositingStage(topicId) {
     runBricktoonShotsStage(topicId);
   }
   if (!isAiVideoMotionReady(topicId)) {
-    runAiVideoMotionPassesStage(topicId);
+    runAiVideoMotionPassesStage(topicId, sceneIds);
   }
-  runNodeAgent("shot_compositing_agent.js", ["--topic", topicId, "--workspace", workspaceDir]);
+  runNodeAgent("shot_compositing_agent.js", appendSceneScopeArgs(["--topic", topicId, "--workspace", workspaceDir], sceneIds));
 
   writeLog(`Completed shot-compositing stage for topic '${topicId}'`);
   return workspaceDir;
 }
 
-function runSceneAssemblyStage(topicId) {
+function runSceneAssemblyStage(topicId, sceneIds = []) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting scene-assembly stage for topic '${topicId}'`);
 
   if (!isShotCompositingReady(topicId)) {
-    runShotCompositingStage(topicId);
+    runShotCompositingStage(topicId, sceneIds);
   }
-  runNodeScript("scripts/assemble_bricktoon_scene_sequences.js", ["--workspace", workspaceDir]);
+  runNodeScript("scripts/assemble_bricktoon_scene_sequences.js", appendSceneScopeArgs(["--workspace", workspaceDir], sceneIds));
 
   writeLog(`Completed scene-assembly stage for topic '${topicId}'`);
   return workspaceDir;
@@ -1926,6 +1978,7 @@ function runBricktoonReliabilityStage(topicId, runtimeProfile = null) {
     scriptArgs.push("--runtime-profile", runtimeProfile);
   }
   runNodeScript("scripts/build_bricktoon_reliability_report.js", scriptArgs);
+  runNodeScript("scripts/build_bricktoon_scene_review.js", ["--workspace", workspaceDir]);
   runNodeScript("scripts/build_bricktoon_recovery_plan.js", scriptArgs);
 
   writeLog(`Completed bricktoon-reliability stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
@@ -1947,6 +2000,43 @@ function runBricktoonRecoveryPlanStage(topicId, runtimeProfile = null) {
   }
 
   writeLog(`Completed bricktoon-recovery-plan stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
+  return workspaceDir;
+}
+
+function runBricktoonSceneRecoveryStage(topicId, sceneIds = [], bucket = null, runtimeProfile = "gtx1080_premium_preview") {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon-scene-recovery stage for topic '${topicId}'`);
+
+  if (!fileHasContent(getTopicPaths(topicId).bricktoonRecoveryPlanPath)) {
+    runBricktoonReliabilityStage(topicId, runtimeProfile);
+  }
+
+  const scriptArgs = ["--workspace", workspaceDir, "--runtime-profile", runtimeProfile];
+  if (bucket) {
+    scriptArgs.push("--bucket", bucket);
+  }
+  if (sceneIds.length > 0) {
+    scriptArgs.push("--scene-ids", sceneIds.join(","));
+  }
+  runNodeScript("scripts/run_bricktoon_scene_recovery.js", scriptArgs);
+
+  writeLog(`Completed bricktoon-scene-recovery stage for topic '${topicId}'`);
+  return workspaceDir;
+}
+
+function runBricktoonSceneReviewStage(topicId) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon-scene-review stage for topic '${topicId}'`);
+
+  if (!fileHasContent(getTopicPaths(topicId).hybridPromotionGatePath)) {
+    runHybridPromotionGateStage(topicId, "gtx1080_premium_preview");
+  }
+  if (!fileHasContent(getTopicPaths(topicId).bricktoonBenchmarkReliabilityReportPath)) {
+    runBenchmarkSceneProofStage(topicId, "gtx1080_benchmark_scene_proof");
+  }
+  runNodeScript("scripts/build_bricktoon_scene_review.js", ["--workspace", workspaceDir]);
+
+  writeLog(`Completed bricktoon-scene-review stage for topic '${topicId}'`);
   return workspaceDir;
 }
 
@@ -2237,6 +2327,7 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-compositing");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-assembly");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-reliability --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-scene-review");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-recovery-plan --runtime-profile gtx1080_premium_preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage benchmark-scene-proof --runtime-profile gtx1080_benchmark_scene_proof");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage visual-preview");
@@ -2343,10 +2434,11 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "reference-sync", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "hybrid-still-benchmark", "hybrid-animation-contract", "hybrid-performance-proof", "hybrid-editorial-proof", "hybrid-promotion-gate", "hybrid-production-readiness", "professional-export-lock", "professional-toolchain-map", "professional-hero-scene", "professional-reintegration", "professional-semi-automation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-reliability", "bricktoon-recovery-plan", "benchmark-scene-proof", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-overnight", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "reference-sync", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "hybrid-still-benchmark", "hybrid-animation-contract", "hybrid-performance-proof", "hybrid-editorial-proof", "hybrid-promotion-gate", "hybrid-production-readiness", "professional-export-lock", "professional-toolchain-map", "professional-hero-scene", "professional-reintegration", "professional-semi-automation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-reliability", "bricktoon-scene-review", "bricktoon-recovery-plan", "bricktoon-scene-recovery", "benchmark-scene-proof", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-overnight", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
+      const sceneIds = parseSceneIdsArg(args["scene-ids"]);
       let workspaceDir;
       if (args.stage === "format") {
         workspaceDir = runFormatStage(args.topic);
@@ -2379,7 +2471,7 @@ function main() {
       } else if (args.stage === "composition-guides") {
         workspaceDir = runCompositionGuidesStage(args.topic);
       } else if (args.stage === "asset-generation") {
-        workspaceDir = runAssetGenerationStage(args.topic);
+        workspaceDir = runAssetGenerationStage(args.topic, sceneIds);
       } else if (args.stage === "hybrid-still-benchmark") {
         workspaceDir = runHybridStillBenchmarkStage(args.topic);
       } else if (args.stage === "hybrid-animation-contract") {
@@ -2419,7 +2511,7 @@ function main() {
           args["runtime-profile"] || "gtx1080_premium_preview"
         );
       } else if (args.stage === "asset-consistency-validation") {
-        workspaceDir = runAssetConsistencyValidationStage(args.topic);
+        workspaceDir = runAssetConsistencyValidationStage(args.topic, sceneIds);
       } else if (args.stage === "layer-extraction") {
         workspaceDir = runLayerExtractionStage(args.topic);
       } else if (args.stage === "character-rigging") {
@@ -2433,15 +2525,19 @@ function main() {
       } else if (args.stage === "bricktoon-shots") {
         workspaceDir = runBricktoonShotsStage(args.topic);
       } else if (args.stage === "ai-video-motion-passes") {
-        workspaceDir = runAiVideoMotionPassesStage(args.topic);
+        workspaceDir = runAiVideoMotionPassesStage(args.topic, sceneIds);
       } else if (args.stage === "shot-compositing") {
-        workspaceDir = runShotCompositingStage(args.topic);
+        workspaceDir = runShotCompositingStage(args.topic, sceneIds);
       } else if (args.stage === "scene-assembly") {
-        workspaceDir = runSceneAssemblyStage(args.topic);
+        workspaceDir = runSceneAssemblyStage(args.topic, sceneIds);
       } else if (args.stage === "bricktoon-reliability") {
         workspaceDir = runBricktoonReliabilityStage(args.topic, args["runtime-profile"] || null);
+      } else if (args.stage === "bricktoon-scene-review") {
+        workspaceDir = runBricktoonSceneReviewStage(args.topic);
       } else if (args.stage === "bricktoon-recovery-plan") {
         workspaceDir = runBricktoonRecoveryPlanStage(args.topic, args["runtime-profile"] || null);
+      } else if (args.stage === "bricktoon-scene-recovery") {
+        workspaceDir = runBricktoonSceneRecoveryStage(args.topic, sceneIds, args.bucket || null, args["runtime-profile"] || "gtx1080_premium_preview");
       } else if (args.stage === "benchmark-scene-proof") {
         workspaceDir = runBenchmarkSceneProofStage(args.topic, args["runtime-profile"] || "gtx1080_benchmark_scene_proof");
       } else if (args.stage === "visual-preview") {

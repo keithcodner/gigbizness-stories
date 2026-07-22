@@ -105,8 +105,15 @@ function recommendedStageChain(bucket) {
 
 function recommendedCommands(topicId, bucket) {
   const stageChain = recommendedStageChain(bucket);
+  if (bucket === "light_rework" || bucket === "heavy_rework") {
+    return [
+      `node agents/orchestrator.js --topic ${topicId} --stage bricktoon-scene-recovery --bucket ${bucket} --runtime-profile gtx1080_premium_preview`
+    ];
+  }
   return stageChain.map((stage) => {
     switch (stage) {
+      case "bricktoon-preview":
+        return `node agents/orchestrator.js --topic ${topicId} --stage bricktoon-scene-review`;
       case "hybrid-promotion-gate":
         return `node agents/orchestrator.js --topic ${topicId} --stage hybrid-promotion-gate --runtime-profile gtx1080_premium_preview`;
       case "bricktoon-reliability":

@@ -6,6 +6,7 @@ const { parseArgs, readJson, writeText } = require("../agents/common");
 const { createEmptyManifest, upsertAsset } = require("../src/bricktoon/buildAssetManifest");
 const { concatClips, ensureDir } = require("../src/bricktoon/proceduralSequenceRenderer");
 const { summarizeSceneSequence } = require("../src/bricktoon/sequencePolish");
+const { filterScenes, mergeScopedRecords, parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
 function loadManifest(filePath, workspaceId) {
   if (!fs.existsSync(filePath)) {
@@ -24,6 +25,8 @@ function main() {
     const workspaceDir = args.workspace;
     const workspaceId = path.basename(workspaceDir);
     const shotPlan = readJson(path.join(workspaceDir, "07_shot_plans", "shot_plan.json")).scenes || [];
+    const selectedSceneIds = parseSceneIdsArg(args["scene-ids"]);
+    const scenes = filterScenes(shotPlan, selectedSceneIds);
     const manifestPath = path.join(workspaceDir, "07_visuals", "asset_manifest.json");
     let manifest = loadManifest(manifestPath, workspaceId);
     const sequenceDir = path.join(workspaceDir, "08_animation", "scene_sequences");
@@ -31,11 +34,14 @@ function main() {
     const proceduralShotDir = path.join(workspaceDir, "08_animation", "shot_clips");
     const compositingReport = readJson(path.join(workspaceDir, "08_animation", "compositing_reports", "compositing_report.json"));
     const sceneManifest = readJson(path.join(workspaceDir, "05_render_plan", "scene_manifest.json"));
+    const existingReport = fs.existsSync(path.join(sequenceDir, "scene_sequence_report.json"))
+      ? readJson(path.join(sequenceDir, "scene_sequence_report.json"))
+      : { scenes: [] };
     const shotSelections = new Map((compositingReport.shots || []).map((shot) => [shot.shot_id, shot]));
     ensureDir(sequenceDir);
     const reports = [];
 
-    for (const scene of shotPlan) {
+    for (const scene of scenes) {
       const sceneSelectionRows = scene.shots.map((shot) => shotSelections.get(shot.shot_id)).filter(Boolean);
       const sceneRecord = (sceneManifest.scenes || []).find((entry) => entry.id === scene.scene_id) || {};
       const sequenceSummary = summarizeSceneSequence({
@@ -135,8 +141,12 @@ function main() {
       });
     }
 
+    const mergedReports = mergeScopedRecords(existingReport.scenes || [], reports, {
+      idField: "scene_id",
+      scopedIds: selectedSceneIds
+    });
     writeText(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-    writeText(path.join(sequenceDir, "scene_sequence_report.json"), `${JSON.stringify({ scenes: reports }, null, 2)}\n`);
+    writeText(path.join(sequenceDir, "scene_sequence_report.json"), `${JSON.stringify({ scenes: mergedReports }, null, 2)}\n`);
     console.log(`Bricktoon scene sequences assembled for '${workspaceId}'.`);
   } catch (error) {
     console.error(`Error: ${error.message}`);

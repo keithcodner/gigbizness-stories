@@ -4,9 +4,13 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 const { parseArgs } = require("./common");
 
-function run(scriptName, workspaceDir) {
+function run(scriptName, workspaceDir, sceneIds = null) {
   const scriptPath = path.join(path.resolve(__dirname, ".."), "scripts", scriptName);
-  const result = spawnSync("node", [scriptPath, "--workspace", workspaceDir], { encoding: "utf8" });
+  const commandArgs = [scriptPath, "--workspace", workspaceDir];
+  if (sceneIds) {
+    commandArgs.push("--scene-ids", sceneIds);
+  }
+  const result = spawnSync("node", commandArgs, { encoding: "utf8" });
   if (result.stdout) {
     process.stdout.write(result.stdout);
   }
@@ -24,8 +28,8 @@ function main() {
     if (!args.topic || !args.workspace) {
       throw new Error("Usage: node agents/ai_video_motion_agent.js --topic <topic_id> --workspace <workspace_path>");
     }
-    run("generate_ai_motion_passes.js", args.workspace);
-    run("stabilize_ai_motion.js", args.workspace);
+    run("generate_ai_motion_passes.js", args.workspace, args["scene-ids"] || null);
+    run("stabilize_ai_motion.js", args.workspace, args["scene-ids"] || null);
     console.log(`AI video motion passes prepared for topic '${args.topic}'.`);
   } catch (error) {
     console.error(`Error: ${error.message}`);

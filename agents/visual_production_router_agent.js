@@ -33,7 +33,9 @@ function main() {
           quality_tier: qualityTier,
           reason: `Heuristic route for ${shot.shot_type || "general shot"} based on current AI-quality architecture.`,
           base_artwork: productionMode.includes("ai") ? "ai_illustration" : "procedural_layout",
-          character_motion: productionMode.includes("rigged") ? "layered_puppet" : "camera_motion_only",
+          character_motion: ["hybrid_2d_ai", "rigged_ai_character_scene"].includes(productionMode)
+            ? "layered_puppet"
+            : "camera_motion_only",
           camera_motion: shot.camera?.movement || "steady_push",
           secondary_motion: productionMode.includes("ai") ? "ai_video_pass_optional" : "none",
           duration_seconds: Number((shot.end - shot.start).toFixed(2)),

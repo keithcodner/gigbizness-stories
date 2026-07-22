@@ -11,7 +11,11 @@ function main() {
       throw new Error("Usage: node agents/asset_consistency_agent.js --topic <topic_id> --workspace <workspace_path>");
     }
     const scriptPath = path.join(path.resolve(__dirname, ".."), "scripts", "validate_generated_assets.js");
-    const result = spawnSync("node", [scriptPath, "--workspace", args.workspace], { encoding: "utf8" });
+    const commandArgs = [scriptPath, "--workspace", args.workspace];
+    if (args["scene-ids"]) {
+      commandArgs.push("--scene-ids", args["scene-ids"]);
+    }
+    const result = spawnSync("node", commandArgs, { encoding: "utf8" });
     if (result.stdout) {
       process.stdout.write(result.stdout);
     }

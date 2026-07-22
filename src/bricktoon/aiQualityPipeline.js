@@ -105,18 +105,38 @@ function inferQualityTier(shot) {
 function inferProductionMode(shot) {
   const type = String(shot.shot_type || "");
   const purpose = String(shot.purpose || "").toLowerCase();
+  const normalizedType = type.toLowerCase();
 
-  if (type.includes("document") || purpose.includes("invoice") || purpose.includes("contract") || purpose.includes("proof")) {
-    return "procedural_document";
-  }
-  if (type.includes("closeup") || purpose.includes("reaction") || purpose.includes("reveal")) {
+  // Character-performance shots must stay on the hybrid path even when
+  // the narration beat is about invoices, contracts, or paperwork.
+  if (
+    normalizedType.includes("closeup")
+    || normalizedType.includes("medium_single")
+    || normalizedType.includes("medium_two_shot")
+    || normalizedType.includes("two_shot")
+    || normalizedType.includes("over_shoulder")
+  ) {
     return "hybrid_2d_ai";
   }
-  if (type.includes("wide") || type.includes("establishing")) {
+  if (
+    normalizedType.includes("top_down_document")
+    || normalizedType.includes("document_insert")
+    || normalizedType.includes("push_in_document")
+    || normalizedType === "document_insert"
+  ) {
+    return "procedural_document";
+  }
+  if (purpose.includes("reaction") || purpose.includes("reveal")) {
+    return "hybrid_2d_ai";
+  }
+  if (normalizedType.includes("wide") || normalizedType.includes("establishing")) {
     return "layered_ai_illustration";
   }
-  if (type.includes("over_shoulder") || type.includes("two_shot") || type.includes("three_character")) {
+  if (normalizedType.includes("three_character")) {
     return "rigged_ai_character_scene";
+  }
+  if (purpose.includes("invoice") || purpose.includes("contract") || purpose.includes("proof")) {
+    return "procedural_document";
   }
   return "layered_procedural_2d";
 }

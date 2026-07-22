@@ -6,6 +6,7 @@ const path = require("path");
 const { getCastMembers } = require("../src/bricktoon/normalizeCast");
 const { resolveSceneAsset } = require("../src/render/resolveSceneAsset");
 const { buildLayerRegions } = require("../src/bricktoon/layerRegions");
+const { isFreshArtifact, summarizeArtifactFreshness } = require("../src/bricktoon/artifactFreshness");
 const {
   buildOvernightRunReport,
   buildReliabilityReport,
@@ -26,6 +27,7 @@ const {
 const { splitNarrationIntoCaptionChunks, summarizeSceneSequence } = require("../src/bricktoon/sequencePolish");
 const { loadVisualGenerationConfig, resolveWorkflowTemplate, qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
 const { buildPerformanceFrameState, cameraStateForFrame } = require("../src/bricktoon/proceduralSequenceRenderer");
+const { inferProductionMode } = require("../src/bricktoon/aiQualityPipeline");
 const { buildHybridCharacterContract, buildHybridShotContract } = require("../src/bricktoon/hybridAnimationContract");
 const { buildHybridProofPerformance, selectHybridProofShots } = require("../src/bricktoon/hybridPerformanceProof");
 const {
@@ -70,6 +72,17 @@ const {
   evaluateProfessionalSemiAutomation,
   summarizeProfessionalSemiAutomationInputs
 } = require("../src/bricktoon/professionalSemiAutomationDecision");
+const {
+  buildSceneReviewPacket,
+  collectReviewRequiredSceneIds,
+  summarizeReviewClearance
+} = require("../src/bricktoon/sceneReviewClearance");
+const {
+  collectShotIdsFromScenes,
+  filterScenes,
+  mergeScopedRecords,
+  parseSceneIdsArg
+} = require("../src/bricktoon/sceneSelection");
 const {
   buildAnimationSafetyLines,
   buildCharacterLockLines,
@@ -213,6 +226,25 @@ test("hero shot workflow resolves to managed hero refinement template", () => {
 test("quality classification favors composited motion outputs", () => {
   assert.equal(qualityClassificationForAsset("composited_shot_clip"), "premium_motion");
   assert.equal(qualityClassificationForAsset("approved_keyframe"), "premium_still");
+});
+
+test("production routing keeps medium character-performance shots on hybrid motion even for invoice beats", () => {
+  assert.equal(inferProductionMode({
+    shot_type: "medium_single",
+    purpose: "Introduce the paperwork, invoice, or fee pressure prop."
+  }), "hybrid_2d_ai");
+
+  assert.equal(inferProductionMode({
+    shot_type: "medium_two_shot",
+    purpose: "Review the contract and invoice pressure together."
+  }), "hybrid_2d_ai");
+});
+
+test("production routing keeps true document inserts on procedural document mode", () => {
+  assert.equal(inferProductionMode({
+    shot_type: "document_insert",
+    purpose: "Show the amount or leverage shift directly on the key document."
+  }), "procedural_document");
 });
 
 test("single-character shot guidance prioritizes only the hero references", () => {
@@ -573,6 +605,69 @@ test("reliability gate blocks overnight finish when fallback and hold pressure a
   assert.ok(gate.blockers.some((item) => item.includes("fallback ratio")));
 });
 
+test("artifact freshness detects stale downstream files after dependency updates", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "bricktoon-freshness-"));
+  const dependencyPath = path.join(tempDir, "dependency.json");
+  const targetPath = path.join(tempDir, "target.json");
+  const olderDate = new Date("2026-07-22T00:00:00.000Z");
+  const newerDate = new Date("2026-07-22T00:00:05.000Z");
+
+  fs.writeFileSync(targetPath, "{\"ok\":true}\n", "utf8");
+  fs.writeFileSync(dependencyPath, "{\"route\":1}\n", "utf8");
+  fs.utimesSync(targetPath, olderDate, olderDate);
+  fs.utimesSync(dependencyPath, newerDate, newerDate);
+
+  assert.equal(isFreshArtifact(targetPath, [dependencyPath]), false);
+
+  fs.writeFileSync(targetPath, "{\"ok\":true,\"refreshed\":true}\n", "utf8");
+  const refreshedDate = new Date("2026-07-22T00:00:10.000Z");
+  fs.utimesSync(targetPath, refreshedDate, refreshedDate);
+  assert.equal(isFreshArtifact(targetPath, [dependencyPath]), true);
+
+  const freshness = summarizeArtifactFreshness([{
+    artifact_id: "hybrid_animation_contract",
+    target_path: targetPath,
+    dependencies: {
+      production_routes: dependencyPath
+    }
+  }]);
+
+  assert.equal(freshness.stale_artifact_count, 0);
+  fs.rmSync(tempDir, { recursive: true, force: true });
+});
+
+test("reliability gate blocks when downstream artifacts are stale", () => {
+  const gate = evaluateReliabilityGate({
+    require_preview: true,
+    require_sequence_reports: true,
+    require_render_contract: true,
+    require_qc_approval: false,
+    allow_review_required_finish: false,
+    intended_flow: "overnight_finish",
+    max_unresolved_high_priority: 3,
+    max_fallback_ratio: 0.35,
+    max_fragile_scene_ratio: 0.25
+  }, {
+    preview_exists: true,
+    sequence_reports_ready: true,
+    render_contract_ready: true,
+    qc_approved: false,
+    unresolved_high_priority_count: 0,
+    stale_artifact_count: 2,
+    stale_artifacts: [
+      { artifact_id: "hybrid_animation_contract", stale_dependencies: ["production_routes"] },
+      { artifact_id: "shot_compositing", stale_dependencies: ["ai_motion_report"] }
+    ],
+    fallback_ratio: 0.1,
+    fragile_scene_ratio: 0.1,
+    review_scenes: 0,
+    hold_scenes: 0
+  });
+
+  assert.equal(gate.decision, "blocked");
+  assert.ok(gate.blockers.some((item) => item.includes("downstream artifacts are stale")));
+});
+
 test("reliability report promotes clean draft finish readiness", () => {
   const report = buildReliabilityReport({
     topicId: "test_story_template",
@@ -807,6 +902,219 @@ test("reliability recovery plan summarizes scene queue and benchmark proof path"
   assert.equal(report.recovery_buckets[0].bucket, "manual_review");
   assert.equal(report.scene_queue[0].scene_id, "S01");
   assert.match(report.next_phase_summary.benchmark_proof_command, /benchmark-scene-proof/);
+});
+
+test("scene selection helpers normalize ids and collect scoped shots", () => {
+  const sceneIds = parseSceneIdsArg("s03, S01  s03");
+  const scenes = filterScenes([
+    { scene_id: "S01", shots: [{ shot_id: "S01_A" }] },
+    { scene_id: "S02", shots: [{ shot_id: "S02_A" }] },
+    { scene_id: "S03", shots: [{ shot_id: "S03_A" }, { shot_id: "S03_B" }] }
+  ], sceneIds);
+
+  assert.deepEqual(sceneIds, ["S01", "S03"]);
+  assert.deepEqual(scenes.map((scene) => scene.scene_id), ["S01", "S03"]);
+  assert.deepEqual(collectShotIdsFromScenes(scenes), ["S01_A", "S03_A", "S03_B"]);
+});
+
+test("mergeScopedRecords replaces only the selected scoped entries", () => {
+  const merged = mergeScopedRecords([
+    { shot_id: "S01_A", quality: "old" },
+    { shot_id: "S02_A", quality: "keep" },
+    { shot_id: "S03_A", quality: "old" }
+  ], [
+    { shot_id: "S01_A", quality: "new" },
+    { shot_id: "S03_B", quality: "new" }
+  ], {
+    idField: "shot_id",
+    scopedIds: ["S01_A", "S03_A", "S03_B"]
+  });
+
+  assert.deepEqual(merged, [
+    { shot_id: "S01_A", quality: "new" },
+    { shot_id: "S02_A", quality: "keep" },
+    { shot_id: "S03_B", quality: "new" }
+  ]);
+});
+
+test("scene review packet seeds decisions for review-required scenes", () => {
+  const report = buildSceneReviewPacket({
+    topicId: "test_story_template",
+    promotionGate: {
+      benchmark_editorial_scene: {
+        scene_id: "S04",
+        title: "Where Pressure Enters"
+      },
+      human_checkpoint: {
+        checklist: ["character identity stays on-model and readable"],
+        review_focus: ["weak mouth motion on speaking beats"]
+      },
+      scene_decisions: [
+        {
+          scene_id: "S01",
+          decision: "review_required",
+          continuity_status: "mixed",
+          fallback_shots: 1,
+          premium_motion_shots: 2,
+          reasons: ["sequence report still requires human review before finish"],
+          next_actions: ["review the preview against the benchmark editorial scene"]
+        },
+        {
+          scene_id: "S02",
+          decision: "review_required",
+          continuity_status: "mixed",
+          fallback_shots: 2,
+          premium_motion_shots: 2,
+          reasons: ["sequence report still requires human review before finish"],
+          next_actions: ["review the preview against the benchmark editorial scene"]
+        }
+      ]
+    },
+    sceneSequenceReport: {
+      scenes: [
+        { scene_id: "S01", promotion_status: "review_before_finish", continuity_status: "mixed", fallback_shots: 1, premium_motion_shots: 2 },
+        { scene_id: "S02", promotion_status: "review_before_finish", continuity_status: "mixed", fallback_shots: 2, premium_motion_shots: 2 }
+      ]
+    },
+    renderContract: {
+      scenes: [
+        { scene_id: "S01", selected_asset_type: "bricktoon_composited_shot_sequence", selected_asset_file: "08_animation/scene_sequences/S01_sequence.mp4" },
+        { scene_id: "S02", selected_asset_type: "bricktoon_composited_shot_sequence", selected_asset_file: "08_animation/scene_sequences/S02_sequence.mp4" }
+      ]
+    },
+    benchmarkReliabilityReport: {
+      readiness: {
+        benchmark_scene_ready: true
+      },
+      gate: {
+        decision: "ready_for_overnight_finish"
+      }
+    },
+    reviewDecisions: {
+      decisions: [
+        {
+          scene_id: "S01",
+          status: "approved",
+          reviewer: "qa",
+          approved_at: "2026-07-22T04:30:00.000Z",
+          checklist: {
+            identity_readable: true,
+            motion_readable: true,
+            prop_readable: true,
+            benchmark_comparison_passed: true,
+            subtitle_safe_framing: true
+          }
+        }
+      ]
+    }
+  });
+
+  assert.equal(report.review_clearance.total_review_required, 2);
+  assert.equal(report.review_clearance.approved_count, 1);
+  assert.equal(report.review_clearance.pending_count, 1);
+  assert.equal(report.decisions.length, 2);
+  assert.equal(report.review_scenes[0].benchmark_scene_ready, true);
+});
+
+test("scene review helpers collect review scenes and summarize clearance", () => {
+  const reviewSceneIds = collectReviewRequiredSceneIds({
+    promotionGate: {
+      scene_decisions: [
+        { scene_id: "S01", decision: "review_required" },
+        { scene_id: "S02", decision: "review_required" }
+      ]
+    }
+  });
+  const summary = summarizeReviewClearance({
+    reviewRequiredSceneIds: reviewSceneIds,
+    reviewDecisions: {
+      decisions: [
+        { scene_id: "S01", status: "approved" },
+        { scene_id: "S02", status: "pending" }
+      ]
+    }
+  });
+
+  assert.deepEqual(reviewSceneIds, ["S01", "S02"]);
+  assert.equal(summary.approved_count, 1);
+  assert.equal(summary.pending_count, 1);
+});
+
+test("reliability report only blocks on unresolved review scenes after review approval", () => {
+  const report = buildReliabilityReport({
+    topicId: "test_story_template",
+    runtimeProfile: {
+      profile_id: "gtx1080_premium_preview",
+      machine_target: "gtx1080_8gb",
+      require_preview: true,
+      require_sequence_reports: true,
+      require_render_contract: true,
+      require_promotion_gate: true,
+      require_qc_approval: false,
+      allow_review_required_finish: false,
+      intended_flow: "preview_plus_gate",
+      max_unresolved_high_priority: 5,
+      max_fallback_ratio: 0.55,
+      max_fragile_scene_ratio: 0.5,
+      runtime_policy: {
+        max_parallel_motion_jobs: 1,
+        max_parallel_keyframe_jobs: 1,
+        recommended_window: "evening_review"
+      }
+    },
+    machineProfile: {
+      gpu: {
+        model: "NVIDIA GeForce GTX 1080",
+        vram_gb: 8,
+        preferred_encoding: "h264_nvenc"
+      },
+      overnight_mode: true
+    },
+    sceneSequenceReport: {
+      scenes: [
+        {
+          scene_id: "S01",
+          continuity_status: "mixed",
+          promotion_status: "review_before_finish",
+          premium_motion_shots: 3,
+          fallback_shots: 1
+        },
+        {
+          scene_id: "S02",
+          continuity_status: "mixed",
+          promotion_status: "review_before_finish",
+          premium_motion_shots: 4,
+          fallback_shots: 1
+        }
+      ]
+    },
+    renderContract: {
+      scenes: [{ scene_id: "S01" }, { scene_id: "S02" }]
+    },
+    promotionGate: {
+      gate: {
+        decision: "approved_for_selected_scene_promotion",
+        selected_scene_ready: true,
+        promoted_scene_count: 1
+      }
+    },
+    sceneReviewDecisions: {
+      decisions: [
+        { scene_id: "S01", status: "approved" },
+        { scene_id: "S02", status: "pending" }
+      ]
+    },
+    visualReadiness: {
+      unresolved_high_priority_count: 1
+    },
+    visualPreviewExists: true,
+    finalApprovalText: "NOT APPROVED"
+  });
+
+  assert.equal(report.readiness.review_scenes_total, 2);
+  assert.equal(report.readiness.review_scenes_approved, 1);
+  assert.equal(report.readiness.review_scenes_pending, 1);
+  assert.ok(report.gate.blockers.some((item) => item.includes("1 scene(s) still require human review")));
 });
 
 test("overnight state summary reports blocked resumable runs with reliability context", () => {

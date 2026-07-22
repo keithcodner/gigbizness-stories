@@ -15,6 +15,7 @@ const {
   assetTimestamp
 } = require("../src/bricktoon/aiQualityPipeline");
 const { inferMotionRecipe } = require("../src/bricktoon/workflowContracts");
+const { collectShotIdsFromScenes, filterScenes, hasSceneSelection, mergeScopedRecords, parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
 function runFfmpeg(args, label) {
   const result = spawnSync("ffmpeg", args, { encoding: "utf8" });
@@ -141,6 +142,10 @@ function main() {
     const workspaceDir = path.resolve(args.workspace);
     const routes = readJsonSafe(path.join(workspaceDir, "07_visuals", "production_routes", "production_routes.json"), {});
     const shotPlan = readJsonSafe(path.join(workspaceDir, "07_shot_plans", "shot_plan.json"), {});
+    const selectedSceneIds = parseSceneIdsArg(args["scene-ids"]);
+    const selectedScenes = filterScenes(shotPlan.scenes || [], selectedSceneIds);
+    const selectedShotIds = hasSceneSelection(selectedSceneIds) ? collectShotIdsFromScenes(selectedScenes) : [];
+    const selectedShotIdSet = new Set(selectedShotIds);
     const shotClipsDir = path.join(workspaceDir, "08_animation", "shot_clips");
     const rawDir = path.join(workspaceDir, "08_animation", "raw_ai_video");
     const approvedKeyframesDir = path.join(workspaceDir, "07_visuals", "approved_keyframes");
@@ -154,6 +159,7 @@ function main() {
         shotLookup.set(shot.shot_id, { ...shot, scene_id: scene.scene_id });
       }
     }
+    const existingReport = readJsonSafe(path.join(rawDir, "ai_motion_report.json"), {});
     const report = {
       generated_at: assetTimestamp(),
       status: "motion_passes_ready",
@@ -161,6 +167,9 @@ function main() {
     };
 
     for (const route of routes.routes || []) {
+      if (selectedShotIds.length > 0 && !selectedShotIdSet.has(route.shot_id)) {
+        continue;
+      }
       if (!["hybrid_2d_ai", "layered_ai_illustration", "ai_image_to_video"].includes(route.production_mode)) {
         continue;
       }
@@ -231,6 +240,10 @@ function main() {
       });
     }
 
+    report.shots = mergeScopedRecords(existingReport.shots || [], report.shots, {
+      idField: "shot_id",
+      scopedIds: selectedShotIds
+    });
     saveManifest(workspaceDir, manifest);
     writeJson(path.join(rawDir, "ai_motion_report.json"), report);
     console.log(`AI motion passes generated for '${path.basename(workspaceDir)}'.`);

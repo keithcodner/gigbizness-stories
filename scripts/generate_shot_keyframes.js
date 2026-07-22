@@ -33,6 +33,7 @@ const {
   selectCharacterRefPaths
 } = require("../src/bricktoon/shotKeyframeGuidance");
 const { readJson } = require("../agents/common");
+const { filterScenes, parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
 function keyframeCountForTier(tier) {
   if (tier === "hero") {
@@ -84,6 +85,8 @@ async function main() {
 
     const workspaceDir = path.resolve(args.workspace);
     const shotPlan = readJsonSafe(path.join(workspaceDir, "07_shot_plans", "shot_plan.json"), {});
+    const selectedSceneIds = parseSceneIdsArg(args["scene-ids"]);
+    const scenes = filterScenes(shotPlan.scenes || [], selectedSceneIds);
     const artDirectionDir = path.join(workspaceDir, "07_visuals", "art_direction");
     const generatedDir = path.join(workspaceDir, "07_visuals", "generated_keyframes");
     const approvedDir = path.join(workspaceDir, "07_visuals", "approved_keyframes");
@@ -97,7 +100,7 @@ async function main() {
     ensureDir(generatedDir);
     ensureDir(approvedDir);
 
-    for (const scene of shotPlan.scenes || []) {
+    for (const scene of scenes) {
       for (const shot of scene.shots || []) {
         const tier = inferQualityTier(shot);
         const count = keyframeCountForTier(tier);

@@ -40,6 +40,17 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function normalizeReviewStatus(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "approved") {
+    return "approved";
+  }
+  if (normalized === "rejected") {
+    return "rejected";
+  }
+  return "pending";
+}
+
 function getPromotedSceneIds(promotionGate = {}) {
   const promoted = safeArray(promotionGate.scene_decisions)
     .filter((scene) => scene.decision === "promote_to_hybrid_finish")
@@ -139,6 +150,8 @@ function summarizeReadinessInputs({
   finalApprovalText = "",
   visualReadiness = {},
   promotionGate = {},
+  sceneReviewDecisions = {},
+  artifactFreshness = {},
   scope = "topic"
 }) {
   const scopedScenes = buildScopedSceneRecords({
@@ -148,6 +161,18 @@ function summarizeReadinessInputs({
     scope
   });
   const scopedSceneIds = scopedScenes.map((scene) => scene.scene_id).filter(Boolean);
+  const reviewSceneIds = scopedScenes
+    .filter((scene) => scene.promotion_status === "review_before_finish")
+    .map((scene) => scene.scene_id)
+    .filter(Boolean);
+  const reviewDecisionLookup = new Map(
+    safeArray(sceneReviewDecisions.decisions)
+      .filter((decision) => decision && decision.scene_id)
+      .map((decision) => [decision.scene_id, decision])
+  );
+  const approvedReviewSceneIds = reviewSceneIds.filter((sceneId) => normalizeReviewStatus(reviewDecisionLookup.get(sceneId)?.status) === "approved");
+  const rejectedReviewSceneIds = reviewSceneIds.filter((sceneId) => normalizeReviewStatus(reviewDecisionLookup.get(sceneId)?.status) === "rejected");
+  const pendingReviewSceneIds = reviewSceneIds.filter((sceneId) => !approvedReviewSceneIds.includes(sceneId) && !rejectedReviewSceneIds.includes(sceneId));
   const sequenceHealth = summarizeSequenceHealth(scopedScenes);
   const renderScenes = scope === "benchmark_selected"
     ? safeArray(renderContract.scenes).filter((scene) => scopedSceneIds.includes(scene.scene_id)).length
@@ -166,9 +191,18 @@ function summarizeReadinessInputs({
     promoted_scene_count: Number(promotionGateState.promoted_scene_count || 0),
     qc_approved: String(finalApprovalText || "").startsWith("APPROVED"),
     unresolved_high_priority_count: Number(visualReadiness.unresolved_high_priority_count || 0),
+    stale_artifact_count: Number(artifactFreshness.stale_artifact_count || 0),
+    stale_artifacts: safeArray(artifactFreshness.stale_artifacts),
     total_scenes: sequenceHealth.total_scenes,
     fragile_scenes: sequenceHealth.fragile_scenes,
-    review_scenes: sequenceHealth.review_scenes,
+    review_scenes_total: reviewSceneIds.length,
+    review_scenes_approved: approvedReviewSceneIds.length,
+    review_scenes_rejected: rejectedReviewSceneIds.length,
+    review_scenes_pending: pendingReviewSceneIds.length,
+    approved_review_scene_ids: approvedReviewSceneIds,
+    rejected_review_scene_ids: rejectedReviewSceneIds,
+    pending_review_scene_ids: pendingReviewSceneIds,
+    review_scenes: pendingReviewSceneIds.length,
     hold_scenes: sequenceHealth.hold_scenes,
     premium_motion_shots: sequenceHealth.premium_motion_shots,
     fallback_shots: sequenceHealth.fallback_shots,
@@ -195,6 +229,12 @@ function evaluateReliabilityGate(runtimeProfile, readiness) {
   }
   if (runtimeProfile.require_qc_approval && !readiness.qc_approved) {
     blockers.push("QC final approval is missing");
+  }
+  if (readiness.stale_artifact_count > 0) {
+    const staleArtifactNames = readiness.stale_artifacts
+      .map((artifact) => artifact.artifact_id)
+      .filter(Boolean);
+    blockers.push(`downstream artifacts are stale (${readiness.stale_artifact_count}): ${staleArtifactNames.join(", ")}`);
   }
   if (readiness.hold_scenes > 0) {
     blockers.push(`${readiness.hold_scenes} scene(s) are still marked hold_for_polish`);
@@ -244,7 +284,9 @@ function buildReliabilityReport({
   sceneSequenceReport,
   renderContract,
   promotionGate,
+  sceneReviewDecisions,
   visualReadiness,
+  artifactFreshness,
   visualPreviewExists,
   finalApprovalText,
   scope = "topic"
@@ -258,6 +300,8 @@ function buildReliabilityReport({
     finalApprovalText,
     visualReadiness,
     promotionGate,
+    sceneReviewDecisions,
+    artifactFreshness,
     scope
   });
   const gate = evaluateReliabilityGate(runtimeProfile, readiness);
@@ -378,14 +422,28 @@ function buildReliabilityMarkdown(report) {
     `- Promoted scenes: ${report.readiness.promoted_scene_count}`,
     `- QC approved: ${report.readiness.qc_approved ? "yes" : "no"}`,
     `- Unresolved high-priority assets: ${report.readiness.unresolved_high_priority_count}`,
+    `- Stale downstream artifacts: ${report.readiness.stale_artifact_count ?? 0}`,
     `- Fallback ratio: ${report.readiness.fallback_ratio}`,
     `- Fragile scene ratio: ${report.readiness.fragile_scene_ratio}`,
-    `- Review scenes: ${report.readiness.review_scenes}`,
+    `- Review scenes pending: ${report.readiness.review_scenes}`,
+    `- Review scenes approved: ${report.readiness.review_scenes_approved ?? 0}`,
     `- Hold scenes: ${report.readiness.hold_scenes}`,
     "",
-    "## Blockers",
+    "## Stale Artifacts",
     ""
   ];
+
+  if (safeArray(report.readiness.stale_artifacts).length === 0) {
+    lines.push("- None");
+  } else {
+    for (const artifact of report.readiness.stale_artifacts) {
+      lines.push(`- ${artifact.artifact_id}: ${safeArray(artifact.stale_dependencies).join(", ")}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## Blockers");
+  lines.push("");
 
   if (report.gate.blockers.length === 0) {
     lines.push("- None");

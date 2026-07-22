@@ -6,6 +6,7 @@ const { parseArgs } = require("../agents/common");
 const { assetTimestamp, loadManifest, readJsonSafe, relativeWorkspacePath, saveManifest, upsertAsset, writeJson } = require("../src/bricktoon/aiQualityPipeline");
 const { qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
 const { classifyShotRole, subtitleSafeModeForShotType } = require("../src/bricktoon/sequencePolish");
+const { collectShotIdsFromScenes, filterScenes, hasSceneSelection, mergeScopedRecords, parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
 function main() {
   try {
@@ -16,6 +17,9 @@ function main() {
 
     const workspaceDir = path.resolve(args.workspace);
     const shotPlan = readJsonSafe(path.join(workspaceDir, "07_shot_plans", "shot_plan.json"), {});
+    const selectedSceneIds = parseSceneIdsArg(args["scene-ids"]);
+    const scenes = filterScenes(shotPlan.scenes || [], selectedSceneIds);
+    const selectedShotIds = hasSceneSelection(selectedSceneIds) ? collectShotIdsFromScenes(scenes) : [];
     const baseShotDir = path.join(workspaceDir, "08_animation", "shot_clips");
     const stabilizedDir = path.join(workspaceDir, "08_animation", "stabilized_ai_video");
     const compositedDir = path.join(workspaceDir, "08_animation", "composited_shot_clips");
@@ -23,11 +27,12 @@ function main() {
     const manifest = loadManifest(workspaceDir);
     const motionReport = readJsonSafe(path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json"), {});
     const shotClipReport = readJsonSafe(path.join(workspaceDir, "08_animation", "shot_clips", "shot_clip_report.json"), {});
+    const existingReport = readJsonSafe(path.join(reportsDir, "compositing_report.json"), {});
     const report = { shots: [] };
     const motionLookup = new Map((motionReport.shots || []).map((shot) => [shot.shot_id, shot]));
     const clipLookup = new Map((shotClipReport.shots || []).map((entry) => [entry.shot_id, entry]));
 
-    for (const scene of shotPlan.scenes || []) {
+    for (const scene of scenes) {
       for (const [shotIndex, shot] of (scene.shots || []).entries()) {
         const stabilizedPath = path.join(stabilizedDir, `${shot.shot_id}_stabilized.mp4`);
         const fallbackPath = path.join(baseShotDir, `${shot.shot_id}.mp4`);
@@ -76,6 +81,10 @@ function main() {
       }
     }
 
+    report.shots = mergeScopedRecords(existingReport.shots || [], report.shots, {
+      idField: "shot_id",
+      scopedIds: selectedShotIds
+    });
     writeJson(path.join(reportsDir, "compositing_report.json"), report);
     saveManifest(workspaceDir, manifest);
     console.log(`Bricktoon shot compositing completed for '${path.basename(workspaceDir)}'.`);
