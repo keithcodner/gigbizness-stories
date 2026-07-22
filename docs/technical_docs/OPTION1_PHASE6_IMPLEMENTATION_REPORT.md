@@ -153,13 +153,17 @@ Phase 6 was supposed to deliver:
 - `node scripts\\build_bricktoon_reliability_report.js --workspace workspaces\\test_story_template --runtime-profile gtx1080_premium_preview` now blocks only for scene quality/review reasons and no longer reports stale downstream artifacts.
 - `node --test tests\\bricktoon_pipeline.test.js` now passes 70 tests on Wednesday, July 22, 2026, including new scene-selection and scoped-report-merge coverage for scene recovery.
 - `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-scene-recovery --bucket manual_review --runtime-profile gtx1080_premium_preview` completed successfully on Wednesday, July 22, 2026 and refreshed review, reliability, and recovery artifacts through the new governed recovery entrypoint.
+- `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-scene-recovery --bucket light_rework --runtime-profile gtx1080_premium_preview` completed successfully on Wednesday, July 22, 2026 after the stabilization-script fix, and moved `S03`, `S06`, and `S07` from rework into manual review.
+- `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-scene-recovery --bucket heavy_rework --runtime-profile gtx1080_premium_preview` completed successfully on Wednesday, July 22, 2026 and moved `S05` from rework into manual review.
 
 ## Remaining Follow-Up Pressure
 
 - Record a real governed overnight run that clears the premium runtime profile.
 - Reduce the remaining review and hold scenes until the benchmark can pass the reliability gate honestly.
-- Use the scene-review packet to clear `S01` and `S02` first, then convert at least one fragile hold scene out of the `S03` / `S06` / `S07` bucket before tackling `S05`.
+- Use the scene-review packet to clear `S01`, `S02`, `S03`, `S05`, `S06`, and `S07` before attempting a premium finish decision on the broader topic.
 - Use `bricktoon-scene-recovery` for `light_rework` and `heavy_rework` buckets instead of burning full-topic expensive reruns while closing the remaining scene-quality blockers.
+- The `light_rework` and `heavy_rework` buckets are now done in the live benchmark workspace.
+  The next remaining target is no longer build-side recovery; it is the governed manual-review set `S01`, `S02`, `S03`, `S05`, `S06`, and `S07`.
 - Continue tightening edge cases where a resumed run might be technically valid but still operationally ambiguous, but the next main pressure is now scene quality rather than stale dependency handling.
 - Keep reporting strong enough that blocked, failed, and partial overnight runs are easy to diagnose from artifacts alone.
 - Keep the benchmark-proof path honest by treating it as proof of the selected scene only, not as permission to skip the full-topic reliability gate.

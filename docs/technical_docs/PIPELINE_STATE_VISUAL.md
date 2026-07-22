@@ -219,7 +219,7 @@ PIPELINE STATUS
     |-- professional hero scene package .... [REAL]
     |-- professional reintegration ......... [REAL]
     |-- option 3 route classification ...... [REAL]
-    `-- unattended overnight production ..... [BLOCKED BY REPORT]
+    `-- unattended overnight production ..... [BLOCKED BY REVIEW ONLY]
 ```
 
 ## Flow View
@@ -399,16 +399,15 @@ MAIN BLOCKERS:
    selects stabilized motion for those bridge shots instead of leaving
    them stuck behind stale fallback metadata.
 
-8. The new reliability report is working, and it is currently blocking
-   `test_story_template` for concrete reasons even after the stale-output
-   gap was removed: 4 hold-for-polish scenes, fragile-scene ratio
-   `0.571`, and 2 scenes still marked for review before finish.
+8. The new reliability report is working, and after the scoped
+   `light_rework` plus `heavy_rework` passes it is now blocking
+   `test_story_template` only for governed review approval:
+   6 scenes still marked for review before finish. The earlier
+   hold-scene and fragile-scene-ratio blockers have both been cleared.
 
 9. The new recovery-plan stage now converts those blockers into a ranked
    queue automatically:
-   manual review -> `S01`, `S02`
-   light rework -> `S03`, `S06`, `S07`
-   heavy rework -> `S05`
+   manual review -> `S01`, `S02`, `S03`, `S05`, `S06`, `S07`
    benchmark locked -> `S04`
 
 10. The new scene-review stage now creates a governed approval file for
@@ -416,9 +415,10 @@ MAIN BLOCKERS:
     review scene once that file marks it approved.
 
 11. The new scene-scoped recovery stage now lets us rerun only the queued
-    weak scenes while preserving the rest of the topic reports:
-    `npm run bricktoon:scene-recovery -- --topic test_story_template --bucket light_rework`
-    is now the intended recovery path instead of burning a full-topic rerun.
+    weak scenes while preserving the rest of the topic reports.
+    This path has now been proven live for both `light_rework` and
+    `heavy_rework`, and it moved `S03`, `S05`, `S06`, and `S07` out of
+    rework without a whole-topic rerun.
 
 12. Milestone 2 is now the active gate, so the project should not
     treat scale, automation, or production readiness as the next win

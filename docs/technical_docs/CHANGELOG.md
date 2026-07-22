@@ -7,6 +7,13 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 ### Changed
 
 - Continued executable build work for `Milestone 2 -> Option 1 -> Phase 6: Overnight Reliability`.
+- Executed the new scoped recovery path against the `heavy_rework` bucket for `S05`, refreshing keyframes, validation, preview, motion, stabilization, compositing, sequence assembly, render contract, promotion gate, reliability, review packet, and recovery plan in one governed pass.
+- Updated the live recovery state for `workspaces/test_story_template` so `S05` now moves out of rework and into governed manual review, leaving no remaining rework scenes in the current benchmark topic.
+- Continued executable build work for `Milestone 2 -> Option 1 -> Phase 6: Overnight Reliability`.
+- Fixed `scripts/stabilize_ai_motion.js` so scene-scoped recovery no longer crashes during stabilization from a missing `readJsonSafe` import.
+- Executed the new scoped recovery path against the `light_rework` bucket for `S03`, `S06`, and `S07`, refreshing keyframes, validation, preview, motion, stabilization, compositing, sequence assembly, render contract, promotion gate, reliability, review packet, and recovery plan in one governed pass.
+- Updated the live recovery state for `workspaces/test_story_template` so `S03`, `S06`, and `S07` now move out of rework and into governed manual review, leaving `S05` as the only remaining true rework scene.
+- Continued executable build work for `Milestone 2 -> Option 1 -> Phase 6: Overnight Reliability`.
 - Added `src/bricktoon/sceneSelection.js` so scene-scoped reruns now have one reusable contract for scene-id parsing, scoped shot collection, and partial report merging.
 - Updated `scripts/generate_shot_keyframes.js`, `scripts/validate_generated_assets.js`, `scripts/generate_ai_motion_passes.js`, `scripts/stabilize_ai_motion.js`, `scripts/composite_bricktoon_shots.js`, and `scripts/assemble_bricktoon_scene_sequences.js` so expensive reruns can now target selected scenes without wiping unrelated topic-wide report state.
 - Updated `agents/asset_consistency_agent.js`, `agents/ai_video_motion_agent.js`, and `agents/shot_compositing_agent.js` so scoped scene reruns can flow through the existing agent wrappers instead of only through direct script calls.
@@ -76,6 +83,12 @@ This log tracks implementation changes, bug fixes, and incidental fixes discover
 
 ### Verified
 
+- Verified the heavy-rework recovery path on Wednesday, July 22, 2026: `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-scene-recovery --bucket heavy_rework --runtime-profile gtx1080_premium_preview` completed successfully.
+- Verified the refreshed live gate state on Wednesday, July 22, 2026: `workspaces/test_story_template/10_qc/bricktoon_reliability_report.json` now records `hold_scenes: 0`, `review_scenes: 6`, `fragile_scene_ratio: 0`, `fallback_ratio: 0.308`, and gate decision `review_required`.
+- Verified the refreshed recovery queue on Wednesday, July 22, 2026: `workspaces/test_story_template/10_qc/bricktoon_recovery_plan.json` now classifies `S01`, `S02`, `S03`, `S05`, `S06`, and `S07` as `manual_review`, with no remaining rework bucket entries.
+- Verified the repaired scoped-recovery path on Wednesday, July 22, 2026: `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-scene-recovery --bucket light_rework --runtime-profile gtx1080_premium_preview` completed successfully after the stabilization-script fix.
+- Verified the refreshed live gate state on Wednesday, July 22, 2026: `workspaces/test_story_template/10_qc/bricktoon_reliability_report.json` now records `hold_scenes: 1`, `review_scenes: 5`, `fragile_scene_ratio: 0.143`, and `fallback_ratio: 0.346`.
+- Verified the refreshed recovery queue on Wednesday, July 22, 2026: `workspaces/test_story_template/10_qc/bricktoon_recovery_plan.json` now classifies `S01`, `S02`, `S03`, `S06`, and `S07` as `manual_review`, `S05` as `heavy_rework`, and `S04` as `benchmark_locked`.
 - Verified the new scene-selection / scoped-merge regression coverage on Wednesday, July 22, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 70 tests, including the new scoped-recovery helper coverage.
 - Verified the new manual-review recovery entrypoint on Wednesday, July 22, 2026: `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-scene-recovery --bucket manual_review --runtime-profile gtx1080_premium_preview` completed successfully and refreshed review, reliability, and recovery artifacts without a whole-topic rerun.
 - Verified the new artifact-freshness regression coverage on Wednesday, July 22, 2026: `node --test tests\\bricktoon_pipeline.test.js` passed all 68 tests, including the new stale-artifact reliability checks.

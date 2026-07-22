@@ -7,6 +7,7 @@ const { parseArgs } = require("../agents/common");
 const {
   ensureDir,
   loadManifest,
+  readJsonSafe,
   saveManifest,
   upsertAsset,
   relativeWorkspacePath,
