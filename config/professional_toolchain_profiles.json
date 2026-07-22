@@ -1,0 +1,140 @@
+{
+  "default_profile": "adobe_character_animator_after_effects",
+  "profiles": {
+    "adobe_character_animator_after_effects": {
+      "label": "Adobe Character Animator + After Effects",
+      "puppet_tool": "Adobe Character Animator",
+      "speech_tool": "Adobe Character Animator Lip Sync",
+      "compositing_tool": "Adobe After Effects",
+      "camera_tool": "Adobe After Effects Camera + Nulls",
+      "best_for": [
+        "speaking puppet shots",
+        "blink and gesture behavior",
+        "host-led explainers",
+        "hybrid editorial compositing"
+      ],
+      "capability_map": {
+        "mouth_sync": {
+          "primary_tool": "Adobe Character Animator Lip Sync",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Import clean voiceover and timing markers, bind mouth shapes to puppet visemes, then pass the rendered character shot into After Effects for editorial polish."
+        },
+        "blink_and_gesture_systems": {
+          "primary_tool": "Adobe Character Animator Behaviors",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Drive blink, head turn, body motion, and gesture swaps with puppet behaviors, then add timing accents and camera polish in After Effects."
+        },
+        "puppet_setup": {
+          "primary_tool": "Adobe Character Animator Puppet Authoring",
+          "secondary_tool": "Photoshop or layered still prep",
+          "workflow_summary": "Build puppet groups from exported character refs, layer manifests, and rig sockets, preserving identity packages and anchor points."
+        },
+        "prop_interaction": {
+          "primary_tool": "Adobe Character Animator + After Effects",
+          "secondary_tool": "Manual keyed overrides",
+          "workflow_summary": "Attach exported props to socket-driven hands where possible, then use keyed overrides in After Effects when contact timing needs stronger control."
+        },
+        "shot_compositing": {
+          "primary_tool": "Adobe After Effects",
+          "secondary_tool": "Premiere or final NLE",
+          "workflow_summary": "Composite puppet renders, document inserts, overlays, and subtitle-safe framing in After Effects before final assembly."
+        },
+        "camera_control": {
+          "primary_tool": "Adobe After Effects",
+          "secondary_tool": "Null-based camera rigs",
+          "workflow_summary": "Translate exported camera recipes and composition guides into keyframed pushes, parallax, and reframing moves in After Effects."
+        }
+      }
+    },
+    "toon_boom_harmony_after_effects": {
+      "label": "Toon Boom Harmony + After Effects",
+      "puppet_tool": "Toon Boom Harmony",
+      "speech_tool": "Toon Boom mouth/phoneme swapping",
+      "compositing_tool": "Adobe After Effects",
+      "camera_tool": "Toon Boom Camera + After Effects",
+      "best_for": [
+        "cut-out puppet animation",
+        "pose libraries",
+        "multi-character dialogue staging",
+        "editorial finishing"
+      ],
+      "capability_map": {
+        "mouth_sync": {
+          "primary_tool": "Toon Boom Harmony",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Use exported mouth-shape expectations and timing markers to drive phoneme swaps in Harmony, then composite and polish in After Effects."
+        },
+        "blink_and_gesture_systems": {
+          "primary_tool": "Toon Boom Harmony",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Build reusable eye, brow, arm, and pose swaps in Harmony, then add editorial timing polish after render."
+        },
+        "puppet_setup": {
+          "primary_tool": "Toon Boom Harmony Cut-Out Rigs",
+          "secondary_tool": "Photoshop or layered still prep",
+          "workflow_summary": "Convert exported character refs, layer manifests, and sockets into Harmony peg-based puppets with reusable pose controls."
+        },
+        "prop_interaction": {
+          "primary_tool": "Toon Boom Harmony",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Use peg and deform controls for hand-to-prop contact, then accent reveal timing and impact beats in After Effects."
+        },
+        "shot_compositing": {
+          "primary_tool": "Adobe After Effects",
+          "secondary_tool": "Harmony scene renders",
+          "workflow_summary": "Render character shots from Harmony and merge them with inserts, overlays, and camera polish in After Effects."
+        },
+        "camera_control": {
+          "primary_tool": "Toon Boom Harmony",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Apply exported camera recipes either in Harmony's camera system or as post camera refinement in After Effects."
+        }
+      }
+    },
+    "animate_after_effects": {
+      "label": "Adobe Animate + After Effects",
+      "puppet_tool": "Adobe Animate",
+      "speech_tool": "Adobe Animate Auto Lip Sync",
+      "compositing_tool": "Adobe After Effects",
+      "camera_tool": "Adobe After Effects",
+      "best_for": [
+        "lighter puppet setups",
+        "symbol swaps",
+        "speech-driven explainers",
+        "fast editorial finishing"
+      ],
+      "capability_map": {
+        "mouth_sync": {
+          "primary_tool": "Adobe Animate Auto Lip Sync",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Import clean audio and timing markers into Animate, map mouth symbols, then composite and refine in After Effects."
+        },
+        "blink_and_gesture_systems": {
+          "primary_tool": "Adobe Animate",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Use symbol swaps and keyframed gesture loops in Animate, then add editorial timing and camera treatment in After Effects."
+        },
+        "puppet_setup": {
+          "primary_tool": "Adobe Animate Symbols",
+          "secondary_tool": "Photoshop or layered still prep",
+          "workflow_summary": "Translate exported layers and identity refs into symbol-driven characters with controllable mouth, eye, arm, and prop states."
+        },
+        "prop_interaction": {
+          "primary_tool": "Adobe Animate",
+          "secondary_tool": "Adobe After Effects",
+          "workflow_summary": "Animate prop contacts with symbol swaps and keyed transforms, then use After Effects for proof emphasis and compositing."
+        },
+        "shot_compositing": {
+          "primary_tool": "Adobe After Effects",
+          "secondary_tool": "Animate scene renders",
+          "workflow_summary": "Use After Effects for inserts, overlays, subtitle-safe framing, and final camera polish around Animate renders."
+        },
+        "camera_control": {
+          "primary_tool": "Adobe After Effects",
+          "secondary_tool": "Animate stage blocking",
+          "workflow_summary": "Treat exported camera recipes as After Effects camera moves while keeping Animate focused on character motion."
+        }
+      }
+    }
+  }
+}

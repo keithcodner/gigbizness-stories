@@ -13,19 +13,24 @@ PIPELINE STATUS
 |   |-- implementation options ............. [LOCKED]
 |   |-- phased option tracks ............... [LOCKED]
 |   |-- known gap capture .................. [LOCKED]
-|   |-- path decision ...................... [OPTION 2 ACTIVE]
+|   |-- path decision ...................... [OPTION 3 CLASSIFIED AS BENCHMARK ROUTE]
 |   |-- option 1 / phase 1 status ......... [BUILD DONE, VISUAL SIGNOFF PENDING]
 |   |-- option 1 / phase 2 status ......... [BUILD DONE, PREMIUM SIGNOFF PENDING]
 |   |-- option 1 / phase 3 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
 |   |-- option 1 / phase 4 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
 |   |-- option 1 / phase 5 status ......... [BUILD DONE, SEQUENCE SIGNOFF PENDING]
-|   |-- option 1 / phase 6 status ......... [PARTIAL]
+|   |-- option 1 / phase 6 status ......... [PARTIAL, BENCHMARK PROOF + RECOVERY PLANNING WORKING]
 |   |-- option 2 / phase 1 status ......... [BUILD DONE, FRESH STILL SIGNOFF PENDING]
 |   |-- option 2 / phase 2 status ......... [BUILD DONE, ROUNDTRIP SIGNOFF PENDING]
 |   |-- option 2 / phase 3 status ......... [BUILD DONE, SAMPLE SIGNOFF PENDING]
 |   |-- option 2 / phase 4 status ......... [BUILD DONE, EDITORIAL SIGNOFF PENDING]
 |   |-- option 2 / phase 5 status ......... [BUILD DONE, TOPIC-WIDE PROMOTION BLOCKED]
 |   |-- option 2 / phase 6 status ......... [BUILD DONE, DEFAULT NOT APPROVED]
+|   |-- option 3 / phase 1 status ......... [BUILD DONE]
+|   |-- option 3 / phase 2 status ......... [BUILD DONE]
+|   |-- option 3 / phase 3 status ......... [BUILD DONE]
+|   |-- option 3 / phase 4 status ......... [BUILD DONE]
+|   |-- option 3 / phase 5 status ......... [BUILD DONE, ROUTE CLASSIFIED]
 |   `-- proceed-past-gate approval ......... [BLOCKED]
 |
 |-- FOUNDATION / ORCHESTRATOR ............... [WORKING]
@@ -122,6 +127,46 @@ PIPELINE STATUS
 |   |-- implementation closeout report ...... [WORKING]
 |   `-- default path approval ............... [BLOCKED]
 |
+|-- PROFESSIONAL EXPORT LOCK ............... [PARTIAL]
+|   |-- export-lock contract layer ......... [WORKING]
+|   |-- versioned handoff package .......... [WORKING]
+|   |-- cast/shot/composition export ....... [WORKING]
+|   |-- reference/audio packaging .......... [WORKING]
+|   |-- benchmark-safe guidance ............ [WORKING]
+|   `-- downstream toolchain map ........... [WORKING]
+|
+|-- PROFESSIONAL TOOLCHAIN MAP ............. [PARTIAL]
+|   |-- profile registry ................... [WORKING]
+|   |-- orchestrator stage ................. [WORKING]
+|   |-- capability mapping contract ........ [WORKING]
+|   |-- shot-class playbook ................ [WORKING]
+|   |-- repeatable operating model ......... [WORKING]
+|   `-- hero-scene proof ................... [WORKING]
+|
+|-- PROFESSIONAL HERO SCENE ................ [PARTIAL]
+|   |-- benchmark-scene package ............ [WORKING]
+|   |-- shot-level acceptance checks ....... [WORKING]
+|   |-- proof-sequence bundling ............ [WORKING]
+|   |-- audio/timing handoff ............... [WORKING]
+|   |-- orchestrator stage ................. [WORKING]
+|   `-- returned external render import .... [WORKING]
+|
+|-- PROFESSIONAL REINTEGRATION ............. [PARTIAL]
+|   |-- imported benchmark media ........... [WORKING]
+|   |-- asset-manifest registration ........ [WORKING]
+|   |-- render-contract alignment .......... [WORKING]
+|   |-- qc-facing report ................... [WORKING]
+|   |-- benchmark comparison ............... [WORKING]
+|   `-- semi-automation decision ........... [WORKING]
+|
+|-- PROFESSIONAL SEMI-AUTOMATION ........... [PARTIAL]
+|   |-- route classification ............... [WORKING]
+|   |-- standardize-now list ............... [WORKING]
+|   |-- operator-assisted list ............. [WORKING]
+|   |-- not-ready-for-scale list ........... [WORKING]
+|   |-- orchestrator stage ................. [WORKING]
+|   `-- default-production approval ........ [BLOCKED]
+|
 |-- PREVIEW GATE ............................ [WORKING]
 |   |-- reference-sync stage ................ [WORKING]
 |   |-- bricktoon-preview stage ............. [WORKING]
@@ -134,8 +179,14 @@ PIPELINE STATUS
 |   |-- runtime profiles .................... [WORKING]
 |   |-- reliability gate .................... [WORKING]
 |   |-- reliability report .................. [WORKING]
+|   |-- recovery plan stage ................. [WORKING]
 |   |-- promotion-gate awareness ............ [WORKING]
 |   |-- resumable overnight runner .......... [WORKING]
+|   |-- overnight state history ............. [WORKING]
+|   |-- overnight run report ................ [WORKING]
+|   |-- evidence vocabulary alignment ....... [WORKING]
+|   |-- benchmark-scoped reliability ........ [WORKING]
+|   |-- benchmark scene proof render ........ [WORKING]
 |   |-- premium finish hard gate ............ [WORKING]
 |   `-- benchmark overnight trust ........... [BLOCKED]
 |
@@ -161,6 +212,10 @@ PIPELINE STATUS
     |-- milestone 2 planning ................ [LOCKED]
     |-- known-gap documentation ............. [LOCKED]
     |-- reliability gate .................... [REAL]
+    |-- professional toolchain mapping ..... [REAL]
+    |-- professional hero scene package .... [REAL]
+    |-- professional reintegration ......... [REAL]
+    |-- option 3 route classification ...... [REAL]
     `-- unattended overnight production ..... [BLOCKED BY REPORT]
 ```
 
@@ -242,10 +297,11 @@ RELIABILITY GATE
 |
         |
         +--> BLOCKED
-        |     -> polish scenes
-        |     -> reduce fallback usage
-        |     -> clear hold/review states
-        |     -> rerun preview/reliability
+        |     -> bricktoon-recovery-plan
+        |     -> ranked scene queue
+        |     -> clear review scenes first
+        |     -> rework light scenes, then heavy scenes
+        |     -> rerun preview/gate/reliability
         |
         `--> PASS
               -> continue to finish / overnight
@@ -291,6 +347,8 @@ human review
     ->
 bricktoon-reliability
     ->
+bricktoon-recovery-plan if blocked
+    ->
 bricktoon-finish only if approved
 ```
 
@@ -333,11 +391,17 @@ MAIN BLOCKERS:
 
 8. The new reliability report is working, and it is currently blocking
    `test_story_template` for concrete reasons even after the benchmark
-   scene clears promotion: 5 hold-for-polish scenes, fallback ratio
-   `0.577`, fragile-scene ratio `0.714`, and 2 scenes still marked for
-   review before finish.
+   scene clears promotion: 4 hold-for-polish scenes, fragile-scene ratio
+   `0.571`, and 2 scenes still marked for review before finish.
 
-9. Milestone 2 is now the active gate, so the project should not
+9. The new recovery-plan stage now converts those blockers into a ranked
+   queue automatically:
+   manual review -> `S01`, `S02`
+   light rework -> `S03`, `S06`, `S07`
+   heavy rework -> `S05`
+   benchmark locked -> `S04`
+
+10. Milestone 2 is now the active gate, so the project should not
    treat scale, automation, or production readiness as the next win
    until the minimum animation floor is actually met.
 ```
@@ -401,7 +465,7 @@ Known gap capture:
 - complete for currently known issues as of July 21, 2026
 
 Current active build:
-- Option 2
-- Phase 6: Benchmark Demo And Production Readiness Decision
-- completion status: build done, default not approved
+- Option 1
+- Phase 6: Overnight Reliability
+- completion status: partial, benchmark proof path and recovery planning are working and full-topic overnight trust is still blocked
 ```

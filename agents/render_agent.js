@@ -92,11 +92,12 @@ function main() {
 
     enforceQcForFinal(profileName, paths.finalApprovalPath, paths.visualReadinessPath, paths.qualityRulesPath);
 
-    const outputPath = profileName === "draft" ? paths.draftOutputPath : paths.finalOutputPath;
+    const manifestPath = args.manifest || paths.sceneManifestPath;
+    const outputPath = args.output || (profileName === "draft" ? paths.draftOutputPath : paths.finalOutputPath);
     runCommand("python", [
       paths.rendererScriptPath,
       "--manifest",
-      paths.sceneManifestPath,
+      manifestPath,
       "--profile",
       profileName,
       "--output",

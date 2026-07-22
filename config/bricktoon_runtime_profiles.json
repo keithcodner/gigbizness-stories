@@ -41,6 +41,26 @@
         "recommended_window": "evening_review"
       }
     },
+    "gtx1080_benchmark_scene_proof": {
+      "label": "GTX 1080 Benchmark Scene Proof",
+      "render_profile": "draft",
+      "intended_flow": "benchmark_scene_proof",
+      "require_preview": true,
+      "require_sequence_reports": true,
+      "require_render_contract": true,
+      "require_promotion_gate": true,
+      "require_qc_approval": false,
+      "allow_review_required_finish": false,
+      "max_unresolved_high_priority": 5,
+      "max_fallback_ratio": 0.2,
+      "max_fragile_scene_ratio": 0,
+      "machine_target": "gtx1080_8gb",
+      "runtime_policy": {
+        "max_parallel_motion_jobs": 1,
+        "max_parallel_keyframe_jobs": 1,
+        "recommended_window": "focused_benchmark_review"
+      }
+    },
     "gtx1080_overnight_finish_draft": {
       "label": "GTX 1080 Overnight Finish Draft",
       "render_profile": "draft",

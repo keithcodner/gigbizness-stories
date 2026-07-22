@@ -1,5 +1,6 @@
 function rankAssetType(assetType) {
   const order = [
+    "professional_hero_scene_sequence",
     "bricktoon_composited_shot_sequence",
     "bricktoon_scene_sequence",
     "bricktoon_animated_clip",

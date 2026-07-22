@@ -36,8 +36,82 @@ function ratio(numerator, denominator) {
   return numerator / denominator;
 }
 
-function summarizeSequenceHealth(sceneSequenceReport = {}) {
-  const scenes = Array.isArray(sceneSequenceReport.scenes) ? sceneSequenceReport.scenes : [];
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function getPromotedSceneIds(promotionGate = {}) {
+  const promoted = safeArray(promotionGate.scene_decisions)
+    .filter((scene) => scene.decision === "promote_to_hybrid_finish")
+    .map((scene) => scene.scene_id)
+    .filter(Boolean);
+  if (promoted.length > 0) {
+    return promoted;
+  }
+
+  const benchmarkSceneId = promotionGate.benchmark_editorial_scene?.scene_id || null;
+  return benchmarkSceneId ? [benchmarkSceneId] : [];
+}
+
+function normalizeScopedSceneRecord(sequenceScene = {}, renderScene = {}) {
+  const renderAssetType = renderScene.selected_asset_type || null;
+  const renderQuality = renderScene.asset_quality_classification || null;
+  const sequencePremium = Number(sequenceScene.premium_motion_shots ?? renderScene.shot_source_breakdown?.premium_motion_shots ?? 0);
+  const sequenceFallback = Number(sequenceScene.fallback_shots ?? renderScene.shot_source_breakdown?.fallback_shots ?? 0);
+  const totalShots = Math.max(sequencePremium + sequenceFallback, 1);
+
+  if (renderAssetType === "professional_hero_scene_sequence" || (renderAssetType === "professional_hero_scene_sequence" && renderQuality === "premium_motion")) {
+    return {
+      scene_id: renderScene.scene_id || sequenceScene.scene_id || null,
+      continuity_status: "locked",
+      promotion_status: "ready_for_finish",
+      premium_motion_shots: totalShots,
+      fallback_shots: 0,
+      continuity_notes: [
+        "benchmark imported professional scene selected in render contract",
+        `${totalShots} premium motion shot(s) represented by approved benchmark sequence`
+      ]
+    };
+  }
+
+  return {
+    scene_id: renderScene.scene_id || sequenceScene.scene_id || null,
+    continuity_status: sequenceScene.continuity_status || renderScene.continuity_status || "fragile",
+    promotion_status: sequenceScene.promotion_status || renderScene.promotion_status || "hold_for_polish",
+    premium_motion_shots: sequencePremium,
+    fallback_shots: sequenceFallback,
+    continuity_notes: safeArray(sequenceScene.continuity_notes)
+  };
+}
+
+function buildScopedSceneRecords({
+  sceneSequenceReport = {},
+  renderContract = {},
+  promotionGate = {},
+  scope = "topic"
+}) {
+  const sequenceLookup = new Map(
+    safeArray(sceneSequenceReport.scenes).map((scene) => [scene.scene_id, scene])
+  );
+  const renderLookup = new Map(
+    safeArray(renderContract.scenes).map((scene) => [scene.scene_id, scene])
+  );
+
+  let sceneIds = Array.from(new Set([
+    ...sequenceLookup.keys(),
+    ...renderLookup.keys()
+  ]));
+  if (scope === "benchmark_selected") {
+    sceneIds = getPromotedSceneIds(promotionGate);
+  }
+
+  return sceneIds.map((sceneId) => normalizeScopedSceneRecord(
+    sequenceLookup.get(sceneId) || { scene_id: sceneId },
+    renderLookup.get(sceneId) || { scene_id: sceneId }
+  ));
+}
+
+function summarizeSequenceHealth(scenes = []) {
   const totalScenes = scenes.length;
   const fragileScenes = scenes.filter((scene) => scene.continuity_status === "fragile").length;
   const reviewScenes = scenes.filter((scene) => scene.promotion_status === "review_before_finish").length;
@@ -64,12 +138,24 @@ function summarizeReadinessInputs({
   renderContract = {},
   finalApprovalText = "",
   visualReadiness = {},
-  promotionGate = {}
+  promotionGate = {},
+  scope = "topic"
 }) {
-  const sequenceHealth = summarizeSequenceHealth(sceneSequenceReport);
-  const renderScenes = Array.isArray(renderContract.scenes) ? renderContract.scenes.length : 0;
+  const scopedScenes = buildScopedSceneRecords({
+    sceneSequenceReport,
+    renderContract,
+    promotionGate,
+    scope
+  });
+  const scopedSceneIds = scopedScenes.map((scene) => scene.scene_id).filter(Boolean);
+  const sequenceHealth = summarizeSequenceHealth(scopedScenes);
+  const renderScenes = scope === "benchmark_selected"
+    ? safeArray(renderContract.scenes).filter((scene) => scopedSceneIds.includes(scene.scene_id)).length
+    : safeArray(renderContract.scenes).length;
   const promotionGateState = promotionGate.gate || {};
   return {
+    scope,
+    scoped_scene_ids: scopedSceneIds,
     machine_target: runtimeProfile.machine_target || null,
     machine_gpu: machineProfile.gpu?.model || null,
     preview_exists: visualPreviewExists,
@@ -160,7 +246,8 @@ function buildReliabilityReport({
   promotionGate,
   visualReadiness,
   visualPreviewExists,
-  finalApprovalText
+  finalApprovalText,
+  scope = "topic"
 }) {
   const readiness = summarizeReadinessInputs({
     machineProfile,
@@ -170,7 +257,8 @@ function buildReliabilityReport({
     renderContract,
     finalApprovalText,
     visualReadiness,
-    promotionGate
+    promotionGate,
+    scope
   });
   const gate = evaluateReliabilityGate(runtimeProfile, readiness);
 
@@ -189,6 +277,86 @@ function buildReliabilityReport({
   };
 }
 
+function summarizeOvernightState(overnightState = {}, reliabilityReport = {}) {
+  if (!overnightState || Object.keys(overnightState).length === 0) {
+    return {
+      status: "not_started",
+      completed_step_count: 0,
+      last_reliability_decision: reliabilityReport.gate?.decision || null,
+      resumable: false,
+      summary: "no overnight run state has been recorded yet"
+    };
+  }
+
+  const completedSteps = safeArray(overnightState.completed_steps);
+  const stepHistory = safeArray(overnightState.step_history);
+  const failedSteps = stepHistory.filter((entry) => entry.status === "failed").length;
+  const blockedSteps = stepHistory.filter((entry) => entry.status === "blocked").length;
+  const resumedCount = Number(overnightState.resume_count || 0);
+  const runCount = Number(overnightState.run_count || 0);
+  const currentStep = overnightState.current_step || null;
+  const status = overnightState.status || (overnightState.completed_at ? "completed" : "partial");
+  const lastDecision = overnightState.last_reliability_decision || reliabilityReport.gate?.decision || null;
+  const resumable = ["blocked", "failed", "running", "partial"].includes(status);
+
+  let summary = `overnight state exists with ${completedSteps.length} completed step(s)`;
+  if (status === "completed") {
+    summary = `overnight run completed after ${runCount || 1} run(s) and ${resumedCount} resume attempt(s)`;
+  } else if (status === "blocked") {
+    summary = `overnight run blocked at ${currentStep || "unknown_step"} with ${completedSteps.length} completed step(s)`;
+  } else if (status === "failed") {
+    summary = `overnight run failed at ${currentStep || "unknown_step"} with ${failedSteps} failed step event(s) recorded`;
+  } else if (status === "running") {
+    summary = `overnight run is currently at ${currentStep || "unknown_step"}`;
+  }
+
+  return {
+    status,
+    completed_step_count: completedSteps.length,
+    completed_steps: completedSteps,
+    current_step: currentStep,
+    blocked: Boolean(overnightState.blocked),
+    blocked_reason: overnightState.blocked_reason || null,
+    last_error: overnightState.last_error || null,
+    last_reliability_decision: lastDecision,
+    run_count: runCount,
+    resume_count: resumedCount,
+    failed_step_events: failedSteps,
+    blocked_step_events: blockedSteps,
+    step_history_count: stepHistory.length,
+    resumable,
+    summary
+  };
+}
+
+function buildOvernightRunReport({
+  topicId,
+  runtimeProfile,
+  machineProfile = {},
+  reliabilityReport = {},
+  overnightState = {}
+}) {
+  return {
+    topic_id: topicId,
+    created_at: new Date().toISOString(),
+    runtime_profile: runtimeProfile,
+    machine_profile: {
+      gpu_model: machineProfile.gpu?.model || null,
+      vram_gb: machineProfile.gpu?.vram_gb || null,
+      preferred_encoding: machineProfile.gpu?.preferred_encoding || null,
+      overnight_mode: Boolean(machineProfile.overnight_mode)
+    },
+    overnight_state: summarizeOvernightState(overnightState, reliabilityReport),
+    reliability_gate: {
+      decision: reliabilityReport.gate?.decision || null,
+      blocker_count: safeArray(reliabilityReport.gate?.blockers).length,
+      warning_count: safeArray(reliabilityReport.gate?.warnings).length,
+      blockers: safeArray(reliabilityReport.gate?.blockers),
+      warnings: safeArray(reliabilityReport.gate?.warnings)
+    }
+  };
+}
+
 function buildReliabilityMarkdown(report) {
   const lines = [
     "# Bricktoon Reliability Report",
@@ -200,6 +368,8 @@ function buildReliabilityMarkdown(report) {
     "",
     "## Readiness",
     "",
+    `- Scope: ${report.readiness.scope || "topic"}`,
+    `- Scoped scenes: ${safeArray(report.readiness.scoped_scene_ids).join(", ") || "all"}`,
     `- Preview exists: ${report.readiness.preview_exists ? "yes" : "no"}`,
     `- Sequence reports ready: ${report.readiness.sequence_reports_ready ? "yes" : "no"}`,
     `- Render contract ready: ${report.readiness.render_contract_ready ? "yes" : "no"}`,
@@ -248,9 +418,66 @@ function buildReliabilityMarkdown(report) {
   return `${lines.join("\n")}\n`;
 }
 
+function buildOvernightRunMarkdown(report = {}) {
+  const lines = [
+    "# Bricktoon Overnight Run Report",
+    "",
+    `- Topic: ${report.topic_id || "n/a"}`,
+    `- Profile: ${report.runtime_profile?.profile_id || "n/a"}`,
+    `- Generated: ${report.created_at || "n/a"}`,
+    `- Overnight status: ${report.overnight_state?.status || "n/a"}`,
+    `- Last reliability decision: ${report.overnight_state?.last_reliability_decision || "n/a"}`,
+    "",
+    "## State",
+    "",
+    `- Summary: ${report.overnight_state?.summary || "n/a"}`,
+    `- Completed steps: ${report.overnight_state?.completed_step_count ?? 0}`,
+    `- Current step: ${report.overnight_state?.current_step || "n/a"}`,
+    `- Blocked: ${report.overnight_state?.blocked ? "yes" : "no"}`,
+    `- Resumable: ${report.overnight_state?.resumable ? "yes" : "no"}`,
+    `- Run count: ${report.overnight_state?.run_count ?? 0}`,
+    `- Resume count: ${report.overnight_state?.resume_count ?? 0}`,
+    `- Failed step events: ${report.overnight_state?.failed_step_events ?? 0}`,
+    `- Blocked step events: ${report.overnight_state?.blocked_step_events ?? 0}`,
+    "",
+    "## Reliability Gate Snapshot",
+    "",
+    `- Decision: ${report.reliability_gate?.decision || "n/a"}`,
+    `- Blocker count: ${report.reliability_gate?.blocker_count ?? 0}`,
+    `- Warning count: ${report.reliability_gate?.warning_count ?? 0}`,
+    ""
+  ];
+
+  lines.push("## Blockers");
+  lines.push("");
+  if (safeArray(report.reliability_gate?.blockers).length === 0) {
+    lines.push("- None");
+  } else {
+    for (const blocker of report.reliability_gate.blockers) {
+      lines.push(`- ${blocker}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## Warnings");
+  lines.push("");
+  if (safeArray(report.reliability_gate?.warnings).length === 0) {
+    lines.push("- None");
+  } else {
+    for (const warning of report.reliability_gate.warnings) {
+      lines.push(`- ${warning}`);
+    }
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 module.exports = {
+  buildOvernightRunMarkdown,
+  buildOvernightRunReport,
   buildReliabilityMarkdown,
   buildReliabilityReport,
+  summarizeOvernightState,
   evaluateReliabilityGate,
   loadRuntimeProfiles,
   resolveRuntimeProfile,

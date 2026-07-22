@@ -219,6 +219,8 @@ const WORKSPACE_LAYOUT = [
       "shot_clips",
       "scene_sequences"
       ,
+      "professional_imports",
+      "professional_imports/shots",
       "hybrid_contract",
       "hybrid_contract/characters",
       "hybrid_contract/shots"
@@ -269,6 +271,17 @@ const WORKSPACE_LAYOUT = [
       "optional_improvements.md": "# Optional Improvements\n\n",
       "final_approval.md": "NOT APPROVED\n"
     }
+  },
+  {
+    dir: "11_external_handoff",
+    files: {},
+    subdirs: [
+      "professional_export_lock",
+      "professional_toolchain_map",
+      "professional_hero_scene",
+      "professional_reintegration",
+      "professional_semi_automation"
+    ]
   }
 ];
 
@@ -500,20 +513,50 @@ function getTopicPaths(topicId) {
     hybridPromotionGateMdPath: path.join(workspaceDir, "10_qc", "hybrid_promotion_gate_report.md"),
     hybridProductionReadinessPath: path.join(workspaceDir, "10_qc", "hybrid_production_readiness_report.json"),
     hybridProductionReadinessMdPath: path.join(workspaceDir, "10_qc", "hybrid_production_readiness_report.md"),
+    professionalExportLockDir: path.join(workspaceDir, "11_external_handoff", "professional_export_lock"),
+    professionalExportLockLatestPath: path.join(workspaceDir, "11_external_handoff", "professional_export_lock", "latest_export_lock_report.json"),
+    professionalExportLockLatestMdPath: path.join(workspaceDir, "11_external_handoff", "professional_export_lock", "latest_export_lock_report.md"),
+    professionalToolchainMapDir: path.join(workspaceDir, "11_external_handoff", "professional_toolchain_map"),
+    professionalToolchainMapLatestPath: path.join(workspaceDir, "11_external_handoff", "professional_toolchain_map", "latest_toolchain_map_report.json"),
+    professionalToolchainMapLatestMdPath: path.join(workspaceDir, "11_external_handoff", "professional_toolchain_map", "latest_toolchain_map_report.md"),
+    professionalHeroSceneDir: path.join(workspaceDir, "11_external_handoff", "professional_hero_scene"),
+    professionalHeroSceneLatestPath: path.join(workspaceDir, "11_external_handoff", "professional_hero_scene", "latest_professional_hero_scene_report.json"),
+    professionalHeroSceneLatestMdPath: path.join(workspaceDir, "11_external_handoff", "professional_hero_scene", "latest_professional_hero_scene_report.md"),
+    professionalReintegrationDir: path.join(workspaceDir, "11_external_handoff", "professional_reintegration"),
+    professionalReintegrationLatestPath: path.join(workspaceDir, "11_external_handoff", "professional_reintegration", "latest_professional_reintegration_report.json"),
+    professionalReintegrationLatestMdPath: path.join(workspaceDir, "11_external_handoff", "professional_reintegration", "latest_professional_reintegration_report.md"),
+    professionalReintegrationQcPath: path.join(workspaceDir, "10_qc", "professional_reintegration_report.json"),
+    professionalReintegrationQcMdPath: path.join(workspaceDir, "10_qc", "professional_reintegration_report.md"),
+    professionalSemiAutomationDir: path.join(workspaceDir, "11_external_handoff", "professional_semi_automation"),
+    professionalSemiAutomationLatestPath: path.join(workspaceDir, "11_external_handoff", "professional_semi_automation", "latest_professional_semi_automation_report.json"),
+    professionalSemiAutomationLatestMdPath: path.join(workspaceDir, "11_external_handoff", "professional_semi_automation", "latest_professional_semi_automation_report.md"),
+    professionalSemiAutomationQcPath: path.join(workspaceDir, "10_qc", "professional_semi_automation_report.json"),
+    professionalSemiAutomationQcMdPath: path.join(workspaceDir, "10_qc", "professional_semi_automation_report.md"),
     animationPlanPath: path.join(workspaceDir, "08_animation", "animation_plan.json"),
     editPlanPath: path.join(workspaceDir, "09_edit_plan", "edit_plan.md"),
     renderContractPath: path.join(workspaceDir, "09_edit_plan", "render_contract.json"),
     draftRenderPath: path.join(workspaceDir, "06_renders", "draft_01.mp4"),
     visualPreviewPath: path.join(workspaceDir, "06_renders", "previews", "visual_preview.mp4"),
+    benchmarkSceneProofPath: path.join(workspaceDir, "06_renders", "benchmark_scene_proof.mp4"),
     shortOnePath: path.join(workspaceDir, "07_shorts", "short_01.mp4"),
     thumbnailPath: path.join(workspaceDir, "08_thumbnail", "final_thumbnail.jpg"),
     titleOptionsPath: path.join(workspaceDir, "09_publish", "title_options.txt"),
+    benchmarkSceneManifestPath: path.join(workspaceDir, "05_render_plan", "benchmark_scene_manifest.json"),
+    benchmarkRenderPlanPath: path.join(workspaceDir, "05_render_plan", "benchmark_render_plan.json"),
     qualityReportPath: path.join(workspaceDir, "10_qc", "quality_report.md"),
     requiredFixesPath: path.join(workspaceDir, "10_qc", "required_fixes.md"),
     finalApprovalPath: path.join(workspaceDir, "10_qc", "final_approval.md"),
     bricktoonReliabilityReportPath: path.join(workspaceDir, "10_qc", "bricktoon_reliability_report.json"),
     bricktoonReliabilityReportMdPath: path.join(workspaceDir, "10_qc", "bricktoon_reliability_report.md"),
+    bricktoonBenchmarkReliabilityReportPath: path.join(workspaceDir, "10_qc", "bricktoon_benchmark_reliability_report.json"),
+    bricktoonBenchmarkReliabilityReportMdPath: path.join(workspaceDir, "10_qc", "bricktoon_benchmark_reliability_report.md"),
+    benchmarkSceneProofReportPath: path.join(workspaceDir, "10_qc", "benchmark_scene_proof_report.json"),
+    benchmarkSceneProofReportMdPath: path.join(workspaceDir, "10_qc", "benchmark_scene_proof_report.md"),
+    bricktoonRecoveryPlanPath: path.join(workspaceDir, "10_qc", "bricktoon_recovery_plan.json"),
+    bricktoonRecoveryPlanMdPath: path.join(workspaceDir, "10_qc", "bricktoon_recovery_plan.md"),
     bricktoonOvernightStatePath: path.join(workspaceDir, "10_qc", "bricktoon_overnight_state.json"),
+    bricktoonOvernightReportPath: path.join(workspaceDir, "10_qc", "bricktoon_overnight_report.json"),
+    bricktoonOvernightReportMdPath: path.join(workspaceDir, "10_qc", "bricktoon_overnight_report.md"),
     finalRenderPath: path.join(workspaceDir, "06_renders", "final_1080p.mp4")
   };
 }
@@ -1588,6 +1631,146 @@ function runHybridProductionReadinessStage(topicId, runtimeProfile = "gtx1080_pr
   return workspaceDir;
 }
 
+function runProfessionalExportLockStage(topicId, runtimeProfile = "gtx1080_premium_preview") {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting professional-export-lock stage for topic '${topicId}' with runtime profile '${runtimeProfile}'`);
+
+  if (!isCastReady(topicId)) {
+    runCastStage(topicId);
+  }
+  if (!isShotPlannerReady(topicId)) {
+    runShotPlannerStage(topicId);
+  }
+  if (!isShotArtDirectionReady(topicId)) {
+    runShotArtDirectionStage(topicId);
+  }
+  if (!isCompositionGuidesReady(topicId)) {
+    runCompositionGuidesStage(topicId);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridStillBenchmarkPackPath)) {
+    runHybridStillBenchmarkStage(topicId);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridProductionReadinessPath)) {
+    runHybridProductionReadinessStage(topicId, runtimeProfile);
+  }
+
+  runNodeScript("scripts/build_professional_export_lock.js", [
+    "--workspace",
+    workspaceDir
+  ]);
+
+  writeLog(`Completed professional-export-lock stage for topic '${topicId}' with runtime profile '${runtimeProfile}'`);
+  return workspaceDir;
+}
+
+function runProfessionalToolchainMapStage(
+  topicId,
+  toolchainProfile = "adobe_character_animator_after_effects",
+  runtimeProfile = "gtx1080_premium_preview"
+) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting professional-toolchain-map stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+
+  if (!fileHasContent(getTopicPaths(topicId).professionalExportLockLatestPath)) {
+    runProfessionalExportLockStage(topicId, runtimeProfile);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridAnimationContractPath)) {
+    runHybridAnimationContractStage(topicId);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridProductionReadinessPath)) {
+    runHybridProductionReadinessStage(topicId, runtimeProfile);
+  }
+
+  runNodeScript("scripts/build_professional_toolchain_map.js", [
+    "--workspace",
+    workspaceDir,
+    "--toolchain-profile",
+    toolchainProfile
+  ]);
+
+  writeLog(`Completed professional-toolchain-map stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+  return workspaceDir;
+}
+
+function runProfessionalHeroSceneStage(
+  topicId,
+  toolchainProfile = "adobe_character_animator_after_effects",
+  runtimeProfile = "gtx1080_premium_preview"
+) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting professional-hero-scene stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+
+  if (!fileHasContent(getTopicPaths(topicId).professionalToolchainMapLatestPath)) {
+    runProfessionalToolchainMapStage(topicId, toolchainProfile, runtimeProfile);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridEditorialReportPath)) {
+    runHybridEditorialProofStage(topicId);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridProductionReadinessPath)) {
+    runHybridProductionReadinessStage(topicId, runtimeProfile);
+  }
+
+  runNodeScript("scripts/build_professional_hero_scene.js", [
+    "--workspace",
+    workspaceDir
+  ]);
+
+  writeLog(`Completed professional-hero-scene stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+  return workspaceDir;
+}
+
+function runProfessionalReintegrationStage(
+  topicId,
+  toolchainProfile = "adobe_character_animator_after_effects",
+  runtimeProfile = "gtx1080_premium_preview"
+) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting professional-reintegration stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+
+  if (!fileHasContent(getTopicPaths(topicId).professionalHeroSceneLatestPath)) {
+    runProfessionalHeroSceneStage(topicId, toolchainProfile, runtimeProfile);
+  }
+
+  runNodeScript("scripts/build_professional_reintegration.js", [
+    "--workspace",
+    workspaceDir,
+    "--profile",
+    "draft",
+    "--mode",
+    "development"
+  ]);
+
+  writeLog(`Completed professional-reintegration stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+  return workspaceDir;
+}
+
+function runProfessionalSemiAutomationStage(
+  topicId,
+  toolchainProfile = "adobe_character_animator_after_effects",
+  runtimeProfile = "gtx1080_premium_preview"
+) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting professional-semi-automation stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+
+  if (!fileHasContent(getTopicPaths(topicId).professionalReintegrationLatestPath)) {
+    runProfessionalReintegrationStage(topicId, toolchainProfile, runtimeProfile);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).bricktoonReliabilityReportPath)) {
+    runBricktoonReliabilityStage(topicId, runtimeProfile);
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridProductionReadinessPath)) {
+    runHybridProductionReadinessStage(topicId, runtimeProfile);
+  }
+
+  runNodeScript("scripts/build_professional_semi_automation_decision.js", [
+    "--workspace",
+    workspaceDir
+  ]);
+
+  writeLog(`Completed professional-semi-automation stage for topic '${topicId}' with profile '${toolchainProfile}' and runtime profile '${runtimeProfile}'`);
+  return workspaceDir;
+}
+
 function runCharacterRiggingStage(topicId) {
   const workspaceDir = ensureWorkspace(topicId);
   writeLog(`Starting character-rigging stage for topic '${topicId}'`);
@@ -1743,8 +1926,82 @@ function runBricktoonReliabilityStage(topicId, runtimeProfile = null) {
     scriptArgs.push("--runtime-profile", runtimeProfile);
   }
   runNodeScript("scripts/build_bricktoon_reliability_report.js", scriptArgs);
+  runNodeScript("scripts/build_bricktoon_recovery_plan.js", scriptArgs);
 
   writeLog(`Completed bricktoon-reliability stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
+  return workspaceDir;
+}
+
+function runBricktoonRecoveryPlanStage(topicId, runtimeProfile = null) {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting bricktoon-recovery-plan stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
+
+  if (!fileHasContent(getTopicPaths(topicId).bricktoonReliabilityReportPath)) {
+    runBricktoonReliabilityStage(topicId, runtimeProfile || "gtx1080_premium_preview");
+  } else {
+    const scriptArgs = ["--workspace", workspaceDir];
+    if (runtimeProfile) {
+      scriptArgs.push("--runtime-profile", runtimeProfile);
+    }
+    runNodeScript("scripts/build_bricktoon_recovery_plan.js", scriptArgs);
+  }
+
+  writeLog(`Completed bricktoon-recovery-plan stage for topic '${topicId}'${runtimeProfile ? ` with runtime profile '${runtimeProfile}'` : ""}`);
+  return workspaceDir;
+}
+
+function runBenchmarkSceneProofStage(topicId, runtimeProfile = "gtx1080_benchmark_scene_proof") {
+  const workspaceDir = ensureWorkspace(topicId);
+  writeLog(`Starting benchmark-scene-proof stage for topic '${topicId}' with runtime profile '${runtimeProfile}'`);
+
+  if (!fileHasContent(getTopicPaths(topicId).visualPreviewPath)) {
+    runVisualPreviewStage(topicId);
+  }
+  if (!isShotCompositingReady(topicId)) {
+    runShotCompositingStage(topicId);
+  }
+  if (!isBricktoonClipsReady(topicId)) {
+    runSceneAssemblyStage(topicId);
+  }
+  if (!isRenderContractReady(topicId)) {
+    runRenderContractStage(topicId, "draft", "development");
+  }
+  if (!fileHasContent(getTopicPaths(topicId).hybridPromotionGatePath)) {
+    runHybridPromotionGateStage(topicId, "gtx1080_premium_preview");
+  }
+
+  runNodeAgent("render_plan_agent.js", ["--topic", topicId, "--workspace", workspaceDir, "--profile", "draft"]);
+  runRenderContractStage(topicId, "draft", "development");
+  runNodeScript("scripts/build_benchmark_scene_proof.js", ["--workspace", workspaceDir]);
+  runNodeScript("scripts/build_bricktoon_reliability_report.js", [
+    "--workspace",
+    workspaceDir,
+    "--runtime-profile",
+    runtimeProfile,
+    "--scope",
+    "benchmark_selected"
+  ]);
+
+  const reliabilityReport = readJson(getTopicPaths(topicId).bricktoonBenchmarkReliabilityReportPath, {});
+  const reliabilityDecision = reliabilityReport.gate?.decision || null;
+  if (!["ready_for_overnight_finish", "ready_for_final_export"].includes(reliabilityDecision)) {
+    throw new Error(`Benchmark scene proof blocked by reliability gate. Review ${getTopicPaths(topicId).bricktoonBenchmarkReliabilityReportMdPath}`);
+  }
+
+  runNodeAgent("render_agent.js", [
+    "--topic",
+    topicId,
+    "--workspace",
+    workspaceDir,
+    "--profile",
+    "draft",
+    "--manifest",
+    getTopicPaths(topicId).benchmarkSceneManifestPath,
+    "--output",
+    getTopicPaths(topicId).benchmarkSceneProofPath
+  ]);
+
+  writeLog(`Completed benchmark-scene-proof stage for topic '${topicId}' with runtime profile '${runtimeProfile}'`);
   return workspaceDir;
 }
 
@@ -1964,6 +2221,11 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-editorial-proof");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-promotion-gate --runtime-profile gtx1080_premium_preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-production-readiness --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage professional-export-lock --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage professional-toolchain-map --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage professional-hero-scene --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage professional-reintegration --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage professional-semi-automation --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage asset-consistency-validation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage layer-extraction");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage character-rigging");
@@ -1975,6 +2237,8 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage shot-compositing");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage scene-assembly");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-reliability --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-recovery-plan --runtime-profile gtx1080_premium_preview");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage benchmark-scene-proof --runtime-profile gtx1080_benchmark_scene_proof");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage visual-preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage bricktoon-finish --profile draft");
@@ -2079,7 +2343,7 @@ function main() {
         throw new Error("Missing required argument: --topic <topic_id>");
       }
 
-      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "reference-sync", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "hybrid-still-benchmark", "hybrid-animation-contract", "hybrid-performance-proof", "hybrid-editorial-proof", "hybrid-promotion-gate", "hybrid-production-readiness", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-reliability", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-overnight", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
+      if (!["format", "research", "angle", "cast", "visual-character-bible", "script", "scene-cards", "voice", "assets", "reference-sync", "scene-beats", "shot-planner", "visual-production-router", "shot-art-direction", "composition-guides", "asset-generation", "hybrid-still-benchmark", "hybrid-animation-contract", "hybrid-performance-proof", "hybrid-editorial-proof", "hybrid-promotion-gate", "hybrid-production-readiness", "professional-export-lock", "professional-toolchain-map", "professional-hero-scene", "professional-reintegration", "professional-semi-automation", "asset-consistency-validation", "layer-extraction", "character-rigging", "bricktoon-characters", "bricktoon-scenes", "bricktoon-manifest", "bricktoon-shots", "ai-video-motion-passes", "shot-compositing", "scene-assembly", "bricktoon-reliability", "bricktoon-recovery-plan", "benchmark-scene-proof", "visual-preview", "bricktoon-preview", "bricktoon-finish", "bricktoon-auto", "bricktoon-overnight", "bricktoon-clips", "animation", "render-contract", "render", "bricktoon-audit", "shorts", "qc"].includes(args.stage)) {
         throw new Error(`Unsupported stage for current build: ${args.stage}`);
       }
 
@@ -2128,6 +2392,32 @@ function main() {
         workspaceDir = runHybridPromotionGateStage(args.topic, args["runtime-profile"] || "gtx1080_premium_preview");
       } else if (args.stage === "hybrid-production-readiness") {
         workspaceDir = runHybridProductionReadinessStage(args.topic, args["runtime-profile"] || "gtx1080_premium_preview");
+      } else if (args.stage === "professional-export-lock") {
+        workspaceDir = runProfessionalExportLockStage(args.topic, args["runtime-profile"] || "gtx1080_premium_preview");
+      } else if (args.stage === "professional-toolchain-map") {
+        workspaceDir = runProfessionalToolchainMapStage(
+          args.topic,
+          args["toolchain-profile"] || "adobe_character_animator_after_effects",
+          args["runtime-profile"] || "gtx1080_premium_preview"
+        );
+      } else if (args.stage === "professional-hero-scene") {
+        workspaceDir = runProfessionalHeroSceneStage(
+          args.topic,
+          args["toolchain-profile"] || "adobe_character_animator_after_effects",
+          args["runtime-profile"] || "gtx1080_premium_preview"
+        );
+      } else if (args.stage === "professional-reintegration") {
+        workspaceDir = runProfessionalReintegrationStage(
+          args.topic,
+          args["toolchain-profile"] || "adobe_character_animator_after_effects",
+          args["runtime-profile"] || "gtx1080_premium_preview"
+        );
+      } else if (args.stage === "professional-semi-automation") {
+        workspaceDir = runProfessionalSemiAutomationStage(
+          args.topic,
+          args["toolchain-profile"] || "adobe_character_animator_after_effects",
+          args["runtime-profile"] || "gtx1080_premium_preview"
+        );
       } else if (args.stage === "asset-consistency-validation") {
         workspaceDir = runAssetConsistencyValidationStage(args.topic);
       } else if (args.stage === "layer-extraction") {
@@ -2150,6 +2440,10 @@ function main() {
         workspaceDir = runSceneAssemblyStage(args.topic);
       } else if (args.stage === "bricktoon-reliability") {
         workspaceDir = runBricktoonReliabilityStage(args.topic, args["runtime-profile"] || null);
+      } else if (args.stage === "bricktoon-recovery-plan") {
+        workspaceDir = runBricktoonRecoveryPlanStage(args.topic, args["runtime-profile"] || null);
+      } else if (args.stage === "benchmark-scene-proof") {
+        workspaceDir = runBenchmarkSceneProofStage(args.topic, args["runtime-profile"] || "gtx1080_benchmark_scene_proof");
       } else if (args.stage === "visual-preview") {
         workspaceDir = runVisualPreviewStage(args.topic);
       } else if (args.stage === "bricktoon-preview") {

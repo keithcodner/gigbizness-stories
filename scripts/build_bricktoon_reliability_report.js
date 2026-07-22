@@ -28,6 +28,7 @@ function main() {
     const topicId = path.basename(workspaceDir);
     const runtimeProfiles = loadRuntimeProfiles(rootDir);
     const runtimeProfile = resolveRuntimeProfile(runtimeProfiles, args["runtime-profile"]);
+    const scope = args.scope || "topic";
 
     const report = buildReliabilityReport({
       topicId,
@@ -40,16 +41,20 @@ function main() {
       visualPreviewExists: fs.existsSync(path.join(workspaceDir, "06_renders", "previews", "visual_preview.mp4")),
       finalApprovalText: fs.existsSync(path.join(workspaceDir, "10_qc", "final_approval.md"))
         ? fs.readFileSync(path.join(workspaceDir, "10_qc", "final_approval.md"), "utf8")
-        : ""
+        : "",
+      scope
     });
 
     const reportDir = path.join(workspaceDir, "10_qc");
-    const jsonPath = path.join(reportDir, "bricktoon_reliability_report.json");
-    const mdPath = path.join(reportDir, "bricktoon_reliability_report.md");
+    const baseName = scope === "benchmark_selected"
+      ? "bricktoon_benchmark_reliability_report"
+      : "bricktoon_reliability_report";
+    const jsonPath = path.join(reportDir, `${baseName}.json`);
+    const mdPath = path.join(reportDir, `${baseName}.md`);
     fs.writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
     fs.writeFileSync(mdPath, buildReliabilityMarkdown(report), "utf8");
 
-    console.log(`Bricktoon reliability report created for '${topicId}' with decision '${report.gate.decision}'.`);
+    console.log(`Bricktoon reliability report created for '${topicId}' with decision '${report.gate.decision}' in scope '${scope}'.`);
     if (report.gate.blockers.length > 0) {
       console.log(`Blockers: ${report.gate.blockers.join("; ")}`);
     }

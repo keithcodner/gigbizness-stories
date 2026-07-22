@@ -269,11 +269,11 @@ The milestone now defines phase tracks for all three options so planning can con
 
 Active build track:
 
-- `Option 2: Best Quality Hybrid Pipeline`
+- `Option 3: Fastest Professional Pipeline`
 
 Active implementation phase:
 
-- `Phase 6: Benchmark Demo And Production Readiness Decision` -> `BUILD DONE, DEFAULT NOT APPROVED`
+- `Phase 5: Semi-Automation Decision` -> `BUILD DONE, ROUTE CLASSIFIED`
 
 Phase 1 implementation work completed so far:
 
@@ -361,20 +361,38 @@ Phase 6 implementation work started so far:
 - added `scripts/build_bricktoon_reliability_report.js` so each benchmark workspace can emit a durable `bricktoon_reliability_report.json` and markdown summary before expensive finish runs
 - added `agents/bricktoon_overnight_agent.js` so the bricktoon finish path now has a resumable overnight runner with state tracking instead of depending on one-shot manual command discipline
 - updated `agents/orchestrator.js` so `bricktoon-reliability` and `bricktoon-overnight` are now first-class stages, `bricktoon-finish` can enforce runtime-profile gates, and draft-only manual testing can still proceed without pretending the premium path is trusted
+- added `src/bricktoon/reliabilityRecoveryPlan.js` plus `scripts/build_bricktoon_recovery_plan.js` so blocked reliability runs now emit a ranked scene-recovery package instead of leaving the user to manually correlate multiple QC artifacts
+- updated `agents/orchestrator.js` and `package.json` so `bricktoon-recovery-plan` / `npm run bricktoon:recovery` are now first-class recovery entrypoints, and `bricktoon-reliability` automatically writes the recovery plan after each gated run
 - fixed render-contract readiness checks so the orchestrator now validates the current render-contract shape instead of an older stale field expectation
 - added regression coverage for reliability-gate decisions so fallback-heavy or hold-heavy benchmark states are blocked intentionally instead of slipping through silently
+- strengthened the overnight evidence contract so blocked, failed, running, and completed overnight states now normalize through one reusable report summary instead of ad hoc state interpretation
+- updated `agents/bricktoon_overnight_agent.js` so step-history events, current-step tracking, persisted reliability decisions, resumable failure context, and `bricktoon_overnight_report.{json,md}` are now emitted as first-class artifacts
+- aligned `src/bricktoon/hybridProductionReadiness.js` and `src/bricktoon/professionalSemiAutomationDecision.js` with the actual overnight-trial vocabulary so higher-level milestone decisions consume `passed` / `partial` / `not_recorded` consistently instead of relying on stale naming
+- fixed a benchmark-proof bug in the reliability layer so benchmark scene `S04` is now judged through the imported professional render-contract selection when that scene has been reintegrated, instead of being dragged down by stale pre-reintegration scene-sequence metadata
+- added `src/bricktoon/benchmarkSceneProof.js` plus `scripts/build_benchmark_scene_proof.js` so the promoted benchmark scene can now be packaged into a filtered proof manifest and proof report instead of forcing a full-topic render every time we want benchmark evidence
+- updated `agents/render_agent.js`, `agents/orchestrator.js`, `config/bricktoon_runtime_profiles.json`, and `package.json` so `benchmark-scene-proof` / `npm run bricktoon:benchmark-proof` are now first-class GTX 1080 benchmark-proof entrypoints
+- updated `scripts/build_bricktoon_reliability_report.js` so reliability can now emit a separate benchmark-scoped report using `scope=benchmark_selected` rather than overwriting the full-topic report
 
 Phase 6 validation evidence so far:
 
 - all pipeline tests currently pass, including the new reliability-gate coverage
 - `workspaces/test_story_template/10_qc/bricktoon_reliability_report.md` now proves the benchmark is blocked from premium finish for concrete reasons instead of vague "not ready" language
 - the current benchmark blocker set is now explicit: 5 hold-for-polish scenes, fallback ratio `0.577`, fragile scene ratio `0.714`, and 2 scenes still requiring human review before finish
+- `node --test tests\\bricktoon_pipeline.test.js` now passes 58 tests, including the new overnight-state summary, overnight-report contract, benchmark-scene proof packaging, and benchmark-scoped reliability coverage
+- `node agents\\orchestrator.js --topic test_story_template --stage hybrid-production-readiness --runtime-profile gtx1080_premium_preview` still returns `keep_option2_in_benchmark_mode`, which confirms the stronger overnight contract did not falsely promote the benchmark
+- `node agents\\orchestrator.js --topic test_story_template --stage professional-semi-automation --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview` still returns `benchmark_route_only`, which confirms the route decision remains governed after the overnight-status naming fix
+- `npm run bricktoon:benchmark-proof -- --topic test_story_template` now completes successfully and produces `workspaces/test_story_template/06_renders/benchmark_scene_proof.mp4`
+- `workspaces/test_story_template/10_qc/bricktoon_benchmark_reliability_report.md` now shows a clean benchmark-scoped verdict for scene `S04`: `ready_for_overnight_finish`, `fallback_ratio: 0`, `fragile_scene_ratio: 0`
+- `workspaces/test_story_template/10_qc/benchmark_scene_proof_report.md` now records a governed proof package for promoted benchmark scene `S04` with expected duration `28` seconds
+- `node --test tests\\bricktoon_pipeline.test.js` now passes 58 tests, including the new benchmark-scene proof packaging and benchmark-scoped reliability coverage
 
 Phase 6 is still in progress because:
 
 - the gate exists and is working, but the benchmark story still fails it
 - unattended finish trust is not earned until the benchmark can clear the reliability report under a premium runtime profile
 - GTX 1080-safe runtime tiering is now defined, but it still needs real overnight evidence on a benchmark run that finishes without collapsing into fallback-heavy output
+- the overnight runner is now much easier to diagnose and resume correctly, but a real governed overnight success case is still missing from benchmark evidence
+- benchmark-scoped proof now exists and is useful, but the full topic still fails the real premium reliability gate and therefore cannot be treated as overnight-trustworthy as a whole
 
 Option 2 Phase 1 implementation work started so far:
 
@@ -487,6 +505,8 @@ Option 2 Phase 5 validation evidence so far:
 - `node agents\\orchestrator.js --topic test_story_template --stage hybrid-promotion-gate --runtime-profile gtx1080_premium_preview` now completes successfully and writes `workspaces/test_story_template/10_qc/hybrid_promotion_gate_report.{json,md}`
 - the generated promotion gate currently marks scene `S04` (`Where Pressure Enters`) as `promote_to_hybrid_finish` and the topic decision as `approved_for_selected_scene_promotion`
 - `node agents\\orchestrator.js --topic test_story_template --stage bricktoon-reliability --runtime-profile gtx1080_premium_preview` now shows that the premium preview path recognizes the promotion gate while still blocking topic-wide finish for concrete reasons instead of vague "not ready" language
+- the latest full-topic reliability run now records a narrower blocker set than the earlier stale report: 4 hold scenes, 4 fragile scenes, 2 review scenes, fallback ratio `0.462`, and fragile-scene ratio `0.571`
+- the latest recovery output now exists at `workspaces/test_story_template/10_qc/bricktoon_recovery_plan.{json,md}` and ranks the remaining queue as `S01`, `S02`, `S03`, `S06`, `S07`, `S05`, with `S04` isolated as benchmark-locked proof instead of ordinary rework
 
 Option 2 Phase 5 is still in progress because:
 
@@ -516,6 +536,176 @@ Option 2 Phase 6 current closeout state:
 - default approval for Option 2: not approved
 - current accepted use: benchmark-only premium path
 - formal implementation closeout report: `docs/technical_docs/OPTION2_PHASE6_IMPLEMENTATION_REPORT.md`
+
+Option 3 Phase 1 implementation work completed so far:
+
+- added `src/bricktoon/professionalExportLock.js` so the repo now has a reusable export-lock contract for cast exports, shot-plan exports, composition exports, reference packaging, audio/timing packaging, benchmark guidance, and export readiness decisions
+- added `scripts/build_professional_export_lock.js` so each workspace can emit a versioned external-handoff package under `11_external_handoff/professional_export_lock/export_*`
+- updated `agents/orchestrator.js` plus `package.json` so `professional-export-lock` / `npm run professional:export-lock` are first-class pipeline entrypoints
+- updated workspace generation so new topics now reserve `11_external_handoff/professional_export_lock/` for governed upstream handoff packages
+- added regression coverage for export-material counting, incomplete export blocking, and benchmark-safe export locking
+
+Option 3 Phase 1 validation evidence so far:
+
+- `node --test tests\\bricktoon_pipeline.test.js` now passes 40 tests, including the new professional export-lock coverage
+- `node agents\\orchestrator.js --topic test_story_template --stage professional-export-lock --runtime-profile gtx1080_premium_preview` now completes successfully
+- the first governed export package for the benchmark fixture now exists at `workspaces/test_story_template/11_external_handoff/professional_export_lock/export_001/`
+- the generated export-lock report currently marks the handoff as `export_locked` with 252 exported artifacts, including cast files, shot plan, 26 composition guides, 52 art-direction files, reference packaging, clean audio/timing files, benchmark pack exports, and the hybrid contract package
+
+Option 3 Phase 1 is still in progress because:
+
+- the export package is now locked, but the exact downstream professional toolchain mapping still belongs to Phase 2
+- the shared asset catalog is still structurally present but not yet richly populated for repeated professional handoffs
+- benchmark governance is strong enough for export guidance, but the benchmark still remains benchmark-only rather than full default production approval
+
+Option 3 Phase 2 implementation work completed so far:
+
+- added `config/professional_toolchain_profiles.json` so the professional route now has repo-owned toolchain profiles for `Adobe Character Animator + After Effects`, `Toon Boom Harmony + After Effects`, and `Adobe Animate + After Effects`
+- added `src/bricktoon/professionalToolchainMap.js` so the repo now has a reusable mapping layer for mouth sync, blink and gesture systems, puppet setup, prop interaction, shot compositing, camera control, shot-class playbooks, and the downstream operating model
+- added `scripts/build_professional_toolchain_map.js` so each workspace can emit a versioned professional-toolchain map under `11_external_handoff/professional_toolchain_map/map_*`
+- updated `agents/orchestrator.js` plus `package.json` so `professional-toolchain-map` / `npm run professional:map` are first-class pipeline entrypoints
+- updated workspace generation so new topics now reserve `11_external_handoff/professional_toolchain_map/` for governed downstream operating-model reports
+- added regression coverage for repo-side motion coverage counting, incomplete toolchain-map blocking, and benchmark-safe professional operating-model locking
+
+Option 3 Phase 2 validation evidence so far:
+
+- `node --test tests\\bricktoon_pipeline.test.js` now passes 43 tests, including the new professional toolchain-map coverage
+- `node agents\\orchestrator.js --topic test_story_template --stage professional-toolchain-map --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview` now completes successfully
+- the generated map package now exists at `workspaces/test_story_template/11_external_handoff/professional_toolchain_map/map_002/`
+- `latest_toolchain_map_report.json` currently records `toolchain_map_locked` for the `adobe_character_animator_after_effects` profile against export package `export_001`
+- the live benchmark handoff now proves 26 shot contracts, 4 character contracts, 16 mouth-ready speaking shots, full camera/compositing coverage, and a governed six-step professional operating model
+
+Option 3 Phase 2 is considered build-complete for its scope because:
+
+- the exact downstream professional toolchain route is now explicit instead of implied
+- every milestone capability in this phase now has a mapped repo input contract and a chosen professional primary tool
+- the shot-class playbook now says which shots belong in the puppet tool versus the compositing/camera layer
+- the benchmark fixture can now be handed to a professional animation workflow with a repeatable operating model instead of a loose folder handoff
+
+Option 3 Phase 2 still leaves these next-phase gaps:
+
+- no hero scene has been animated yet through the mapped professional route
+- benchmark governance still keeps this path in benchmark-only mode rather than default production approval
+- the shared reusable asset catalog is still structurally present but not richly populated for repeated professional handoffs
+- repo reintegration of returned professional renders still belongs to Phase 4
+
+Option 3 Phase 3 implementation work completed so far:
+
+- added `src/bricktoon/professionalHeroScene.js` so the repo now has a reusable hero-scene build layer for benchmark-scene selection, shot-build acceptance checks, prop/speech coverage checks, and governed hero-scene build decisions
+- added `scripts/build_professional_hero_scene.js` so each workspace can emit a versioned hero-scene package under `11_external_handoff/professional_hero_scene/build_*`
+- updated `agents/orchestrator.js` plus `package.json` so `professional-hero-scene` / `npm run professional:hero-scene` are first-class pipeline entrypoints
+- updated workspace generation so new topics now reserve `11_external_handoff/professional_hero_scene/` for benchmark-scene handoff packages
+- added regression coverage for benchmark-scene acting coverage, incomplete hero-scene blocking, and governed hero-scene build locking
+
+Option 3 Phase 3 validation evidence so far:
+
+- `node --test tests\\bricktoon_pipeline.test.js` now passes 46 tests, including the new professional hero-scene coverage
+- `node agents\\orchestrator.js --topic test_story_template --stage professional-hero-scene --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview` now completes successfully
+- the generated hero-scene package now exists at `workspaces/test_story_template/11_external_handoff/professional_hero_scene/build_001/`
+- `latest_professional_hero_scene_report.json` currently records `hero_scene_build_locked` for benchmark scene `S04`
+- the live benchmark hero-scene package now proves 5 scene shot contracts, 5 editorial proof shots, 5 premium-motion shots, 3 talking shots, 5 prop-interaction shots, locked continuity, balanced pacing, and clean audio/timing handoff
+
+Option 3 Phase 3 is considered build-complete for its repo-side scope because:
+
+- one governed benchmark scene is now packaged as a concrete hero-scene build instead of only as a general toolchain map
+- each hero-scene shot now carries acceptance checks tied to speech readability, prop contact, insert readability, and camera behavior
+- the benchmark sequence, shot proofs, shot contracts, composition guides, art direction, and audio/timing files are now bundled into one repeatable handoff package
+- the repo now has a durable hero-scene checkpoint before reintegration work begins
+
+Option 3 Phase 3 still leaves these next-phase gaps:
+
+- the current hero-scene lock is based on the governed repo-side benchmark proof package, not yet a returned external pro-tool render
+- benchmark governance still keeps this route in benchmark-only mode rather than default production approval
+- repo reintegration of externally returned hero-scene renders, metadata, and QC decisions still belongs to Phase 4
+- the shared reusable asset catalog is still structurally present but not richly populated for repeated professional handoffs
+
+Option 3 Phase 4 implementation work completed so far:
+
+- added `src/bricktoon/professionalReintegration.js` so the repo now has a reusable reintegration layer for imported benchmark assets, render-contract alignment checks, QC compatibility checks, and benchmark comparison decisions
+- added `scripts/build_professional_reintegration.js` so each workspace can emit a versioned reintegration package under `11_external_handoff/professional_reintegration/reintegration_*`
+- updated `src/render/resolveSceneAsset.js` so the repo now prefers `professional_hero_scene_sequence` assets over older composited scene-sequence assets when both are approved for the same scene
+- updated `agents/orchestrator.js` plus `package.json` so `professional-reintegration` / `npm run professional:reintegrate` are first-class pipeline entrypoints
+- updated workspace generation so new topics now reserve `11_external_handoff/professional_reintegration/` plus `08_animation/professional_imports/` for imported benchmark media and reintegration reports
+- added regression coverage for professional-scene asset preference, imported benchmark-asset tracking, incomplete reintegration blocking, and locked render-contract reintegration
+
+Option 3 Phase 4 validation evidence so far:
+
+- `node --test tests\\bricktoon_pipeline.test.js` now passes 50 tests, including the new professional reintegration coverage
+- `node agents\\orchestrator.js --topic test_story_template --stage professional-reintegration --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview` now completes successfully
+- the generated reintegration package now exists at `workspaces/test_story_template/11_external_handoff/professional_reintegration/reintegration_002/`
+- `latest_professional_reintegration_report.json` currently records `professional_reintegration_locked`
+- the imported benchmark scene asset now exists in `07_visuals/asset_manifest.json` as `PROHEROSEQ_S04_MAIN`, and `09_edit_plan/render_contract.json` now selects that imported professional benchmark asset for scene `S04`
+- the reintegration layer also writes QC-facing reports at `10_qc/professional_reintegration_report.{json,md}`
+
+Option 3 Phase 4 is considered build-complete for its repo-side scope because:
+
+- returned professional benchmark media is now imported into workspace-owned asset locations instead of living only in external-handoff packages
+- the asset manifest now tracks the imported benchmark scene plus imported benchmark shot assets
+- render-contract selection now naturally prefers the imported professional benchmark asset for the benchmark scene
+- the repo now has a QC-facing reintegration report that compares the imported benchmark asset against the hero-scene acceptance package
+
+Option 3 Phase 4 still leaves these next-phase gaps:
+
+- the current reintegration path is governed and repeatable, but still targeted at the benchmark scene rather than broad topic-wide automation
+- benchmark governance still keeps this route in benchmark-only mode rather than default production approval
+- the current imported benchmark asset is still derived from the governed repo-side benchmark proof package rather than a truly external animation-tool return
+- the next phase still needs to decide how much of this professional path should be standardized versus remain manual
+
+Option 3 Phase 5 implementation work completed so far:
+
+- added `src/bricktoon/professionalSemiAutomationDecision.js` so the repo now has a reusable decision layer for route classification, automation bucket planning, operator-burden capture, and scale-readiness decisions
+- added `scripts/build_professional_semi_automation_decision.js` so each workspace can emit a versioned semi-automation decision package under `11_external_handoff/professional_semi_automation/decision_*`
+- updated `agents/orchestrator.js` plus `package.json` so `professional-semi-automation` / `npm run professional:decision` are first-class pipeline entrypoints
+- updated workspace generation so new topics now reserve `11_external_handoff/professional_semi_automation/` for governed route-classification reports
+- added regression coverage for benchmark-only route classification, incomplete decision blocking, and locked semi-automation decisions
+
+Option 3 Phase 5 validation evidence so far:
+
+- `node --test tests\\bricktoon_pipeline.test.js` now passes 53 tests, including the new professional semi-automation decision coverage
+- `node agents\\orchestrator.js --topic test_story_template --stage professional-semi-automation --toolchain-profile adobe_character_animator_after_effects --runtime-profile gtx1080_premium_preview` now completes successfully
+- the generated decision package now exists at `workspaces/test_story_template/11_external_handoff/professional_semi_automation/decision_001/`
+- `latest_professional_semi_automation_report.json` currently records `semi_automation_decision_locked`
+- the current route decision is now explicit: `benchmark_route_only` with recommended use `use_as_benchmark_route_only`
+
+Option 3 Phase 5 decision outcome:
+
+- standardize now:
+  - repo-side export lock package generation
+  - professional toolchain-map generation
+  - benchmark hero-scene package generation
+  - professional benchmark asset reintegration
+  - benchmark-scene asset-manifest registration
+  - benchmark-scene render-contract preference
+  - qc-facing reintegration reporting
+- keep operator assisted:
+  - character puppet authoring inside the pro toolchain
+  - speech and mouth-shape polish on talking shots
+  - blink, gesture, and acting polish on hero shots
+  - camera polish and editorial composite tuning
+  - music selection and subjective pacing review
+  - benchmark acceptance review before broader rollout
+- do not automate yet:
+  - full-topic overnight professional finishing
+  - topic-wide professional import promotion without benchmark review
+  - shared asset-catalog scaling for repeated production topics
+  - portable multi-machine proof for the professional route
+  - category-driven reusable asset sourcing at scale
+  - automatic preview-to-finish promotion for the whole topic
+  - default production use beyond the benchmark scene
+
+Option 3 Phase 5 is considered build-complete because:
+
+- the team now has an explicit answer about what this route is
+- the route is no longer implied to be a future full-production default
+- the automation boundary between repo-side packaging/audit and pro-tool acting/polish is now documented as a governed decision instead of a guess
+
+Option 3 final route classification:
+
+- current role: `benchmark_route_only`
+- current recommended use: `use_as_benchmark_route_only`
+- not approved as: permanent default production path
+- not approved as: unattended full-topic overnight finishing path
+- value retained: strong benchmark-scene accelerator with governed packaging, handoff, reintegration, and audit support
 
 ## Option 1 Phases: Cheapest Custom Pipeline
 

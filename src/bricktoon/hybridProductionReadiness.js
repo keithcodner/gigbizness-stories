@@ -102,17 +102,36 @@ function summarizeOvernightTrial({
   const completedSteps = safeArray(overnightState.completed_steps);
   const lastDecision = overnightState.last_reliability_decision || reliabilityReport.gate?.decision || null;
   const finished = Boolean(overnightState.completed_at);
+  const overnightStatus = overnightState.status || (finished ? "completed" : "partial");
 
   if (finished && ["ready_for_overnight_finish", "ready_for_final_export"].includes(lastDecision || "")) {
     return {
       status: "passed",
-      summary: "overnight state exists and the last recorded reliability decision cleared finishing"
+      summary: "overnight state exists and the last recorded reliability decision cleared finishing",
+      overnight_status: overnightStatus
+    };
+  }
+
+  if (overnightStatus === "blocked") {
+    return {
+      status: "partial",
+      summary: `overnight state is blocked with ${completedSteps.length} completed step(s) and reliability decision '${lastDecision || "n/a"}'`,
+      overnight_status: overnightStatus
+    };
+  }
+
+  if (overnightStatus === "failed") {
+    return {
+      status: "partial",
+      summary: `overnight state failed after ${completedSteps.length} completed step(s)`,
+      overnight_status: overnightStatus
     };
   }
 
   return {
     status: "partial",
-    summary: `overnight state exists with ${completedSteps.length} completed step(s), but production clearance was not recorded`
+    summary: `overnight state exists with ${completedSteps.length} completed step(s), but production clearance was not recorded`,
+    overnight_status: overnightStatus
   };
 }
 
