@@ -24,7 +24,7 @@ function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (!args.workspace) {
-      throw new Error("Usage: node scripts/render_hybrid_performance_proof.js --workspace <workspace_path>");
+      throw new Error("Usage: node scripts/render_hybrid_performance_proof.js --workspace <workspace_path> [--selection-mode sample|topic_wide] [--max-shots <n>]");
     }
 
     const workspaceDir = path.resolve(args.workspace);
@@ -48,7 +48,9 @@ function main() {
     ensureDir(reportDir);
     ensureDir(posterDir);
 
-    const selectedShots = selectHybridProofShots(hybridContract, 4);
+    const selectionMode = String(args["selection-mode"] || args.mode || "topic_wide");
+    const maxShots = Number(args["max-shots"] || 4);
+    const selectedShots = selectHybridProofShots(hybridContract, { mode: selectionMode, maxShots });
     if (selectedShots.length === 0) {
       throw new Error("No hybrid proof shots could be selected from the hybrid animation contract.");
     }
@@ -124,7 +126,10 @@ function main() {
 
     const report = {
       generated_at: assetTimestamp(),
-      proof_profile: "option2_phase3_minimum_viable_character_performance",
+      proof_profile: selectionMode === "sample"
+        ? "option2_phase3_minimum_viable_character_performance_sample"
+        : "option2_phase3_topic_wide_character_performance",
+      selection_mode: selectionMode,
       source_contract_file: "08_animation/hybrid_contract/hybrid_animation_contract.json",
       summary: summarizeHybridProofSelection(selectedShots),
       shots: shotReports,

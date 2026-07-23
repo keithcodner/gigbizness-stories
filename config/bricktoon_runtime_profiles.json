@@ -15,6 +15,8 @@
       "max_fallback_ratio": 0.8,
       "max_scenes_with_fallback_ratio": 1,
       "max_fragile_scene_ratio": 1,
+      "max_selected_weak_motion_scene_ratio": 0.6,
+      "max_attempted_weak_motion_scene_ratio": 0.75,
       "machine_target": "gtx1080_8gb",
       "render_output_proof": {
         "min_audio_bitrate": 8000,
@@ -51,6 +53,8 @@
       "max_fallback_ratio": 0.55,
       "max_scenes_with_fallback_ratio": 0.85,
       "max_fragile_scene_ratio": 0.5,
+      "max_selected_weak_motion_scene_ratio": 0.35,
+      "max_attempted_weak_motion_scene_ratio": 0.5,
       "machine_target": "gtx1080_8gb",
       "render_output_proof": {
         "min_audio_bitrate": 12000,
@@ -87,6 +91,8 @@
       "max_fallback_ratio": 0.2,
       "max_scenes_with_fallback_ratio": 0.5,
       "max_fragile_scene_ratio": 0,
+      "max_selected_weak_motion_scene_ratio": 0.2,
+      "max_attempted_weak_motion_scene_ratio": 0.35,
       "machine_target": "gtx1080_8gb",
       "render_output_proof": {
         "min_audio_bitrate": 12000,
@@ -123,6 +129,8 @@
       "max_fallback_ratio": 0.35,
       "max_scenes_with_fallback_ratio": 0.6,
       "max_fragile_scene_ratio": 0.25,
+      "max_selected_weak_motion_scene_ratio": 0.15,
+      "max_attempted_weak_motion_scene_ratio": 0.3,
       "machine_target": "gtx1080_8gb",
       "render_output_proof": {
         "min_audio_bitrate": 12000,
@@ -159,6 +167,8 @@
       "max_fallback_ratio": 0.2,
       "max_scenes_with_fallback_ratio": 0.35,
       "max_fragile_scene_ratio": 0.1,
+      "max_selected_weak_motion_scene_ratio": 0.1,
+      "max_attempted_weak_motion_scene_ratio": 0.2,
       "machine_target": "gtx1080_8gb",
       "render_output_proof": {
         "min_audio_bitrate": 16000,

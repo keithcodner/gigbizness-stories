@@ -39,7 +39,8 @@ function getPaths(workspaceDir) {
     chartsDir: path.join(assetsDir, "charts"),
     documentsDir: path.join(assetsDir, "documents"),
     bricktoonManifestPath: path.join(workspaceDir, "07_visuals", "asset_manifest.json"),
-    promptExportDir: path.join(workspaceDir, "07_visuals")
+    promptExportDir: path.join(workspaceDir, "07_visuals"),
+    sceneSequenceReportPath: path.join(workspaceDir, "08_animation", "scene_sequences", "scene_sequence_report.json")
   };
 }
 
@@ -283,19 +284,42 @@ function resolveAssetPath(assetsDir, row) {
   return path.join(assetsDir, row.filename || "");
 }
 
-function collectVisualReadiness(manifestRows, assetsDir) {
+function buildCoveredDocumentSceneSet(sceneSequenceReport = {}) {
+  return new Set(
+    (sceneSequenceReport.scenes || [])
+      .filter((scene) =>
+        scene
+        && scene.promotion_status === "ready_for_finish"
+        && Number(scene.fallback_shots || 0) === 0
+      )
+      .map((scene) => scene.scene_id)
+      .filter(Boolean)
+  );
+}
+
+function shouldSuppressHighPriorityUnresolved(row, coveredDocumentScenes) {
+  return row.status === "planned"
+    && row.asset_type === "document"
+    && coveredDocumentScenes.has(row.scene_id);
+}
+
+function collectVisualReadiness(manifestRows, assetsDir, sceneSequenceReport = {}) {
   const rowsWithFiles = manifestRows.map((row) => ({
     ...row,
     asset_path: resolveAssetPath(assetsDir, row),
     exists: fs.existsSync(resolveAssetPath(assetsDir, row))
   }));
+  const coveredDocumentScenes = buildCoveredDocumentSceneSet(sceneSequenceReport);
 
   const generatedExisting = rowsWithFiles.filter((row) => row.status === "generated" && row.exists);
   const realExisting = rowsWithFiles.filter((row) => row.status !== "generated" && row.exists);
   const existingStock = realExisting.filter((row) => row.asset_type === "stock_video");
   const existingDocuments = realExisting.filter((row) => row.asset_type === "document");
   const unresolvedHighPriority = rowsWithFiles.filter((row) =>
-    row.priority === "high" && row.status !== "generated" && !row.exists
+    row.priority === "high"
+    && row.status !== "generated"
+    && !row.exists
+    && !shouldSuppressHighPriorityUnresolved(row, coveredDocumentScenes)
   );
 
   return {
@@ -439,7 +463,8 @@ function main() {
     ]));
     writeText(paths.assetGapsPath, buildAssetGaps(topic, manifestRows));
     writeText(paths.summaryPath, buildSummary(topic, manifestRows, timingData));
-    let readiness = collectVisualReadiness(manifestRows, path.join(args.workspace, "04_assets"));
+    const sceneSequenceReport = readJsonIfExists(paths.sceneSequenceReportPath, { scenes: [] });
+    let readiness = collectVisualReadiness(manifestRows, path.join(args.workspace, "04_assets"), sceneSequenceReport);
     writeText(paths.visualPlanPath, buildVisualPlan(topic, manifestRows, readiness));
     writeText(paths.visualReadinessPath, `${JSON.stringify(readiness, null, 2)}\n`);
 
@@ -497,7 +522,7 @@ function main() {
     ]));
     writeText(paths.assetGapsPath, buildAssetGaps(topic, manifestRows));
     writeText(paths.summaryPath, buildSummary(topic, manifestRows, timingData));
-    readiness = collectVisualReadiness(manifestRows, path.join(args.workspace, "04_assets"));
+    readiness = collectVisualReadiness(manifestRows, path.join(args.workspace, "04_assets"), sceneSequenceReport);
     writeText(paths.visualPlanPath, buildVisualPlan(topic, manifestRows, readiness));
     writeText(paths.visualReadinessPath, `${JSON.stringify(readiness, null, 2)}\n`);
 

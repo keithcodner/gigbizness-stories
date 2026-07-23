@@ -1,6 +1,6 @@
 # Pipeline State Visual
 
-Last updated: July 22, 2026
+Last updated: July 23, 2026
 
 ## Status Board
 
@@ -19,12 +19,12 @@ PIPELINE STATUS
 |   |-- option 1 / phase 3 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
 |   |-- option 1 / phase 4 status ......... [BUILD DONE, BENCHMARK SIGNOFF PENDING]
 |   |-- option 1 / phase 5 status ......... [BUILD DONE, SEQUENCE SIGNOFF PENDING]
-|   |-- option 1 / phase 6 status ......... [PARTIAL, BENCHMARK PROOF + REVIEW CLEARANCE WORKING]
+|   |-- option 1 / phase 6 status ......... [PARTIAL, TOPIC CLEARS DRAFT GATE; GOVERNED RUN NOW REACHES FINISH]
 |   |-- option 2 / phase 1 status ......... [BUILD DONE, FRESH STILL SIGNOFF PENDING]
 |   |-- option 2 / phase 2 status ......... [BUILD DONE, ROUNDTRIP SIGNOFF PENDING]
 |   |-- option 2 / phase 3 status ......... [BUILD DONE, SAMPLE SIGNOFF PENDING]
 |   |-- option 2 / phase 4 status ......... [BUILD DONE, EDITORIAL SIGNOFF PENDING]
-|   |-- option 2 / phase 5 status ......... [BUILD DONE, TOPIC-WIDE PROMOTION BLOCKED]
+|   |-- option 2 / phase 5 status ......... [BUILD DONE, TOPIC-WIDE PROMOTION PROVEN ON BENCHMARK TOPIC]
 |   |-- option 2 / phase 6 status ......... [BUILD DONE, DEFAULT NOT APPROVED]
 |   |-- option 3 / phase 1 status ......... [BUILD DONE]
 |   |-- option 3 / phase 2 status ......... [BUILD DONE]
@@ -38,6 +38,13 @@ PIPELINE STATUS
 |   |-- topic workspace generation .......... [WORKING]
 |   |-- restart / guided / full flows ....... [WORKING]
 |   `-- changelog / docs discipline ......... [WORKING]
+|
+|-- VOICE / DELIVERY AUDIO .................. [WORKING]
+|   |-- transcript generation ............... [WORKING]
+|   |-- windows tts draft narration ......... [WORKING]
+|   |-- silent voice rejection .............. [WORKING]
+|   |-- qc voice usability checks ........... [WORKING]
+|   `-- final render voice mix .............. [WORKING]
 |
 |-- RESEARCH -> SCRIPT CORE ................. [WORKING]
 |   |-- research package .................... [WORKING]
@@ -100,6 +107,7 @@ PIPELINE STATUS
 |   |-- medium-single speaking proof ........ [WORKING]
 |   |-- dialogue/two-shot proof ............. [WORKING]
 |   |-- insert/document proof ............... [WORKING]
+|   |-- topic-wide coverage mode ............ [WORKING]
 |   |-- combined proof sequence ............. [WORKING]
 |   `-- human signoff against quality floor . [PENDING]
 |
@@ -117,7 +125,7 @@ PIPELINE STATUS
 |   |-- human checkpoint checklist .......... [WORKING]
 |   |-- runtime-tier recommendation ......... [WORKING]
 |   |-- orchestrator stage .................. [WORKING]
-|   `-- topic-wide promotion ................ [BLOCKED]
+|   `-- topic-wide promotion ................ [WORKING]
 |
 |-- HYBRID PRODUCTION READINESS ............. [PARTIAL]
 |   |-- benchmark fixture lock .............. [WORKING]
@@ -179,6 +187,7 @@ PIPELINE STATUS
 |   |-- runtime profiles .................... [WORKING]
 |   |-- reliability gate .................... [WORKING]
 |   |-- reliability report .................. [WORKING]
+|   |-- weak-motion visibility .............. [WORKING]
 |   |-- scene review packet ................ [WORKING]
 |   |-- review decision file ............... [WORKING]
 |   |-- recovery plan stage ................. [WORKING]
@@ -194,7 +203,7 @@ PIPELINE STATUS
 |   |-- render output proof gate ............ [WORKING]
 |   |-- static slideshow rejection .......... [WORKING]
 |   |-- premium finish hard gate ............ [WORKING]
-|   `-- benchmark overnight trust ........... [BLOCKED]
+|   `-- benchmark overnight trust ........... [PARTIAL, GOVERNED RUN NOW REACHES FINISH]
 |
 |-- ANIMATION / MOTION ...................... [PARTIAL]
 |   |-- layer extraction .................... [WORKING]
@@ -203,16 +212,19 @@ PIPELINE STATUS
 |   |-- shot compositing .................... [WORKING]
 |   |-- scene assembly ...................... [WORKING]
 |   |-- procedural performance routing ...... [WORKING]
-|   `-- premium believable motion ........... [PARTIAL]
+|   |-- procedural fallback staging ......... [WORKING, QUALITY IMPROVED]
+|   `-- premium believable motion ........... [PARTIAL, BENCHMARK DRAFT NOW PASSES RENDER PROOF]
 |
 |-- RENDER OUTPUT ........................... [PARTIAL]
 |   |-- draft render path ................... [WORKING]
 |   |-- render contract ..................... [WORKING]
 |   |-- sequence outputs .................... [WORKING]
 |   |-- output proof / audibility checks .... [WORKING]
+|   |-- renderer-added text overlays ........ [REMOVED]
+|   |-- readable document-text suppression .. [WORKING]
 |   |-- no-motion slideshow blocking ........ [WORKING]
 |   |-- measurable motion in final draft .... [WORKING]
-|   `-- premium overnight-ready output ...... [NOT READY]
+|   `-- premium overnight-ready output ...... [PARTIAL, DRAFT GATE CLEARS ON BENCHMARK TOPIC]
 |
 `-- CURRENT REALITY
     |-- architecture ........................ [REAL]
@@ -223,11 +235,12 @@ PIPELINE STATUS
     |-- known-gap documentation ............. [LOCKED]
     |-- reliability gate .................... [REAL]
     |-- render truth gate ................... [REAL]
+    |-- motion-health reliability truth ..... [REAL]
     |-- professional toolchain mapping ..... [REAL]
     |-- professional hero scene package .... [REAL]
     |-- professional reintegration ......... [REAL]
     |-- option 3 route classification ...... [REAL]
-    `-- unattended overnight production ..... [BLOCKED BY REVIEW ONLY]
+    `-- unattended overnight production ..... [READY FOR GOVERNED DRAFT TRIAL, NOT YET PROVEN]
 ```
 
 ## Flow View
@@ -383,8 +396,8 @@ MAIN BLOCKERS:
 
 3. The sequence stage now produces usable continuity, subtitle-safe,
    pacing, and promotion metadata, but several benchmark scenes still
-   fall back too often to procedural shots to call the sequence
-   premium-ready.
+   rely on procedural fallback shots that now look materially better,
+   but still do not yet equal the intended premium AI/editorial route.
 
 4. The new Option 2 hybrid animation contract is now real and generated,
    but the external motion layer has not yet been proven to consume it
@@ -407,41 +420,62 @@ MAIN BLOCKERS:
    selects stabilized motion for those bridge shots instead of leaving
    them stuck behind stale fallback metadata.
 
-8. The new reliability report is working, and after the scoped
-   `light_rework` plus `heavy_rework` passes it is now blocking
-   `test_story_template` only for governed review approval:
-   6 scenes still marked for review before finish. The earlier
-   hold-scene and fragile-scene-ratio blockers have both been cleared.
+8. The hybrid performance proof stage is no longer only a 4-shot sample.
+    It now supports topic-wide coverage and has been proven live on
+    `test_story_template` with 19 proof shots:
+    closeups -> 4
+    medium singles -> 4
+    dialogue/two-shot -> 1
+    insert/document shots -> 10
 
-9. The new recovery-plan stage now converts those blockers into a ranked
-   queue automatically:
-   manual review -> `S01`, `S02`, `S03`, `S05`, `S06`, `S07`
-   benchmark locked -> `S04`
+9. The compositing stack now promotes the strongest available motion
+    source per shot instead of blindly favoring procedural clips.
+    Current winner mix on `test_story_template`:
+    professional imports -> 5
+    hybrid proof shots -> 15
+    stabilized motion passes -> 6
+    procedural fallback clips -> 0
 
-10. The new scene-review stage now creates a governed approval file for
-    `S01` and `S02`, and the reliability gate is ready to stop counting a
-    review scene once that file marks it approved.
+10. The latest render-output proof is now approved on Thursday, July 23, 2026:
+    `distinct_frame_ratio` -> `0.857`
+    `duplicate_frame_ratio` -> `0.143`
+    `low_detail_frame_ratio` -> `0.286`
+    `static_window_ratio` -> `0.143`
+    `scenes_with_fallback_ratio` -> `0`
+    `fallback_document_shot_ratio` -> `0`
 
-11. The new scene-scoped recovery stage now lets us rerun only the queued
-    weak scenes while preserving the rest of the topic reports.
-    This path has now been proven live for both `light_rework` and
-    `heavy_rework`, and it moved `S03`, `S05`, `S06`, and `S07` out of
-    rework without a whole-topic rerun.
+11. The reliability layer now makes motion health visible directly instead
+    of hiding it in `ai_motion_report.json`:
+    attempted weak-motion scenes -> `S02`, `S04`
+    selected weak-motion scenes -> none
+    selected weak-motion scene ratio -> `0`
 
-12. The compositing stack now reliably chooses repo-side procedural
-    performance clips over weaker still-derived drifts for speaking,
-    reaction, exchange, and document-led acting beats, which means the
-    current draft is no longer failing as a pure static slideshow.
+12. The continuity-status and visual-readiness truth has now been
+    corrected for the benchmark topic:
+    all scenes are promoted
+    all scenes are `ready_for_finish`
+    `fragile_scene_ratio` -> `0`
+    `scenes_with_fallback_ratio` -> `0`
+    unresolved high-priority assets -> `1`
+    reliability decision -> `ready_for_overnight_finish`
 
-13. The next quality blocker is no longer "is there motion?" but
-    "does the motion happen inside visually distinct enough scenes?"
-    The current render-output proof still blocks because repeated
-    environment layouts and extremely weak audio keep the draft below
-    the premium floor.
+13. The remaining overnight-draft gap is no longer a blocked
+    reliability gate on `test_story_template`.
+    The governed overnight run now skips fresh preview rebuilds,
+    clears reliability, and reaches `bricktoon-finish`.
+    The next missing proof is the completed overnight-run record
+    under the GTX 1080 draft profile.
 
 14. Milestone 2 is now the active gate, so the project should not
     treat scale, automation, or production readiness as the next win
     until the minimum animation floor is actually met.
+
+15. The procedural fallback renderer has now been upgraded for the
+    `legit_front_office` scene family and for minifig character
+    construction, so fallback winners in `S02` no longer read like
+    flat stick-figure placeholders.
+    That is a meaningful improvement, but it is still a fallback-quality
+    safety route rather than the final premium look we are aiming for.
 ```
 
 ## Milestone 2 Gate
@@ -505,5 +539,5 @@ Known gap capture:
 Current active build:
 - Option 1
 - Phase 6: Overnight Reliability
-- completion status: partial, benchmark proof path, review clearance, recovery planning, and scene-scoped recovery reruns are working and full-topic overnight trust is still blocked
+- completion status: partial, benchmark proof path, render-output proof approval, motion-health-aware reliability, continuity/promotion truth correction, overnight preview fast-pathing, and full-topic overnight-draft gate clearance are working; the next missing proof is the completed governed overnight-run record
 ```

@@ -231,19 +231,65 @@ function qualityClassificationForAsset(assetType) {
 function inferMotionRecipe(route = {}, performance = {}) {
   const purpose = String(route.reason || performance.purpose || "").toLowerCase();
   const shotType = String(route.shot_type || performance.shot_type || "").toLowerCase();
-  if (purpose.includes("typing") || shotType.includes("over_shoulder")) {
+  const performanceClass = String(performance.performance_class || route.performance_class || "").toLowerCase();
+  const secondaryAction = String(performance.secondary_action || route.secondary_action || "").toLowerCase();
+  const mouthSyncMode = String(performance.mouth_sync_mode || route.mouth_sync_mode || "").toLowerCase();
+  const angleProfile = String(performance.camera_angle_profile || route.camera_angle_profile || "").toLowerCase();
+
+  if (
+    purpose.includes("typing")
+    || shotType.includes("over_shoulder")
+    || secondaryAction.includes("typing")
+  ) {
     return "typing_action_insert";
   }
-  if (purpose.includes("reaction") || shotType.includes("closeup")) {
-    return "reaction_emphasis";
-  }
-  if (purpose.includes("villain")) {
+  if (
+    purpose.includes("villain")
+    || shotType.includes("villain")
+    || angleProfile.includes("villain")
+  ) {
     return "villain_hero";
   }
-  if (purpose.includes("reveal") || purpose.includes("proof")) {
+  if (
+    shotType.includes("document")
+    || shotType.includes("push_in_document")
+    || shotType.includes("top_down")
+    || purpose.includes("reveal")
+    || purpose.includes("proof")
+    || purpose.includes("invoice")
+    || purpose.includes("fee pressure")
+    || secondaryAction === "document_reveal"
+    || secondaryAction === "counter_change"
+    || performanceClass.includes("document_insert")
+    || performanceClass.includes("insert_proof")
+  ) {
     return "pressure_reveal";
   }
-  if (purpose.includes("talk") || purpose.includes("dialogue")) {
+  if (
+    purpose.includes("reaction")
+    || shotType.includes("reaction")
+    || performanceClass.includes("reaction")
+  ) {
+    return "reaction_emphasis";
+  }
+  if (
+    shotType.includes("establishing_wide")
+    || angleProfile.includes("wide_establish")
+    || performanceClass.includes("tableau")
+  ) {
+    return "establishing_sweep";
+  }
+  if (
+    purpose.includes("talk")
+    || purpose.includes("dialogue")
+    || shotType.includes("closeup")
+    || shotType.includes("medium_single")
+    || shotType.includes("medium_two_shot")
+    || performanceClass.includes("talking_puppet")
+    || performanceClass.includes("single_character_explainer")
+    || performanceClass.includes("two_character_exchange")
+    || ["talk_cycles", "viseme_emphasis"].includes(mouthSyncMode)
+  ) {
     return "talking_character";
   }
   return "static_plus_drift";

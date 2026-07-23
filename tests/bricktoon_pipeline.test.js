@@ -26,9 +26,10 @@ const {
   normalizeSceneTimes
 } = require("../src/bricktoon/benchmarkSceneProof");
 const { splitNarrationIntoCaptionChunks, summarizeSceneSequence } = require("../src/bricktoon/sequencePolish");
-const { loadVisualGenerationConfig, resolveWorkflowTemplate, qualityClassificationForAsset } = require("../src/bricktoon/workflowContracts");
+const { loadVisualGenerationConfig, resolveWorkflowTemplate, qualityClassificationForAsset, inferMotionRecipe } = require("../src/bricktoon/workflowContracts");
 const { buildPerformanceFrameState, cameraStateForFrame, sceneEnvironmentProfile } = require("../src/bricktoon/proceduralSequenceRenderer");
 const { inferProductionMode } = require("../src/bricktoon/aiQualityPipeline");
+const { isPreviewFresh, resolveOvernightPreviewMode } = require("../src/bricktoon/overnightPreviewReadiness");
 const { buildHybridCharacterContract, buildHybridShotContract } = require("../src/bricktoon/hybridAnimationContract");
 const { buildHybridProofPerformance, selectHybridProofShots } = require("../src/bricktoon/hybridPerformanceProof");
 const {
@@ -90,6 +91,7 @@ const {
   buildShotNegativePrompt,
   selectCharacterRefPaths
 } = require("../src/bricktoon/shotKeyframeGuidance");
+const { shouldSanitizeReadableText } = require("../src/bricktoon/compositingSanitization");
 
 test("normalizeCast supports legacy and cast-package schemas", () => {
   const legacy = { cast: [{ character_id: "LEGACY_1" }] };
@@ -228,6 +230,31 @@ test("quality classification favors composited motion outputs", () => {
   assert.equal(qualityClassificationForAsset("composited_shot_clip"), "premium_motion");
   assert.equal(qualityClassificationForAsset("bricktoon_shot_clip"), "motion_ready");
   assert.equal(qualityClassificationForAsset("approved_keyframe"), "premium_still");
+});
+
+test("motion recipe inference upgrades speaking, establishing, and document shots beyond static drift", () => {
+  assert.equal(inferMotionRecipe({
+    shot_type: "closeup_face",
+    reason: "Explain the contract pressure clearly."
+  }, {
+    mouth_sync_mode: "viseme_emphasis",
+    performance_class: "closeup_talking_puppet"
+  }), "talking_character");
+
+  assert.equal(inferMotionRecipe({
+    shot_type: "establishing_wide"
+  }, {
+    camera_angle_profile: "wide_establish",
+    performance_class: "staged_cutout_tableau"
+  }), "establishing_sweep");
+
+  assert.equal(inferMotionRecipe({
+    shot_type: "top_down_document",
+    reason: "Reveal the invoice increase."
+  }, {
+    secondary_action: "counter_change",
+    performance_class: "document_insert_motion"
+  }), "pressure_reveal");
 });
 
 test("production routing keeps medium character-performance shots on hybrid motion even for invoice beats", () => {
@@ -599,6 +626,37 @@ test("scene sequence summary reports continuity pacing and promotion state", () 
   assert.equal(summary.promotion_status, "review_before_finish");
 });
 
+test("scene sequence continuity can lock fully animated scenes without fallback spread", () => {
+  const summary = summarizeSceneSequence({
+    scene: {
+      scene_id: "S02",
+      continuity: {
+        allow_axis_crossing: false
+      },
+      shots: [
+        { shot_type: "establishing_wide" },
+        { shot_type: "closeup_face" },
+        { shot_type: "top_down_document" },
+        { shot_type: "push_in_document" }
+      ]
+    },
+    sceneRecord: {
+      id: "S02",
+      duration_seconds: 32
+    },
+    shotSelections: [
+      { quality_classification: "premium_motion", scene_id: "S02" },
+      { quality_classification: "premium_motion", scene_id: "S02" },
+      { quality_classification: "motion_ready", scene_id: "S02" },
+      { quality_classification: "motion_ready", scene_id: "S02" }
+    ]
+  });
+
+  assert.equal(summary.continuity_status, "locked");
+  assert.equal(summary.promotion_status, "ready_for_finish");
+  assert.ok(summary.continuity_notes.some((note) => note.includes("supporting animated shots")));
+});
+
 test("reliability gate blocks overnight finish when fallback and hold pressure are too high", () => {
   const gate = evaluateReliabilityGate({
     require_preview: true,
@@ -765,6 +823,39 @@ test("reliability gate blocks when downstream artifacts are stale", () => {
   assert.ok(gate.blockers.some((item) => item.includes("downstream artifacts are stale")));
 });
 
+test("reliability gate blocks when selected weak-motion scenes exceed the runtime allowance", () => {
+  const gate = evaluateReliabilityGate({
+    require_preview: true,
+    require_sequence_reports: true,
+    require_render_contract: true,
+    require_qc_approval: false,
+    allow_review_required_finish: false,
+    intended_flow: "overnight_finish",
+    max_unresolved_high_priority: 3,
+    max_fallback_ratio: 0.35,
+    max_fragile_scene_ratio: 0.25,
+    max_selected_weak_motion_scene_ratio: 0.1,
+    max_attempted_weak_motion_scene_ratio: 0.3
+  }, {
+    preview_exists: true,
+    sequence_reports_ready: true,
+    render_contract_ready: true,
+    qc_approved: false,
+    unresolved_high_priority_count: 0,
+    stale_artifact_count: 0,
+    stale_artifacts: [],
+    fallback_ratio: 0.1,
+    fragile_scene_ratio: 0.1,
+    selected_weak_motion_scene_ratio: 0.286,
+    attempted_weak_motion_scene_ratio: 0.286,
+    review_scenes: 0,
+    hold_scenes: 0
+  });
+
+  assert.equal(gate.decision, "blocked");
+  assert.ok(gate.blockers.some((item) => item.includes("selected weak-motion scene ratio")));
+});
+
 test("reliability report promotes clean draft finish readiness", () => {
   const report = buildReliabilityReport({
     topicId: "test_story_template",
@@ -826,6 +917,81 @@ test("reliability report promotes clean draft finish readiness", () => {
   assert.equal(report.gate.decision, "ready_for_overnight_finish");
   assert.equal(report.readiness.fallback_ratio, 0.222);
   assert.equal(report.readiness.fragile_scene_ratio, 0);
+});
+
+test("reliability report summarizes attempted and selected weak-motion scenes", () => {
+  const report = buildReliabilityReport({
+    topicId: "test_story_template",
+    runtimeProfile: {
+      profile_id: "gtx1080_overnight_finish_draft",
+      machine_target: "gtx1080_8gb",
+      require_preview: true,
+      require_sequence_reports: true,
+      require_render_contract: true,
+      require_promotion_gate: false,
+      require_qc_approval: false,
+      allow_review_required_finish: false,
+      intended_flow: "overnight_finish",
+      max_unresolved_high_priority: 3,
+      max_fallback_ratio: 0.35,
+      max_fragile_scene_ratio: 0.25,
+      max_selected_weak_motion_scene_ratio: 0.15,
+      max_attempted_weak_motion_scene_ratio: 0.3,
+      runtime_policy: {
+        max_parallel_motion_jobs: 1,
+        max_parallel_keyframe_jobs: 1,
+        recommended_window: "overnight"
+      }
+    },
+    machineProfile: {
+      gpu: {
+        model: "NVIDIA GeForce GTX 1080",
+        vram_gb: 8
+      }
+    },
+    sceneSequenceReport: {
+      scenes: [
+        {
+          scene_id: "S01",
+          continuity_status: "mixed",
+          promotion_status: "ready_for_finish",
+          premium_motion_shots: 3,
+          fallback_shots: 0
+        },
+        {
+          scene_id: "S02",
+          continuity_status: "mixed",
+          promotion_status: "ready_for_finish",
+          premium_motion_shots: 3,
+          fallback_shots: 0
+        }
+      ]
+    },
+    renderContract: {
+      scenes: [{ scene_id: "S01" }, { scene_id: "S02" }]
+    },
+    motionPassReport: {
+      shots: [
+        { shot_id: "S01_SHOT_001", motion_quality_gate: "motion_validated" },
+        { shot_id: "S02_SHOT_001", motion_quality_gate: "weak_motion_retry_exhausted" }
+      ]
+    },
+    compositingReport: {
+      shots: [
+        { shot_id: "S02_SHOT_001", winning_source_type: "stabilized_motion_pass" }
+      ]
+    },
+    visualReadiness: {
+      unresolved_high_priority_count: 0
+    },
+    visualPreviewExists: true,
+    finalApprovalText: "NOT APPROVED"
+  });
+
+  assert.equal(report.readiness.attempted_weak_motion_scene_count, 1);
+  assert.equal(report.readiness.selected_weak_motion_scene_count, 1);
+  assert.deepEqual(report.readiness.selected_weak_motion_scene_ids, ["S02"]);
+  assert.equal(report.gate.decision, "blocked");
 });
 
 test("reliability recovery targets quantify remaining blocker reductions", () => {
@@ -912,6 +1078,12 @@ test("reliability recovery queue prioritizes review then lighter rework before b
         { scene_id: "S05", selected_asset_type: "bricktoon_composited_shot_sequence", asset_quality_classification: "motion_ready" },
         { scene_id: "S04", selected_asset_type: "professional_hero_scene_sequence", asset_quality_classification: "premium_motion" }
       ]
+    },
+    motionHealthByScene: {
+      S03: {
+        attempted_weak_motion_shots: 1,
+        selected_weak_motion_shots: 1
+      }
     }
   });
 
@@ -923,6 +1095,7 @@ test("reliability recovery queue prioritizes review then lighter rework before b
   assert.equal(queue[2].bucket, "heavy_rework");
   assert.equal(queue.at(-1).scene_id, "S04");
   assert.equal(queue.at(-1).bucket, "benchmark_locked");
+  assert.ok(queue[1].focus.some((item) => item.includes("selected weak-motion shot")));
 });
 
 test("reliability recovery plan summarizes scene queue and benchmark proof path", () => {
@@ -1512,6 +1685,21 @@ test("hybrid proof shot selection prefers closeup, speaking single, dialogue, th
   assert.deepEqual(selected.map((shot) => shot.shot_id), ["D", "B", "E", "C"]);
 });
 
+test("hybrid proof shot selection can expand to topic-wide proof coverage", () => {
+  const selected = selectHybridProofShots({
+    shot_contracts: [
+      { shot_id: "A", shot_class: "establishing_wide" },
+      { shot_id: "B", shot_class: "medium_single" },
+      { shot_id: "C", shot_class: "document_insert" },
+      { shot_id: "D", shot_class: "closeup_face" },
+      { shot_id: "E", shot_class: "medium_two_shot" },
+      { shot_id: "F", shot_class: "push_in_document" }
+    ]
+  }, { mode: "topic_wide" });
+
+  assert.deepEqual(selected.map((shot) => shot.shot_id), ["D", "E", "B", "C", "F"]);
+});
+
 test("hybrid proof performance boosts speaking closeups into visible acting mode", () => {
   const proof = buildHybridProofPerformance({
     shot_id: "S02_SHOT_002",
@@ -2023,6 +2211,110 @@ test("professional semi-automation can become a permanent-solution candidate whe
   });
 
   assert.equal(summary.route_classification, "permanent_solution_candidate");
+});
+
+test("overnight preview mode can skip a fresh existing preview", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "gigbiz-preview-fresh-"));
+  const approvedDir = path.join(tempDir, "07_visuals", "approved_keyframes");
+  const previewDir = path.join(tempDir, "06_renders", "previews");
+  const voiceDir = path.join(tempDir, "03_voice");
+  const musicDir = path.join(tempDir, "04_assets", "music");
+  fs.mkdirSync(approvedDir, { recursive: true });
+  fs.mkdirSync(previewDir, { recursive: true });
+  fs.mkdirSync(voiceDir, { recursive: true });
+  fs.mkdirSync(musicDir, { recursive: true });
+
+  const keyframePath = path.join(approvedDir, "S01_SHOT_001_KF_01.png");
+  const previewPath = path.join(previewDir, "visual_preview.mp4");
+  const previewReportPath = path.join(previewDir, "visual_preview_report.json");
+  const voicePath = path.join(voiceDir, "voiceover_clean.wav");
+  const musicManifestPath = path.join(musicDir, "music_manifest.csv");
+
+  fs.writeFileSync(keyframePath, "keyframe");
+  fs.writeFileSync(voicePath, "voice");
+  fs.writeFileSync(musicManifestPath, "track_path,status\nsong.mp3,selected\n");
+  fs.writeFileSync(previewPath, "preview");
+  fs.writeFileSync(previewReportPath, "{\"ok\":true}\n");
+
+  const now = new Date("2026-07-23T13:00:00.000Z");
+  const earlier = new Date("2026-07-23T12:00:00.000Z");
+  fs.utimesSync(keyframePath, earlier, earlier);
+  fs.utimesSync(voicePath, earlier, earlier);
+  fs.utimesSync(musicManifestPath, earlier, earlier);
+  fs.utimesSync(previewPath, now, now);
+  fs.utimesSync(previewReportPath, now, now);
+
+  assert.equal(isPreviewFresh({
+    previewPath,
+    previewReportPath,
+    approvedKeyframesDir: approvedDir,
+    voicePath,
+    musicManifestPath
+  }), true);
+
+  assert.equal(resolveOvernightPreviewMode({
+    previewPath,
+    previewReportPath,
+    approvedKeyframesDir: approvedDir,
+    voicePath,
+    musicManifestPath
+  }), "skip_existing_preview");
+});
+
+test("overnight preview mode can rebuild only the visual preview when keyframes are fresh", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "gigbiz-preview-rebuild-"));
+  const approvedDir = path.join(tempDir, "07_visuals", "approved_keyframes");
+  const previewDir = path.join(tempDir, "06_renders", "previews");
+  fs.mkdirSync(approvedDir, { recursive: true });
+  fs.mkdirSync(previewDir, { recursive: true });
+
+  const keyframePath = path.join(approvedDir, "S01_SHOT_001_KF_01.png");
+  const previewPath = path.join(previewDir, "visual_preview.mp4");
+  const previewReportPath = path.join(previewDir, "visual_preview_report.json");
+  fs.writeFileSync(keyframePath, "keyframe");
+  fs.writeFileSync(previewPath, "preview");
+  fs.writeFileSync(previewReportPath, "{\"ok\":true}\n");
+
+  const older = new Date("2026-07-23T11:00:00.000Z");
+  const newer = new Date("2026-07-23T13:00:00.000Z");
+  fs.utimesSync(previewPath, older, older);
+  fs.utimesSync(previewReportPath, older, older);
+  fs.utimesSync(keyframePath, newer, newer);
+
+  assert.equal(resolveOvernightPreviewMode({
+    previewPath,
+    previewReportPath,
+    approvedKeyframesDir: approvedDir
+  }), "rebuild_visual_preview");
+});
+
+test("overnight preview mode falls back to full preview build when keyframes are missing", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "gigbiz-preview-full-"));
+  const previewDir = path.join(tempDir, "06_renders", "previews");
+  const approvedDir = path.join(tempDir, "07_visuals", "approved_keyframes");
+  fs.mkdirSync(previewDir, { recursive: true });
+
+  assert.equal(resolveOvernightPreviewMode({
+    previewPath: path.join(previewDir, "visual_preview.mp4"),
+    previewReportPath: path.join(previewDir, "visual_preview_report.json"),
+    approvedKeyframesDir: approvedDir
+  }), "rebuild_full_bricktoon_preview");
+});
+
+test("document-focused composited shots are flagged for no-text sanitization", () => {
+  assert.equal(shouldSanitizeReadableText({
+    shot_type: "top_down_document"
+  }, {
+    focus_target: "document",
+    performance_class: "document_insert_motion"
+  }), true);
+
+  assert.equal(shouldSanitizeReadableText({
+    shot_type: "closeup_face"
+  }, {
+    focus_target: "speaker_face",
+    performance_class: "closeup_talking_puppet"
+  }), false);
 });
 
 test("professional export summary counts upstream handoff materials", () => {

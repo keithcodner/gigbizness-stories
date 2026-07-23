@@ -40,6 +40,14 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function sceneIdFromShotId(shotId) {
+  const value = String(shotId || "").trim();
+  if (!value) {
+    return null;
+  }
+  return value.split("_")[0] || null;
+}
+
 function normalizeReviewStatus(value) {
   const normalized = String(value || "").trim().toLowerCase();
   if (normalized === "approved") {
@@ -144,6 +152,68 @@ function summarizeSequenceHealth(scenes = []) {
   };
 }
 
+function summarizeMotionHealthInputs({
+  motionPassReport = {},
+  compositingReport = {}
+}) {
+  const compositingLookup = new Map(
+    safeArray(compositingReport.shots)
+      .filter((shot) => shot && shot.shot_id)
+      .map((shot) => [shot.shot_id, shot])
+  );
+
+  const attemptedWeakSceneIds = new Set();
+  const selectedWeakSceneIds = new Set();
+  const motionHealthByScene = {};
+  let attemptedWeakShotCount = 0;
+  let selectedWeakShotCount = 0;
+
+  for (const shot of safeArray(motionPassReport.shots)) {
+    const shotId = shot?.shot_id || null;
+    const sceneId = sceneIdFromShotId(shotId);
+    if (!shotId || !sceneId) {
+      continue;
+    }
+
+    if (!motionHealthByScene[sceneId]) {
+      motionHealthByScene[sceneId] = {
+        attempted_weak_motion_shots: 0,
+        selected_weak_motion_shots: 0,
+        attempted_weak_motion_shot_ids: [],
+        selected_weak_motion_shot_ids: []
+      };
+    }
+
+    const motionQualityGate = String(shot.motion_quality_gate || "").trim().toLowerCase();
+    if (motionQualityGate !== "weak_motion_retry_exhausted") {
+      continue;
+    }
+
+    attemptedWeakShotCount += 1;
+    attemptedWeakSceneIds.add(sceneId);
+    motionHealthByScene[sceneId].attempted_weak_motion_shots += 1;
+    motionHealthByScene[sceneId].attempted_weak_motion_shot_ids.push(shotId);
+
+    const compositedShot = compositingLookup.get(shotId) || {};
+    if (compositedShot.winning_source_type === "stabilized_motion_pass") {
+      selectedWeakShotCount += 1;
+      selectedWeakSceneIds.add(sceneId);
+      motionHealthByScene[sceneId].selected_weak_motion_shots += 1;
+      motionHealthByScene[sceneId].selected_weak_motion_shot_ids.push(shotId);
+    }
+  }
+
+  return {
+    attempted_weak_motion_shot_count: attemptedWeakShotCount,
+    attempted_weak_motion_scene_count: attemptedWeakSceneIds.size,
+    attempted_weak_motion_scene_ids: Array.from(attemptedWeakSceneIds).sort(),
+    selected_weak_motion_shot_count: selectedWeakShotCount,
+    selected_weak_motion_scene_count: selectedWeakSceneIds.size,
+    selected_weak_motion_scene_ids: Array.from(selectedWeakSceneIds).sort(),
+    motion_health_by_scene: motionHealthByScene
+  };
+}
+
 function summarizeReadinessInputs({
   machineProfile = {},
   runtimeProfile = {},
@@ -156,6 +226,8 @@ function summarizeReadinessInputs({
   sceneReviewDecisions = {},
   artifactFreshness = {},
   renderOutputProof = {},
+  motionPassReport = {},
+  compositingReport = {},
   scope = "topic"
 }) {
   const scopedScenes = buildScopedSceneRecords({
@@ -178,10 +250,15 @@ function summarizeReadinessInputs({
   const rejectedReviewSceneIds = reviewSceneIds.filter((sceneId) => normalizeReviewStatus(reviewDecisionLookup.get(sceneId)?.status) === "rejected");
   const pendingReviewSceneIds = reviewSceneIds.filter((sceneId) => !approvedReviewSceneIds.includes(sceneId) && !rejectedReviewSceneIds.includes(sceneId));
   const sequenceHealth = summarizeSequenceHealth(scopedScenes);
+  const motionHealth = summarizeMotionHealthInputs({
+    motionPassReport,
+    compositingReport
+  });
   const renderScenes = scope === "benchmark_selected"
     ? safeArray(renderContract.scenes).filter((scene) => scopedSceneIds.includes(scene.scene_id)).length
     : safeArray(renderContract.scenes).length;
   const promotionGateState = promotionGate.gate || {};
+  const sceneCountForMotion = Math.max(sequenceHealth.total_scenes, 1);
   return {
     scope,
     scoped_scene_ids: scopedSceneIds,
@@ -217,7 +294,16 @@ function summarizeReadinessInputs({
     render_output_proof_ready: String(renderOutputProof.gate?.decision || "") === "approved",
     render_output_proof_decision: renderOutputProof.gate?.decision || null,
     render_output_proof_blockers: safeArray(renderOutputProof.gate?.blockers),
-    render_output_proof_warnings: safeArray(renderOutputProof.gate?.warnings)
+    render_output_proof_warnings: safeArray(renderOutputProof.gate?.warnings),
+    attempted_weak_motion_shot_count: motionHealth.attempted_weak_motion_shot_count,
+    attempted_weak_motion_scene_count: motionHealth.attempted_weak_motion_scene_count,
+    attempted_weak_motion_scene_ids: motionHealth.attempted_weak_motion_scene_ids,
+    attempted_weak_motion_scene_ratio: Number(ratio(motionHealth.attempted_weak_motion_scene_count, sceneCountForMotion).toFixed(3)),
+    selected_weak_motion_shot_count: motionHealth.selected_weak_motion_shot_count,
+    selected_weak_motion_scene_count: motionHealth.selected_weak_motion_scene_count,
+    selected_weak_motion_scene_ids: motionHealth.selected_weak_motion_scene_ids,
+    selected_weak_motion_scene_ratio: Number(ratio(motionHealth.selected_weak_motion_scene_count, sceneCountForMotion).toFixed(3)),
+    motion_health_by_scene: motionHealth.motion_health_by_scene
   };
 }
 
@@ -260,6 +346,12 @@ function evaluateReliabilityGate(runtimeProfile, readiness) {
   }
   if (readiness.fragile_scene_ratio > Number(runtimeProfile.max_fragile_scene_ratio || 1)) {
     blockers.push(`fragile scene ratio exceeds profile allowance (${readiness.fragile_scene_ratio} > ${runtimeProfile.max_fragile_scene_ratio})`);
+  }
+  if (readiness.selected_weak_motion_scene_ratio > Number(runtimeProfile.max_selected_weak_motion_scene_ratio ?? 1)) {
+    blockers.push(`selected weak-motion scene ratio exceeds profile allowance (${readiness.selected_weak_motion_scene_ratio} > ${runtimeProfile.max_selected_weak_motion_scene_ratio})`);
+  }
+  if (readiness.attempted_weak_motion_scene_ratio > Number(runtimeProfile.max_attempted_weak_motion_scene_ratio ?? 1)) {
+    blockers.push(`attempted weak-motion scene ratio exceeds profile allowance (${readiness.attempted_weak_motion_scene_ratio} > ${runtimeProfile.max_attempted_weak_motion_scene_ratio})`);
   }
   if (runtimeProfile.require_render_output_proof && !readiness.render_output_proof_ready) {
     if (readiness.render_output_proof_decision) {
@@ -313,6 +405,8 @@ function buildReliabilityReport({
   visualReadiness,
   artifactFreshness,
   renderOutputProof,
+  motionPassReport,
+  compositingReport,
   visualPreviewExists,
   finalApprovalText,
   scope = "topic"
@@ -329,6 +423,8 @@ function buildReliabilityReport({
     sceneReviewDecisions,
     artifactFreshness,
     renderOutputProof,
+    motionPassReport,
+    compositingReport,
     scope
   });
   const gate = evaluateReliabilityGate(runtimeProfile, readiness);
@@ -456,6 +552,8 @@ function buildReliabilityMarkdown(report) {
     `- Review scenes pending: ${report.readiness.review_scenes}`,
     `- Review scenes approved: ${report.readiness.review_scenes_approved ?? 0}`,
     `- Hold scenes: ${report.readiness.hold_scenes}`,
+    `- Attempted weak-motion scenes: ${report.readiness.attempted_weak_motion_scene_count ?? 0} (ratio ${report.readiness.attempted_weak_motion_scene_ratio ?? 0})`,
+    `- Selected weak-motion scenes: ${report.readiness.selected_weak_motion_scene_count ?? 0} (ratio ${report.readiness.selected_weak_motion_scene_ratio ?? 0})`,
     `- Render output proof: ${report.readiness.render_output_proof_decision || "not_run"}`,
     "",
     "## Stale Artifacts",
@@ -470,6 +568,11 @@ function buildReliabilityMarkdown(report) {
     }
   }
 
+  lines.push("");
+  lines.push("## Motion Health");
+  lines.push("");
+  lines.push(`- Attempted weak-motion scenes: ${safeArray(report.readiness.attempted_weak_motion_scene_ids).join(", ") || "none"}`);
+  lines.push(`- Selected weak-motion scenes: ${safeArray(report.readiness.selected_weak_motion_scene_ids).join(", ") || "none"}`);
   lines.push("");
   lines.push("## Blockers");
   lines.push("");
@@ -569,5 +672,6 @@ module.exports = {
   loadRuntimeProfiles,
   resolveRuntimeProfile,
   summarizeReadinessInputs,
-  summarizeSequenceHealth
+  summarizeSequenceHealth,
+  summarizeMotionHealthInputs
 };

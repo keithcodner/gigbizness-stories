@@ -90,6 +90,8 @@ function main() {
       sceneReviewDecisions: readJsonSafe(path.join(workspaceDir, "10_qc", "bricktoon_scene_review_decisions.json"), {}),
       visualReadiness: readJsonSafe(path.join(workspaceDir, "04_assets", "visual_readiness.json"), {}),
       artifactFreshness,
+      motionPassReport: readJsonSafe(path.join(workspaceDir, "08_animation", "raw_ai_video", "ai_motion_report.json"), {}),
+      compositingReport: readJsonSafe(path.join(workspaceDir, "08_animation", "compositing_reports", "compositing_report.json"), {}),
       renderOutputProof: readFirstExistingJson([
         path.join(workspaceDir, "10_qc", "bricktoon_final_render_output_proof.json"),
         path.join(workspaceDir, "10_qc", "bricktoon_render_output_proof.json")

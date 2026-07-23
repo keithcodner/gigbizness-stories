@@ -33,9 +33,62 @@ function proofPriorityForShot(shotContract = {}) {
   return 10;
 }
 
-function selectHybridProofShots(bundle = {}, maxShots = 4) {
+function normalizeSelectionOptions(maxShotsOrOptions) {
+  if (typeof maxShotsOrOptions === "number") {
+    return {
+      mode: "sample",
+      maxShots: maxShotsOrOptions
+    };
+  }
+
+  if (maxShotsOrOptions && typeof maxShotsOrOptions === "object") {
+    return {
+      mode: String(maxShotsOrOptions.mode || "topic_wide"),
+      maxShots: Number(maxShotsOrOptions.maxShots || 4)
+    };
+  }
+
+  return {
+    mode: "topic_wide",
+    maxShots: 4
+  };
+}
+
+function isPreferredHybridProofShot(shotContract = {}) {
+  return [
+    "closeup_face",
+    "medium_single",
+    "medium_two_shot",
+    "document_insert",
+    "top_down_document",
+    "push_in_document"
+  ].includes(String(shotContract.shot_class || ""));
+}
+
+function selectHybridProofShots(bundle = {}, maxShotsOrOptions = undefined) {
   const shotContracts = normalizeShotContracts(bundle);
+  const options = normalizeSelectionOptions(maxShotsOrOptions);
   const preferredOrder = ["closeup_face", "medium_single", "medium_two_shot", "document_insert", "top_down_document", "push_in_document"];
+
+  if (options.mode === "topic_wide" || options.mode === "full_topic" || options.mode === "all_eligible") {
+    const preferredShots = [];
+    const fallbackShots = [];
+
+    for (const shot of shotContracts) {
+      if (isPreferredHybridProofShot(shot)) {
+        preferredShots.push(shot);
+      } else {
+        fallbackShots.push(shot);
+      }
+    }
+
+    preferredShots.sort((a, b) => proofPriorityForShot(b) - proofPriorityForShot(a) || String(a.shot_id || "").localeCompare(String(b.shot_id || "")));
+    fallbackShots.sort((a, b) => proofPriorityForShot(b) - proofPriorityForShot(a) || String(a.shot_id || "").localeCompare(String(b.shot_id || "")));
+
+    return preferredShots.length > 0 ? preferredShots : fallbackShots;
+  }
+
+  const maxShots = Math.max(1, Number(options.maxShots || 4));
   const selected = [];
   const seen = new Set();
 
@@ -194,6 +247,7 @@ function buildHybridProofMarkdown(report = {}) {
     "",
     `- Generated: ${report.generated_at}`,
     `- Proof profile: ${report.proof_profile}`,
+    `- Selection mode: ${report.selection_mode || "topic_wide"}`,
     `- Selected shots: ${report.summary.total_selected_shots}`,
     `- Closeups: ${report.summary.closeup_count}`,
     `- Dialogue shots: ${report.summary.dialogue_count}`,

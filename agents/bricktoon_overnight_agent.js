@@ -10,6 +10,7 @@ const {
   loadRuntimeProfiles,
   resolveRuntimeProfile
 } = require("../src/bricktoon/reliabilityGate");
+const { resolveOvernightPreviewMode } = require("../src/bricktoon/overnightPreviewReadiness");
 
 const ROOT = path.resolve(__dirname, "..");
 const STEP_SEQUENCE = ["bricktoon-preview", "bricktoon-reliability", "bricktoon-finish"];
@@ -84,6 +85,16 @@ function writeOvernightArtifacts({ workspaceDir, topicId, runtimeProfile, state,
   writeText(mdPath, buildOvernightRunMarkdown(overnightReport));
 }
 
+function getOvernightPreviewPaths(workspaceDir) {
+  return {
+    previewPath: path.join(workspaceDir, "06_renders", "previews", "visual_preview.mp4"),
+    previewReportPath: path.join(workspaceDir, "06_renders", "previews", "visual_preview_report.json"),
+    approvedKeyframesDir: path.join(workspaceDir, "07_visuals", "approved_keyframes"),
+    voicePath: path.join(workspaceDir, "03_voice", "voiceover_clean.wav"),
+    musicManifestPath: path.join(workspaceDir, "04_assets", "music", "music_manifest.csv")
+  };
+}
+
 function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
@@ -150,7 +161,14 @@ function main() {
 
       try {
         if (step === "bricktoon-preview") {
-          runOrchestrator(["--topic", args.topic, "--stage", "bricktoon-preview"]);
+          const previewMode = resolveOvernightPreviewMode(getOvernightPreviewPaths(workspaceDir));
+          if (previewMode === "skip_existing_preview") {
+            appendStepHistory(nextState, step, "skipped", "fresh preview artifacts already exist");
+          } else if (previewMode === "rebuild_visual_preview") {
+            runOrchestrator(["--topic", args.topic, "--stage", "visual-preview"]);
+          } else {
+            runOrchestrator(["--topic", args.topic, "--stage", "bricktoon-preview"]);
+          }
         } else if (step === "bricktoon-reliability") {
           runOrchestrator(["--topic", args.topic, "--stage", "bricktoon-reliability", "--runtime-profile", runtimeProfile.profile_id]);
           const report = readJsonSafe(path.join(workspaceDir, "10_qc", "bricktoon_reliability_report.json"), {});

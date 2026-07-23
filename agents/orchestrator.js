@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { parseCsv, toCsv, writeText } = require("./common");
+const { hasUsableVoiceAudio } = require("../src/audio/audioReadiness");
 const { isFreshArtifact } = require("../src/bricktoon/artifactFreshness");
 const { parseSceneIdsArg } = require("../src/bricktoon/sceneSelection");
 
@@ -692,7 +693,9 @@ function isSceneCardsReady(topicId) {
 
 function isVoiceReady(topicId) {
   const paths = getTopicPaths(topicId);
-  return fileHasContent(paths.voiceCleanPath) && fileHasContent(paths.captionsPath);
+  return fileHasContent(paths.voiceCleanPath) &&
+    fileHasContent(paths.captionsPath) &&
+    hasUsableVoiceAudio(paths.voiceCleanPath);
 }
 
 function isAssetsReady(topicId) {
@@ -1612,14 +1615,14 @@ function runHybridAnimationContractStage(topicId) {
   return workspaceDir;
 }
 
-function runHybridPerformanceProofStage(topicId) {
+function runHybridPerformanceProofStage(topicId, selectionMode = "topic_wide") {
   const workspaceDir = ensureWorkspace(topicId);
-  writeLog(`Starting hybrid-performance-proof stage for topic '${topicId}'`);
+  writeLog(`Starting hybrid-performance-proof stage for topic '${topicId}' with selection mode '${selectionMode}'`);
 
   if (!isHybridAnimationContractReady(topicId)) {
     runHybridAnimationContractStage(topicId);
   }
-  runNodeScript("scripts/render_hybrid_performance_proof.js", ["--workspace", workspaceDir]);
+  runNodeScript("scripts/render_hybrid_performance_proof.js", ["--workspace", workspaceDir, "--selection-mode", selectionMode]);
 
   writeLog(`Completed hybrid-performance-proof stage for topic '${topicId}'`);
   return workspaceDir;
@@ -2342,7 +2345,7 @@ function printUsage() {
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage asset-generation");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-still-benchmark");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-animation-contract");
-  console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-performance-proof");
+  console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-performance-proof --selection-mode topic_wide");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-editorial-proof");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-promotion-gate --runtime-profile gtx1080_premium_preview");
   console.log("  node agents/orchestrator.js --topic <topic_id> --stage hybrid-production-readiness --runtime-profile gtx1080_premium_preview");
@@ -2512,7 +2515,7 @@ function main() {
       } else if (args.stage === "hybrid-animation-contract") {
         workspaceDir = runHybridAnimationContractStage(args.topic);
       } else if (args.stage === "hybrid-performance-proof") {
-        workspaceDir = runHybridPerformanceProofStage(args.topic);
+        workspaceDir = runHybridPerformanceProofStage(args.topic, args["selection-mode"] || args.mode || "topic_wide");
       } else if (args.stage === "hybrid-editorial-proof") {
         workspaceDir = runHybridEditorialProofStage(args.topic);
       } else if (args.stage === "hybrid-promotion-gate") {

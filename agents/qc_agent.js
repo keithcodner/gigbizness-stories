@@ -8,6 +8,7 @@ const {
   readJson,
   writeText
 } = require("./common");
+const { hasUsableVoiceAudio } = require("../src/audio/audioReadiness");
 
 function getPaths(workspaceDir) {
   const configDir = path.join(workspaceDir, "00_config");
@@ -360,7 +361,7 @@ function buildAudioChecks(qualityRules, musicPolicy, voiceCleanPath, musicSelect
   const fallbackRoots = musicPolicy.fallback_library_roots || [];
   const allowedRoots = [...preferredRoots, ...fallbackRoots];
 
-  if (!fs.existsSync(voiceCleanPath) || fs.statSync(voiceCleanPath).size === 0) {
+  if (!hasUsableVoiceAudio(voiceCleanPath)) {
     findings.push("Clean voiceover audio is missing.");
   }
 
@@ -391,7 +392,7 @@ function buildAudioChecks(qualityRules, musicPolicy, voiceCleanPath, musicSelect
     passed: findings.length === 0,
     findings,
     summary: [
-      `Voiceover ready: ${fs.existsSync(voiceCleanPath) && fs.statSync(voiceCleanPath).size > 0 ? "yes" : "no"}`,
+      `Voiceover ready: ${hasUsableVoiceAudio(voiceCleanPath) ? "yes" : "no"}`,
       `Music rows logged: ${musicManifestRows.length}`,
       `Selected music track: ${selectedTrack ? (selectedTrack.track_title || selectedTrack.track_path) : "none"}`
     ]

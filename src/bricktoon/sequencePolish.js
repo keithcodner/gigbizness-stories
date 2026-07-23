@@ -132,12 +132,20 @@ function continuityStatusForScene(scene, shotSelections = []) {
   const total = shotSelections.length || (scene?.shots || []).length || 0;
   const fallbackShots = shotSelections.filter((shot) => shot.quality_classification === "fallback").length;
   const premiumShots = shotSelections.filter((shot) => shot.quality_classification === "premium_motion").length;
+  const motionReadyShots = shotSelections.filter((shot) => ["premium_motion", "motion_ready"].includes(shot.quality_classification)).length;
   const axisLocked = scene?.continuity?.allow_axis_crossing === false;
 
   let status = "fragile";
-  if (premiumShots === total && total > 0) {
+  const premiumThresholdForLocked = total > 0 ? Math.max(1, Math.floor(total / 2)) : 0;
+  if (motionReadyShots === total && fallbackShots === 0 && premiumShots >= premiumThresholdForLocked && total > 0) {
     status = "locked";
-  } else if (premiumShots >= Math.ceil(total / 2) && fallbackShots <= Math.floor(total / 2)) {
+  } else if (
+    total > 0
+    && (
+      (motionReadyShots === total && fallbackShots === 0)
+      || (motionReadyShots >= Math.ceil(total / 2) && fallbackShots <= Math.floor(total / 3))
+    )
+  ) {
     status = "mixed";
   }
 
@@ -150,6 +158,10 @@ function continuityStatusForScene(scene, shotSelections = []) {
   }
   if (premiumShots > 0) {
     notes.push(`${premiumShots} premium motion shot${premiumShots === 1 ? "" : "s"} available`);
+  }
+  if (motionReadyShots > premiumShots) {
+    const nonPremiumAnimatedShots = motionReadyShots - premiumShots;
+    notes.push(`${nonPremiumAnimatedShots} supporting animated shot${nonPremiumAnimatedShots === 1 ? "" : "s"} available`);
   }
 
   return {

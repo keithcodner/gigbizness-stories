@@ -21,12 +21,18 @@ function buildSequenceSceneLookup(sceneSequenceReport = {}) {
   );
 }
 
-function recoveryBucketForScene(sceneDecision = {}, renderScene = {}) {
+function recoveryBucketForScene(sceneDecision = {}, renderScene = {}, motionSummary = {}) {
   if (renderScene.selected_asset_type === "professional_hero_scene_sequence") {
     return "benchmark_locked";
   }
   if (sceneDecision.decision === "review_required") {
     return "manual_review";
+  }
+  if (Number(motionSummary.selected_weak_motion_shots || 0) >= 2) {
+    return "heavy_rework";
+  }
+  if (Number(motionSummary.selected_weak_motion_shots || 0) >= 1) {
+    return "light_rework";
   }
   if (sceneDecision.decision === "rework_required" && Number(sceneDecision.fallback_shots || 0) >= 3) {
     return "heavy_rework";
@@ -126,11 +132,13 @@ function recommendedCommands(topicId, bucket) {
   });
 }
 
-function buildSceneFocus(sceneDecision = {}, renderScene = {}, sequenceScene = {}) {
+function buildSceneFocus(sceneDecision = {}, renderScene = {}, sequenceScene = {}, motionSummary = {}) {
   const focus = [];
   const fallbackShots = Number(sceneDecision.fallback_shots ?? sequenceScene.fallback_shots ?? 0);
   const continuityStatus = sceneDecision.continuity_status || sequenceScene.continuity_status || renderScene.continuity_status || "fragile";
   const quality = renderScene.asset_quality_classification || null;
+  const attemptedWeakMotionShots = Number(motionSummary.attempted_weak_motion_shots || 0);
+  const selectedWeakMotionShots = Number(motionSummary.selected_weak_motion_shots || 0);
 
   if (sceneDecision.decision === "review_required") {
     focus.push("clear the manual review checkpoint against the benchmark scene");
@@ -149,6 +157,11 @@ function buildSceneFocus(sceneDecision = {}, renderScene = {}, sequenceScene = {
   if (quality && quality !== "premium_motion") {
     focus.push(`upgrade selected asset quality from ${quality} to premium_motion`);
   }
+  if (selectedWeakMotionShots > 0) {
+    focus.push(`replace ${selectedWeakMotionShots} selected weak-motion shot(s) with stronger motion winners`);
+  } else if (attemptedWeakMotionShots > 0) {
+    focus.push(`rerun or upgrade ${attemptedWeakMotionShots} weak attempted motion shot(s) before overnight trust`);
+  }
   if (renderScene.selected_asset_type === "professional_hero_scene_sequence") {
     focus.length = 0;
     focus.push("no rework required for benchmark proof path");
@@ -161,7 +174,8 @@ function buildSceneRecoveryQueue({
   topicId,
   promotionGate = {},
   sceneSequenceReport = {},
-  renderContract = {}
+  renderContract = {},
+  motionHealthByScene = {}
 }) {
   const renderLookup = buildRenderSceneLookup(renderContract);
   const sequenceLookup = buildSequenceSceneLookup(sceneSequenceReport);
@@ -170,7 +184,8 @@ function buildSceneRecoveryQueue({
     .map((sceneDecision) => {
       const renderScene = renderLookup.get(sceneDecision.scene_id) || {};
       const sequenceScene = sequenceLookup.get(sceneDecision.scene_id) || {};
-      const bucket = recoveryBucketForScene(sceneDecision, renderScene);
+      const motionSummary = motionHealthByScene[sceneDecision.scene_id] || {};
+      const bucket = recoveryBucketForScene(sceneDecision, renderScene, motionSummary);
       const fallbackShots = Number(sceneDecision.fallback_shots ?? sequenceScene.fallback_shots ?? 0);
       const premiumMotionShots = Number(sceneDecision.premium_motion_shots ?? sequenceScene.premium_motion_shots ?? 0);
       const continuityStatus = sceneDecision.continuity_status || sequenceScene.continuity_status || renderScene.continuity_status || "fragile";
@@ -191,10 +206,12 @@ function buildSceneRecoveryQueue({
         continuity_status: continuityStatus,
         fallback_shots: fallbackShots,
         premium_motion_shots: premiumMotionShots,
+        attempted_weak_motion_shots: Number(motionSummary.attempted_weak_motion_shots || 0),
+        selected_weak_motion_shots: Number(motionSummary.selected_weak_motion_shots || 0),
         selected_asset_type: renderScene.selected_asset_type || null,
         selected_asset_file: renderScene.selected_asset_file || null,
         reasons: safeArray(sceneDecision.reasons),
-        focus: buildSceneFocus(sceneDecision, renderScene, sequenceScene),
+        focus: buildSceneFocus(sceneDecision, renderScene, sequenceScene, motionSummary),
         recommended_stage_chain: recommendedStageChain(bucket),
         recommended_commands: recommendedCommands(topicId, bucket)
       };
@@ -256,7 +273,8 @@ function buildReliabilityRecoveryPlan({
     topicId,
     promotionGate,
     sceneSequenceReport,
-    renderContract
+    renderContract,
+    motionHealthByScene: reliabilityReport.readiness?.motion_health_by_scene || {}
   });
   const recoveryTargets = buildRecoveryTargets(reliabilityReport, runtimeProfile);
 
@@ -325,6 +343,8 @@ function buildReliabilityRecoveryMarkdown(report = {}) {
     lines.push(`- Continuity: ${scene.continuity_status || "n/a"}`);
     lines.push(`- Fallback shots: ${scene.fallback_shots}`);
     lines.push(`- Premium motion shots: ${scene.premium_motion_shots}`);
+    lines.push(`- Attempted weak-motion shots: ${scene.attempted_weak_motion_shots ?? 0}`);
+    lines.push(`- Selected weak-motion shots: ${scene.selected_weak_motion_shots ?? 0}`);
     lines.push(`- Selected asset type: ${scene.selected_asset_type || "n/a"}`);
     if (scene.focus.length > 0) {
       lines.push("- Focus:");

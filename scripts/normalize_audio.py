@@ -7,6 +7,8 @@ import sys
 import tempfile
 import wave
 
+SILENT_MEAN_VOLUME_DB = -70.0
+
 
 def create_silent_wav(output_path: str, duration_seconds: float, sample_rate: int = 48000) -> None:
     frame_count = max(1, int(sample_rate * duration_seconds))
@@ -54,7 +56,10 @@ $synth.Dispose()
             capture_output=True,
             text=True,
         )
-        return result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0
+        if result.returncode != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            return False
+        mean_db = detect_mean_volume_db(output_path)
+        return mean_db is not None and mean_db > SILENT_MEAN_VOLUME_DB
     finally:
         if os.path.exists(script_path):
             os.unlink(script_path)
@@ -82,12 +87,35 @@ def run_ffmpeg_normalize(input_path: str, output_path: str) -> None:
         raise RuntimeError(result.stderr.strip() or "ffmpeg normalization failed")
 
 
+def detect_mean_volume_db(file_path: str) -> float | None:
+    result = subprocess.run([
+        "ffmpeg",
+        "-i",
+        file_path,
+        "-af",
+        "volumedetect",
+        "-f",
+        "null",
+        "NUL"
+    ], capture_output=True, text=True)
+    combined = f"{result.stdout}\n{result.stderr}"
+    for line in combined.splitlines():
+        if "mean_volume:" not in line:
+            continue
+        try:
+            return float(line.split("mean_volume:")[1].split("dB")[0].strip())
+        except (IndexError, ValueError):
+            return None
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Create and normalize draft narration WAV audio.")
     parser.add_argument("--transcript", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--normalized-output", required=True)
     parser.add_argument("--timing", required=True)
+    parser.add_argument("--allow-placeholder", action="store_true")
     args = parser.parse_args()
 
     if not os.path.exists(args.transcript):
@@ -97,8 +125,14 @@ def main() -> int:
     padded_duration = duration_seconds + 1.0
     synthesized = synthesize_windows_tts(args.transcript, args.output)
     if not synthesized:
-        create_silent_wav(args.output, padded_duration)
+        if args.allow_placeholder:
+            create_silent_wav(args.output, padded_duration)
+        else:
+            raise RuntimeError("Windows TTS did not produce usable narration audio.")
     run_ffmpeg_normalize(args.output, args.normalized_output)
+    normalized_mean_db = detect_mean_volume_db(args.normalized_output)
+    if normalized_mean_db is None or normalized_mean_db <= SILENT_MEAN_VOLUME_DB:
+      raise RuntimeError("Normalized narration audio is still effectively silent.")
 
     if synthesized:
         print(f"Created draft TTS WAV at {args.output}")

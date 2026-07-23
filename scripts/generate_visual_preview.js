@@ -5,6 +5,7 @@ const path = require("path");
 const os = require("os");
 const { spawnSync } = require("child_process");
 const { parseArgs, parseCsv } = require("../agents/common");
+const { hasUsableVoiceAudio } = require("../src/audio/audioReadiness");
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -112,7 +113,7 @@ function detectSelectedMusic(workspaceDir) {
 }
 
 function attachAudio(baseVideoPath, outputPath, voicePath, musicPath) {
-  if (fileHasContent(voicePath) && musicPath) {
+  if (hasUsableVoiceAudio(voicePath) && musicPath) {
     runCommand("ffmpeg", [
       "-y",
       "-i",
@@ -137,7 +138,7 @@ function attachAudio(baseVideoPath, outputPath, voicePath, musicPath) {
     return;
   }
 
-  if (fileHasContent(voicePath)) {
+  if (hasUsableVoiceAudio(voicePath)) {
     runCommand("ffmpeg", [
       "-y",
       "-i",
@@ -224,7 +225,7 @@ function main() {
       scene_preview_dir: path.relative(workspaceDir, scenePreviewDir).replaceAll("\\", "/"),
       frame_count: frames.length,
       seconds_per_frame: durationSeconds,
-      voiceover_used: fileHasContent(voicePath),
+      voiceover_used: hasUsableVoiceAudio(voicePath),
       music_used: Boolean(musicPath),
       music_track: musicPath || null,
       scenes: sceneGroups.map(([sceneId, sceneFrames]) => ({

@@ -2,6 +2,150 @@
 
 This log tracks implementation changes, bug fixes, and incidental fixes discovered while working on the pipeline.
 
+## 2026-07-23
+
+### Changed
+
+- Added `src/audio/audioReadiness.js` and updated `agents/orchestrator.js`, `agents/qc_agent.js`, and `scripts/generate_visual_preview.js` so silent WAV files are no longer treated as valid voiceover just because they exist on disk.
+- Updated `scripts/normalize_audio.py` so Windows TTS output is validated for usable loudness and the voice stage now fails loudly instead of silently normalizing dead placeholder narration.
+- Updated `scripts/ffmpeg_render.py` so the final render no longer burns title/body/lower-third text into the video by default.
+- Added `src/bricktoon/compositingSanitization.js` and updated `scripts/composite_bricktoon_shots.js` so document/invoice/evidence shots now receive a reusable no-readable-text sanitization pass before they enter scene assembly.
+- Upgraded `src/bricktoon/proceduralSequenceRenderer.js` so the procedural fallback path now renders a richer `legit_front_office` scene family and more deliberate minifig-style character construction instead of the earlier flat storefront/stick-figure look.
+- Rebuilt `workspaces/test_story_template/03_voice/voiceover.{wav,clean.wav}`, `08_animation/composited_shot_clips/*.mp4`, `08_animation/scene_sequences/*.mp4`, and `06_renders/draft_01.mp4` on Thursday, July 23, 2026 after the voice-recovery and no-text-render pass.
+- Rebuilt the procedural fallback clips for `workspaces/test_story_template/08_animation/shot_clips/S02_SHOT_001.mp4` and `S02_SHOT_002.mp4`, then refreshed downstream compositing, scene assembly, and `06_renders/draft_01.mp4` on Thursday, July 23, 2026 so the benchmark draft uses the stronger fallback art in the real shipped render.
+- Expanded regression coverage in `tests/bricktoon_pipeline.test.js`; the suite now passes 82 tests, including document-shot no-text sanitization coverage.
+- Updated `src/bricktoon/sequencePolish.js` so scene continuity can now lock on fully animated `motion_ready` coverage instead of only treating `premium_motion` shots as strong enough proof. This lets the sequence layer reflect real animated winners instead of overstating fragility when fallback spread is already zero.
+- Updated `agents/visual_asset_agent.js` so planned document placeholders no longer keep counting as unresolved high-priority blockers once the newer scene-sequence pipeline has already promoted that scene to `ready_for_finish` with zero fallback shots.
+- Updated `agents/bricktoon_overnight_agent.js` plus new helper `src/bricktoon/overnightPreviewReadiness.js` so governed overnight runs can now reuse a fresh existing preview, rebuild only the lightweight visual preview when approved keyframes already exist, or fall back to the full expensive preview stack only when necessary.
+- Rebuilt `workspaces/test_story_template/10_qc/hybrid_promotion_gate_report.{json,md}`, `workspaces/test_story_template/10_qc/bricktoon_reliability_report.{json,md}`, and `workspaces/test_story_template/10_qc/bricktoon_recovery_plan.{json,md}` on Thursday, July 23, 2026 after the continuity/readiness truth correction pass.
+- Expanded regression coverage in `tests/bricktoon_pipeline.test.js`; the suite now passes 81 tests, including continuity-lock coverage for fully animated no-fallback scenes and overnight preview fast-path coverage.
+- Rebuilt `workspaces/test_story_template/06_renders/draft_01.mp4` and refreshed `workspaces/test_story_template/10_qc/bricktoon_render_output_proof.{json,md}` on Thursday, July 23, 2026 after the motion-hardening pass.
+- Updated `src/bricktoon/workflowContracts.js`, `scripts/generate_ai_motion_passes.js`, `scripts/composite_bricktoon_shots.js`, and `tests/bricktoon_pipeline.test.js` so shot-class motion routing is stronger, weak motion passes are retried automatically, motion distance is measured explicitly, and weak stabilized passes are no longer silently preferred during compositing.
+- Updated `src/bricktoon/reliabilityGate.js`, `scripts/build_bricktoon_reliability_report.js`, `src/bricktoon/reliabilityRecoveryPlan.js`, and `config/bricktoon_runtime_profiles.json` so reliability now tracks attempted weak-motion scenes separately from selected weak-motion scenes, exposes those metrics in the report, and threads motion-health signals into recovery focus instead of hiding them only inside `ai_motion_report.json`.
+- Rebuilt `workspaces/test_story_template/10_qc/bricktoon_reliability_report.{json,md}` and `workspaces/test_story_template/10_qc/bricktoon_recovery_plan.{json,md}` on Thursday, July 23, 2026 so the live workspace reflects the new motion-health-aware reliability path.
+- Expanded regression coverage in `tests/bricktoon_pipeline.test.js`; the suite now passes 77 tests, including new weak-motion reliability and recovery-plan coverage.
+- Updated `src/bricktoon/hybridPerformanceProof.js`, `scripts/render_hybrid_performance_proof.js`, `agents/orchestrator.js`, and `package.json` so the hybrid proof stage now supports governed selection modes instead of being hard-capped to a 4-shot sample.
+- Shifted `hybrid-performance-proof` / `npm run hybrid:proof` to a topic-wide default path, while preserving an explicit `sample` mode through `--selection-mode sample` and `npm run hybrid:proof:sample`.
+- Re-ran the widened hybrid proof stage for `workspaces/test_story_template` on Thursday, July 23, 2026. The proof package now covers 19 shots instead of 4:
+- 4 closeups
+- 4 medium singles
+- 1 dialogue/two-shot
+- 10 insert/document shots
+- Rebuilt the downstream compositing, scene assembly, draft render, and render-output proof after the topic-wide hybrid proof expansion.
+- Updated the current compositing winner mix for `workspaces/test_story_template`:
+- `professional_import_shot`: 5
+- `hybrid_proof_shot`: 15
+- `stabilized_motion_pass`: 6
+- The render-output proof now shows a materially stronger motion/readability state:
+- `distinct_frame_ratio`: `0.857`
+- `duplicate_frame_ratio`: `0.143`
+- `static_window_ratio`: `0.286`
+- `scenes_with_fallback_ratio`: `0`
+- `fallback_document_shot_ratio`: `0`
+- The render-output proof is now blocked by one remaining issue only:
+- `low_detail_frame_ratio`: `1.000`
+- Updated `scripts/composite_bricktoon_shots.js` so compositing now evaluates `professional_import_shot`, `hybrid_editorial_shot`, `hybrid_proof_shot`, `stabilized_motion_pass`, and `bricktoon_shot_clip` as explicit motion candidates instead of auto-promoting procedural clips for almost every speaking or insert-heavy shot.
+- Updated `scripts/composite_bricktoon_shots.js` again so each composited shot now records `available_source_types`, stronger source-selection reasons, and a stricter `procedural_fallback_only` policy when no better animated source exists.
+- Updated `scripts/generate_ai_motion_passes.js` so keyframe-derived motion uses stronger zoom, pan, and sway profiles across `static_plus_drift`, `talking_character`, `reaction_emphasis`, `pressure_reveal`, `villain_hero`, and `typing_action_insert`.
+- Rebuilt the motion-pass chain for `workspaces/test_story_template` on Thursday, July 23, 2026:
+- `08_animation/raw_ai_video/*.mp4`
+- `08_animation/stabilized_ai_video/*.mp4`
+- `08_animation/composited_shot_clips/*.mp4`
+- `08_animation/scene_sequences/*.mp4`
+- `06_renders/draft_01.mp4`
+- `10_qc/bricktoon_render_output_proof.{json,md}`
+- Updated `scripts/ffmpeg_render.py` so final draft renders now choose the loudest usable voice file automatically, reject effectively silent narration tracks, and attach either selected music or a generated procedural preview bed instead of shipping near-silent output.
+- Updated `scripts/ffmpeg_render.py` so repeated scene visuals no longer always restart from the beginning of the same source clip; long source clips now render subclips from different offsets across a scene.
+- Updated `scripts/ffmpeg_render.py` again so portrait bricktoon scene sequences are now delivered into 16:9 with preserved portrait framing plus a blurred background treatment instead of being hard center-cropped.
+- Updated `scripts/ffmpeg_render.py` with a delivery-frame drift pass for portrait-origin visuals so the final 16:9 export can preserve more apparent motion from vertical source shots.
+- Continued executable build work on the premium-motion quality floor by strengthening `src/bricktoon/proceduralSequenceRenderer.js` with richer scene-family layouts, more center-frame scene signatures, denser environment props, and stronger character silhouette definition.
+- Updated `src/bricktoon/proceduralSequenceRenderer.js` again so procedural character staging now renders larger and lower in frame across closeups, medium shots, two-shots, and wides, making subjects more legible inside the final horizontal export.
+- Rebuilt `workspaces/test_story_template/06_renders/draft_01.mp4` and refreshed `workspaces/test_story_template/10_qc/bricktoon_render_output_proof.{json,md}` on Thursday, July 23, 2026.
+
+### Fixed
+
+- Fixed the live workspace voice failure where `voiceover.wav` and `voiceover_clean.wav` existed but were effectively silent at about `-91 dB`, causing the renderer to ship music-only drafts.
+- Fixed the readiness/QC blind spot where a non-empty but silent narration file could still pass as "voice ready."
+- Fixed the render-overlay issue where the final draft still burned explanatory title/body/lower-third text over the visuals even after the project had moved to a visual-first bricktoon route.
+- Fixed the embedded readable-text carry-through on document-style shots by sanitizing those composited shots before final scene assembly, so generated invoice numbers and similar AI text do not survive into the final render as readable text.
+- Fixed the weakest live fallback-art failure where `S02` procedural winners still looked like emergency placeholder diagrams even though motion existed; those fallback shots now render with a real office set, denser props, clearer silhouettes, and stronger bricktoon character styling.
+- Fixed a continuity-scoring blind spot where scenes composed entirely from approved animated winners could still be marked `fragile` or `hold_for_polish` simply because some of those winners were classified as `motion_ready` instead of `premium_motion`.
+- Fixed a visual-readiness blind spot where older planned document rows could keep the overnight gate blocked even after the scene-sequence path had already replaced those placeholders with approved animated outputs.
+- Fixed an overnight-runner waste path where the governed GTX 1080 overnight flow could burn its whole window re-entering the full `bricktoon-preview` pipeline even when fresh preview artifacts already existed.
+- Fixed a reliability blind spot where `weak_motion_retry_exhausted` could be visible in `08_animation/raw_ai_video/ai_motion_report.json` but completely absent from the governed reliability and recovery artifacts that users actually read.
+- Fixed a recovery-planning blind spot where scenes that had weak attempted motion but safe fallback winners were not called out for motion follow-up anywhere in the queue focus notes.
+- Fixed the live motion-truth gap where a render could look approved while the pipeline still had no first-class way to distinguish "weak attempted motion that got replaced safely" from "weak motion that survived into the final chosen shots."
+- Fixed the sample-only proof bottleneck where most medium and insert/document shots never received hybrid proof motion candidates, leaving the final render stuck with avoidable static-feeling fallback behavior.
+- Fixed the immediate topic-wide motion-coverage gap for `test_story_template`: every former procedural-document fallback shot now has a promoted `hybrid_proof_shot` alternative inside compositing.
+- Fixed the latest render-proof blocker mix from "static + repetitive + placeholder-like" down to one narrower remaining truth: low-detail source imagery.
+- Fixed the biggest live truth gap in the bricktoon finish path where richer hybrid/editorial/stabilized motion assets could exist in the workspace but never actually reach the final composited shot winners.
+- Fixed a source-selection bias where `closeup_talking_puppet`, `single_character_explainer`, `two_character_exchange`, and `document_insert_motion` shots were routinely labeled as premium even when the compositor had only chosen the weaker procedural fallback.
+- Fixed the render-finish regression path where stronger motion assets were being generated successfully but silently discarded before scene assembly.
+- Fixed the immediate output-truth gap where a draft render could contain an audio stream but still be effectively inaudible; the current draft now encodes with a real AAC track around `138 kb/s` instead of the earlier near-empty audio stream.
+- Fixed the render-subclip loop behavior that made repeated scene entries feel even more repetitive by always trimming from source time zero.
+- Fixed a delivery-frame loss where portrait bricktoon clips were being upscaled and hard-cropped into 16:9, discarding scene-specific edges and props from the final draft.
+- Confirmed the next remaining blocker is not audio or missing motion anymore; it is visual sameness and low-detail scene composition in the final cropped render.
+- Confirmed the stronger export framing is not enough by itself: the current premium blocker is now clearly the simplicity of the underlying procedural source art, which still reads as low-detail and too static even after framing and staging improvements.
+
+### Current Result
+
+- `workspaces/test_story_template/03_voice/voiceover_clean.wav` now contains usable narration again on Thursday, July 23, 2026:
+- normalized mean volume: about `-14.5 dB`
+- `workspaces/test_story_template/06_renders/draft_01.mp4` now contains a stronger audio mix again:
+- AAC bitrate: about `164 kb/s`
+- overall mean volume: about `-20.6 dB`
+- The final render no longer includes renderer-added title/body/lower-third text.
+- The document-shot sanitization pass now removes the large embedded readable number that previously appeared around the `98` second sample frame, replacing it with a neutral document treatment instead of readable generated text.
+- The benchmark draft now carries the upgraded fallback art in the real final render as of Thursday, July 23, 2026:
+- `workspaces/test_story_template/08_animation/shot_clips/S02_SHOT_001.mp4` now shows an actual office-lobby staging treatment instead of the earlier flat storefront card.
+- `workspaces/test_story_template/08_animation/shot_clips/S02_SHOT_002.mp4` now shows a larger, more legible minifig-style closeup performer instead of the earlier sparse placeholder puppet.
+- `workspaces/test_story_template/06_renders/draft_01.mp4` was rebuilt at approximately `12:38 PM` on Thursday, July 23, 2026 and the S02 section now reflects the upgraded procedural fallback design in the shipped video.
+- `workspaces/test_story_template/10_qc/hybrid_promotion_gate_report.json` now records `approved_for_topic_promotion` on Thursday, July 23, 2026:
+- promoted scenes: `7`
+- review scenes: `0`
+- rework scenes: `0`
+- `workspaces/test_story_template/10_qc/bricktoon_render_output_proof.json` now records an approved rendered draft on Thursday, July 23, 2026:
+- `distinct_frame_ratio`: `0.857`
+- `duplicate_frame_ratio`: `0.143`
+- `low_detail_frame_ratio`: `0.286`
+- `static_window_ratio`: `0.143`
+- `scenes_with_fallback_ratio`: `0`
+- `fallback_document_shot_ratio`: `0`
+- `workspaces/test_story_template/10_qc/bricktoon_reliability_report.json` now records `ready_for_overnight_finish` on Thursday, July 23, 2026:
+- fragile scenes: `0`
+- hold scenes: `0`
+- review scenes: `0`
+- unresolved high-priority assets: `1`
+- scenes with fallback ratio: `0`
+- `workspaces/test_story_template/10_qc/bricktoon_reliability_report.json` also shows the motion-health truth clearly:
+- attempted weak-motion scenes: `S02`, `S04`
+- selected weak-motion scenes: none
+- selected weak-motion scene ratio: `0`
+- `workspaces/test_story_template/10_qc/bricktoon_overnight_state.json` now proves the governed overnight run can skip fresh preview rebuilds, complete `bricktoon-preview`, complete `bricktoon-reliability`, and advance into `bricktoon-finish` instead of getting stranded at step 1.
+- The current truth is materially narrower than before:
+- the final draft is no longer blocked for slideshow behavior
+- weak motion is no longer silently chosen as a winner
+- the benchmark topic now clears the overnight draft reliability gate
+- the next missing proof is the completed governed overnight-run record, not another continuity/promotion unblock
+- `workspaces/test_story_template/08_animation/hybrid_shots/hybrid_performance_proof_report.json` now proves topic-wide hybrid proof coverage instead of only a small sample clip set.
+- `workspaces/test_story_template/06_renders/draft_01.mp4` now renders with audible audio and measurable motion.
+- The compositing winner mix is now materially healthier:
+- `professional_import_shot`: 5
+- `hybrid_proof_shot`: 15
+- `stabilized_motion_pass`: 6
+- The render-output proof improved after this pass, but is still blocked:
+- `distinct_frame_ratio`: `0.857`
+- `low_detail_frame_ratio`: still `1.000`
+- `static_window_ratio`: `0.286`
+- The render-output proof is still intentionally blocked for one remaining visual reason:
+- too many sampled frames still read as low-detail / placeholder-like
+- The remaining truth is now narrower and clearer:
+- stronger source promotion is working
+- stronger keyframe drift generation is working
+- topic-wide hybrid proof motion coverage is working
+- premium motion no longer fails because of coverage gaps alone; it now fails because too many scenes are still built from sparse low-detail stills
+- The current premium-quality problem is now concentrated in still-image richness, scene differentiation, and visual density, not in narration audibility or pure slideshow failure.
+
 ## 2026-07-22
 
 ### Changed
